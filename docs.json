@@ -48,6 +48,9 @@
         ]
       },
       {
+        "sourceRef": "docs-starter"
+      },
+      {
         "tab": "Wallis API reference",
         "groups": [
           {
