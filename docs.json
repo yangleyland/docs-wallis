@@ -9,9 +9,10 @@
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "tabs": [
+    "products": [
       {
-        "tab": "Wallis Guides",
+        "product": "Wallis Guides",
+        "icon": "book-open-cover",
         "groups": [
           {
             "group": "Getting started",
@@ -47,9 +48,9 @@
           }
         ]
       },
-      
       {
-        "tab": "Wallis API reference",
+        "product": "Wallis API Reference",
+        "icon": "code",
         "groups": [
           {
             "group": "API documentation",
