@@ -1,0 +1,13 @@
+---
+title: "Root symlink target page"
+description: "Fixture for validating root-owned symlink expansion under a mounted prefix"
+---
+
+This page lives at `shared/page.mdx` in the root-mounted `yangleyland/docs-wallis` repo.
+
+The symlink `docs/shared-link -> ../shared` sits under the `docs` mount prefix owned by
+`yangleyland/docs-starter`, but both the symlink and this target belong to `docs-wallis`.
+Before the routing fix, prefix matching attributed the symlink to `docs-starter`, saw the
+target resolve to `docs-wallis`, and skipped expansion as "outside its git source".
+
+If this page renders at `/docs/shared-link/page`, symlink ownership routing is working.

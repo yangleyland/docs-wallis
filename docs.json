@@ -46,6 +46,13 @@
               "ai-tools/claude-code",
               "ai-tools/windsurf"
             ]
+          },
+          {
+            "group": "Composite fixtures",
+            "pages": [
+              "docs/root-only",
+              "docs/shared-link/page"
+            ]
           }
         ]
       },
