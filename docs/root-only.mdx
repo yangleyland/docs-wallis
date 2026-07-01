@@ -1,0 +1,10 @@
+---
+title: "Root source nested under docs"
+description: "Fixture for reproducing composite stream routing from a root-mounted source"
+---
+
+This page lives in the root-mounted `yangleyland/docs-wallis` repo at `docs/root-only.mdx`.
+
+When `yangleyland/docs-starter` is mounted at `docs`, there is intentionally no
+`yangleyland/docs-starter/root-only.mdx` counterpart. The composite content tree should still
+stream this file from `docs-wallis`, not from the mounted `docs-starter` source.
