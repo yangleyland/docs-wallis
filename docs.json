@@ -19,7 +19,8 @@
             "pages": [
               "index",
               "quickstart",
-              "development"
+              "development",
+              "testpage"
             ]
           },
           {
