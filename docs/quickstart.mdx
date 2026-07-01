@@ -1,0 +1,12 @@
+---
+title: "Wallis shadow quickstart"
+description: "Intentional path collision fixture for multi-source deployments"
+---
+
+This page intentionally collides with `yangleyland/docs-starter/quickstart.mdx` when:
+
+- `yangleyland/docs-wallis` has mount path `""`
+- `yangleyland/docs-starter` has mount path `"docs"`
+
+Both files flatten to `docs/quickstart.mdx`. The mounted `docs-starter` source should win because
+its mount path is more specific, and the update workflow should surface a path conflict warning.
