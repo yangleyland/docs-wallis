@@ -9,9 +9,9 @@
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "products": [
+    "anchors": [
       {
-        "product": "Wallis Guides",
+        "anchor": "Wallis Guides",
         "icon": "book-open-cover",
         "groups": [
           {
@@ -49,7 +49,7 @@
         ]
       },
       {
-        "product": "Wallis API Reference",
+        "anchor": "Wallis API Reference",
         "icon": "code",
         "groups": [
           {
