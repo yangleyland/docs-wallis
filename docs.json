@@ -59,6 +59,10 @@
       {
         "anchor": "Wallis API Reference",
         "icon": "code",
+        "openapi": {
+          "source": "api-reference/openapi.json",
+          "directory": "api-reference/generated"
+        },
         "groups": [
           {
             "group": "API documentation",
@@ -69,10 +73,10 @@
           {
             "group": "Endpoint examples",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "GET /plants",
+              "POST /plants",
+              "DELETE /plants/{id}",
+              "WEBHOOK /plant/webhook"
             ]
           }
         ]
