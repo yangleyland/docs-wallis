@@ -81,9 +81,6 @@
             ]
           }
         ]
-      },
-      {
-        "sourceRef": "yangleyland/docs-starter"
       }
     ],
     "global": {
