@@ -126,6 +126,11 @@
               }
             }
           }
+        },
+        "summary": "Delete a plant",
+        "x-hidden": true,
+        "x-mint": {
+          "href": "api-reference/plants/delete-a-plant"
         }
       }
     }
