@@ -21,7 +21,8 @@
               "quickstart",
               "development",
               "testpage",
-              "changelog"
+              "changelog",
+              "rollback-test"
             ]
           },
           {
@@ -117,15 +118,15 @@
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
