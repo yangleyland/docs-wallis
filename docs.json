@@ -22,7 +22,8 @@
               "development",
               "testpage",
               "changelog",
-              "rollback-test"
+              "rollback-test",
+              "rollback-v2"
             ]
           },
           {
