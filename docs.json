@@ -23,7 +23,8 @@
               "testpage",
               "changelog",
               "rollback-test",
-              "rollback-v2"
+              "rollback-v2",
+              "rollback-v3"
             ]
           },
           {
