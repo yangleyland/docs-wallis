@@ -9,79 +9,105 @@
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "anchors": [
+    "tabs": [
       {
-        "anchor": "Wallis Guidess",
-        "icon": "book-open-cover",
-        "groups": [
+        "tab": "Docs",
+        "anchors": [
           {
-            "group": "Getting started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development",
-              "testpage",
-              "changelog",
-              "rollback-test",
-              "rollback-v2",
-              "rollback-v3"
+            "anchor": "Wallis Guidess",
+            "icon": "book-open-cover",
+            "groups": [
+              {
+                "group": "Getting started",
+                "pages": [
+                  "index",
+                  "quickstart",
+                  "development",
+                  "testpage",
+                  "changelog",
+                  "rollback-test",
+                  "rollback-v2",
+                  "rollback-v3"
+                ]
+              },
+              {
+                "group": "Customization",
+                "pages": [
+                  "essentials/settings",
+                  "essentials/navigation"
+                ]
+              },
+              {
+                "group": "Writing content",
+                "pages": [
+                  "essentials/markdown",
+                  "essentials/code",
+                  "essentials/images",
+                  "essentials/reusable-snippets"
+                ]
+              },
+              {
+                "group": "AI tools",
+                "pages": [
+                  "ai-tools/cursor",
+                  "ai-tools/claude-code",
+                  "ai-tools/windsurf"
+                ]
+              },
+              {
+                "group": "Composite fixtures",
+                "pages": [
+                  "docs/root-only",
+                  "docs/shared-link/page"
+                ]
+              }
             ]
           },
           {
-            "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
-          },
-          {
-            "group": "Composite fixtures",
-            "pages": [
-              "docs/root-only",
-              "docs/shared-link/page"
+            "anchor": "Wallis API Reference",
+            "icon": "code",
+            "openapi": {
+              "source": "api-reference/openapi.json",
+              "directory": "api-reference/generated"
+            },
+            "groups": [
+              {
+                "group": "API documentation",
+                "pages": [
+                  "api-reference/introduction"
+                ]
+              },
+              {
+                "group": "Endpoint examples",
+                "pages": [
+                  "GET /plants",
+                  "POST /plants",
+                  "DELETE /plants/{id}",
+                  "WEBHOOK /plant/webhook"
+                ]
+              }
             ]
           }
         ]
       },
       {
-        "anchor": "Wallis API Reference",
-        "icon": "code",
-        "openapi": {
-          "source": "api-reference/openapi.json",
-          "directory": "api-reference/generated"
-        },
-        "groups": [
+        "tab": "Solutions",
+        "menu": [
           {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
+            "item": "Wallis Cloud",
+            "icon": "cloud",
+            "groups": [
+              {
+                "group": "Cloud",
+                "pages": [
+                  "quickstart",
+                  "development"
+                ]
+              }
             ]
           },
           {
-            "group": "Endpoint examples",
-            "pages": [
-              "GET /plants",
-              "POST /plants",
-              "DELETE /plants/{id}",
-              "WEBHOOK /plant/webhook"
-            ]
+            "sourceRef": "yangleyland/docs-ethelda"
           }
         ]
       }
