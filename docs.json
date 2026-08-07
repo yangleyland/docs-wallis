@@ -1,11 +1,11 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Prod Rollback V8",
+  "name": "Prod Rollback V9",
   "colors": {
-    "primary": "#DC2626",
-    "light": "#F87171",
-    "dark": "#991B1B"
+    "primary": "#2563EB",
+    "light": "#60A5FA",
+    "dark": "#1E40AF"
   },
   "favicon": "/favicon.svg",
   "navigation": {
