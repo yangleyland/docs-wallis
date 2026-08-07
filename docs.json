@@ -1,11 +1,11 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Rollback Theme V4",
+  "name": "Prod Rollback V5",
   "colors": {
-    "primary": "#9333EA",
-    "light": "#C084FC",
-    "dark": "#6B21A8"
+    "primary": "#16A34A",
+    "light": "#07C983",
+    "dark": "#15803D"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -99,9 +99,6 @@
               "quickstart",
               "development"
             ]
-          },
-          {
-            "sourceRef": "yangleyland/docs-ethelda"
           }
         ]
       }
