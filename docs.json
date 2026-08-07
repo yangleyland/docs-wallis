@@ -92,18 +92,12 @@
       },
       {
         "tab": "Solutions",
-        "menu": [
+        "groups": [
           {
-            "item": "Wallis Cloud",
-            "icon": "cloud",
-            "groups": [
-              {
-                "group": "Cloud",
-                "pages": [
-                  "quickstart",
-                  "development"
-                ]
-              }
+            "group": "Cloud",
+            "pages": [
+              "quickstart",
+              "development"
             ]
           },
           {
