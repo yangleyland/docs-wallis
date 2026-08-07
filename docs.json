@@ -27,7 +27,8 @@
                   "changelog",
                   "rollback-test",
                   "rollback-v2",
-                  "rollback-v3"
+                  "rollback-v3",
+                  "rollback-v6"
                 ]
               },
               {
