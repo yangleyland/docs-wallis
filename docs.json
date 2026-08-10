@@ -84,7 +84,8 @@
                   "GET /plants",
                   "POST /plants",
                   "DELETE /plants/{id}",
-                  "WEBHOOK /plant/webhook"
+                  "WEBHOOK /plant/webhook",
+                  "POST /plants/{id}/water"
                 ]
               }
             ]
