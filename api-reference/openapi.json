@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification Rollback hash test v2. [graph-capture-test v1]",
+    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification Rollback hash test v2.  [serve-mode-test v2]",
     "license": {
       "name": "MIT"
     },
