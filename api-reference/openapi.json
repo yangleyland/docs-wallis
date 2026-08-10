@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification Rollback hash test v2.  [serve-mode-test v2]",
+    "description": "A sample API that uses a plant store as an example. ROLLBACK TEST: this is the NEW spec version.",
     "license": {
       "name": "MIT"
     },
@@ -21,7 +21,7 @@
   "paths": {
     "/plants": {
       "get": {
-        "description": "Returns all plants from the system that the user has access to",
+        "description": "NEW SPEC: Returns all plants from the system. If you can read this, you are seeing the NEW build.",
         "parameters": [
           {
             "name": "limit",
@@ -30,6 +30,15 @@
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "species",
+            "in": "query",
+            "description": "NEW SPEC ONLY: filter results by species name",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -57,7 +66,8 @@
               }
             }
           }
-        }
+        },
+        "summary": "Get all plants (NEW SPEC VERSION)"
       },
       "post": {
         "description": "Creates a new plant in the store",
@@ -131,6 +141,29 @@
         "x-hidden": true,
         "x-mint": {
           "href": "api-reference/plants/delete-a-plant"
+        }
+      }
+    },
+    "/plants/{id}/water": {
+      "post": {
+        "summary": "Water a plant (endpoint only in NEW spec)",
+        "operationId": "waterPlant",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID of plant to water",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plant watered successfully"
+          }
         }
       }
     }
