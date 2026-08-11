@@ -16,26 +16,11 @@
           {
             "anchor": "Wallis Guidess",
             "icon": "book-open-cover",
-            "groups": [
-              {
-                "group": "Getting started",
-                "pages": [
-                  "index",
-                  "quickstart",
-                  "development",
-                  "testpage",
-                  "changelog",
-                  "rollback-test",
-                  "rollback-v2",
-                  "rollback-v3",
-                  "rollback-v6"
-                ]
-              },
+            "pages": [
               {
                 "group": "Customization",
                 "pages": [
-                  "essentials/settings",
-                  "essentials/navigation"
+                  "essentials/settings"
                 ]
               },
               {
@@ -51,8 +36,23 @@
                 "group": "AI tools",
                 "pages": [
                   "ai-tools/cursor",
+                  "essentials/navigation",
                   "ai-tools/claude-code",
-                  "ai-tools/windsurf"
+                  "ai-tools/windsurf",
+                  {
+                    "group": "Getting started",
+                    "pages": [
+                      "index",
+                      "quickstart",
+                      "development",
+                      "testpage",
+                      "changelog",
+                      "rollback-test",
+                      "rollback-v2",
+                      "rollback-v3",
+                      "rollback-v6"
+                    ]
+                  }
                 ]
               },
               {
@@ -61,7 +61,8 @@
                   "docs/root-only",
                   "docs/shared-link/page"
                 ]
-              }
+              },
+              "untitled-page"
             ]
           },
           {
