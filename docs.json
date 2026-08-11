@@ -122,7 +122,7 @@
     }
   },
   "logo": {
-    "light": "/logo/light.svg",
+    "light": "/images/accelerate-svgrepo-com.svg",
     "dark": "/logo/dark.svg"
   },
   "navbar": {
