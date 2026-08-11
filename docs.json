@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "luma",
-  "name": "Prod Rollback V11",
+  "theme": "sequoia",
+  "name": "Prod Rollback V12",
   "colors": {
     "primary": "#0c3ceb",
     "light": "#fa3cf3",
