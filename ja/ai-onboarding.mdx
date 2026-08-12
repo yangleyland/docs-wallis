@@ -1,0 +1,578 @@
+---
+title: AIで開発
+description: "AIエージェントをFirecrawlに接続するために必要なものがすべて揃っています。"
+og:title: "AIで開発 | Firecrawl"
+og:description: "AIエージェントをFirecrawlに接続するために必要なものがすべて揃っています。スキル、CLI、ワークフロー、MCP、llms.txt など。"
+sidebarTitle: "AIで開発"
+---
+
+AIを活用して開発しているなら、Firecrawlは開発体験を向上させるためのさまざまなリソースを提供します。Firecrawlには**スキル**が用意されています。これは、AIコーディングエージェントが自動的に見つけて使う自己完結型のナレッジパックです。インストールコマンドを1つ実行するだけで、エージェントは3つの完全なスキル群を利用できるようになります。ライブWeb作業向けCLIスキル、Firecrawlをアプリケーションコードに統合するためのBuild スキル、そして反復可能な成果物を生み出すためのワークフロースキルです。Firecrawlユーザーは、2つの方法でAPIキーを取得できます。下の[認証情報を取得する](#get-credentials)を参照してください。
+
+* [認証情報を取得する](#get-credentials)
+* [CLIとエージェントスキル](#cli)
+* [Firecrawlをツールとして使う](#using-firecrawl-as-a-tool)
+* [エージェント型デバッグ](#agentic-debugging)
+* [Firecrawl MCP Server](#firecrawl-mcp-server)
+* [エージェント向けFirecrawlドキュメント](#firecrawl-docs-for-agents)
+* [クイックスタートガイド](#quick-start-guides)
+* [エージェントハーネス](#agent-harnesses)
+* [SDKs](#sdks)
+
+<div id="get-credentials">
+  ## 認証情報を取得する
+</div>
+
+Firecrawl ユーザーは、APIキーを 2 つの方法で取得できます。ほとんどのユーザーは、dashboard または CLI からサインインするのが適しています。お使いのエージェントプラットフォームが WorkOS ID-JAG に対応している場合は、Firecrawl に直接登録できます。
+
+**どれを使うべきですか？** お使いのプラットフォームが WorkOS ID-JAG に対応していることが確実でない限り、dashboard または CLI を使用してください。
+
+**ここにたどり着く主なケース:**
+
+* **Docs:** このページから来た場合です。サインイン方法に合った以下のオプションを選んでください。
+* **API `401`:** ID-JAG 対応のエージェントは、[`auth.md`](https://www.firecrawl.dev/auth.md) の Step 1 にあるディスカバリーフローに従えます。それ以外の場合は、dashboard または CLI を使用してください。
+* **Direct URL:** ブラウザでのサインインとセットアップは [`SKILL.md`](https://www.firecrawl.dev/agent-onboarding/SKILL.md)、WorkOS ID-JAG の登録は [`auth.md`](https://www.firecrawl.dev/auth.md) を参照してください。
+
+<CardGroup cols={2}>
+  <Card title="dashboard または CLI を使う" icon="user" href="https://www.firecrawl.dev/agent-onboarding/SKILL.md">
+    **ほとんどのユーザー向けのデフォルトです。** ブラウザでサインインし、CLI `--browser` を実行して、スキル と MCP をインストールするか、dashboard で APIキーを作成します。
+  </Card>
+
+  <Card title="WorkOS ID-JAG で登録する" icon="robot" href="/ja/ai-onboarding/agent-auth">
+    **対応しているエージェントプラットフォーム向け。** お使いのプラットフォームが Firecrawl 用の WorkOS ID-JAG を発行できる場合はこちらを使用します。[Agent Auth](/ja/ai-onboarding/agent-auth) を確認してから、[`auth.md`](https://www.firecrawl.dev/auth.md) に従ってください。
+  </Card>
+</CardGroup>
+
+**サインインできない、またはキーを取得できませんか？** CLI、SDKs、REST API では、APIキーなしで search、スクレイピング、Interact、解析を利用できます。Hosted MCP では、より限定的なkeylessの Search、スクレイピング、Parse 機能を提供しています。そこで Interact を使用するには、アカウント接続または APIキーが必要です。keylessのアクセスにはレート制限があり、あくまでフォールバック手段として提供されるものなので、利用可能になり次第、Free アカウントまたは APIキーに移行してください。詳しくは [Keyless (no API key)](/ja/rate-limits#keyless-no-api-key) を参照してください。
+
+APIキーを取得したら、以下の [CLI and agent skills](#cli) に進んでください。
+
+<span id="cli" />
+
+<div id="cli-and-agent-skills">
+  ## CLI とエージェントスキル
+</div>
+
+[Firecrawl CLI](/ja/sdks/cli) を使うと、エージェントはターミナルから検索、スクレイピング、Interact、クロール、Map、抽出、エージェントジョブの実行を行えます。人間、AI エージェント、CI/CD パイプライン向けに設計されています。
+
+Firecrawl **スキル** は、Claude Code、Antigravity、OpenCode のような AI コーディングエージェントが自動的に見つけて利用できる、自己完結型のナレッジパックです。1 つのインストールコマンドで必要なものがすべてセットアップされます — ライブWeb作業向けの CLI ツール、Firecrawl をアプリケーションコードに統合するためのBuild スキル、そして反復可能な成果物を作成するためのワークフロースキルです：
+
+```bash
+npx -y firecrawl-cli@latest init --all --browser
+```
+
+* `--all` は、このマシンで検出されたすべての AI コーディングエージェントに、Firecrawl の全スキルセグメント (CLI、Build、ワークフロー) をインストールします
+* `--browser` は Firecrawl の認証のためにブラウザを自動的に開きます
+
+インストール後、すべてが正しく動作していることを確認します：
+
+```bash
+firecrawl --status
+firecrawl scrape "https://firecrawl.dev"
+```
+
+後で再インストールする、または特定のエージェントのみに適用するには：
+
+```bash
+firecrawl setup skills      # CLI + Build スキル
+firecrawl setup workflows   # ワークフロースキル
+```
+
+<div id="what-the-install-gives-you">
+  ### インストールで利用できるもの
+</div>
+
+このインストールでは、エージェントが Firecrawl を使うあらゆる方法をカバーする 3 種類のスキルがセットアップされます。各セグメントはそれぞれ独自のリポジトリにあり、個別に進化できるようになっています:
+
+* [`firecrawl/cli`](https://github.com/firecrawl/cli) — ライブの Web 作業向けの CLI スキル
+* [`firecrawl/skills`](https://github.com/firecrawl/skills) — アプリ連携のための Build スキル
+* [`firecrawl/firecrawl-workflows`](https://github.com/firecrawl/firecrawl-workflows) — 再利用可能な成果物向けのワークフロー スキル
+
+**CLI スキル** — エージェントのセッション中にライブのウェブ作業を行うためのもの:
+
+| Skill                | Purpose                          |
+| -------------------- | -------------------------------- |
+| `firecrawl/cli`      | CLI コマンド全体のワークフロー                |
+| `firecrawl-search`   | ウェブを検索してページを見つける                 |
+| `firecrawl-scrape`   | 既知の URL からクリーンなコンテンツを抽出する        |
+| `firecrawl-interact` | プロンプトまたはコードを使ってスクレイピングしたページを操作する |
+| `firecrawl-crawl`    | サイト全体からコンテンツを一括抽出する              |
+| `firecrawl-map`      | ドメイン上のすべての URL を見つける             |
+| `firecrawl-agent`    | ジョブを使って自律的にウェブデータを収集する           |
+
+**Build スキル** — Firecrawl をアプリケーションコードに統合するためのもの:
+
+| Skill                        | Purpose                        |
+| ---------------------------- | ------------------------------ |
+| `firecrawl-build`            | プロダクトに適した Firecrawl エンドポイントを選ぶ |
+| `firecrawl-build-onboarding` | 認証とプロジェクト設定                    |
+| `firecrawl-build-scrape`     | アプリコードにスクレイピングを実装する            |
+| `firecrawl-build-search`     | アプリコードに検索を実装する                 |
+| `firecrawl-build-interact`   | アプリコードにページ操作を実装する              |
+| `firecrawl-build-crawl`      | アプリコードにクロールを実装する               |
+| `firecrawl-build-map`        | アプリコードに URL 発見を実装する            |
+| `firecrawl-build-parse`      | アプリコードにドキュメント解析を実装する           |
+
+**ワークフロー スキル** — Firecrawl のウェブデータから具体的な成果物を生み出す、成果重視のスキル:
+
+| Skill                            | Outcome                                         |
+| -------------------------------- | ----------------------------------------------- |
+| `firecrawl-workflows`            | 適切なワークフローを選ぶための包括的なスキル                          |
+| `firecrawl-deep-research`        | 複数ソースに基づく調査レポート                                 |
+| `firecrawl-seo-audit`            | サイトマップ、オンページ SEO チェック、SERP 比較、優先度付きの修正項目        |
+| `firecrawl-lead-research`        | 商談前の企業・人物調査ブリーフ                                 |
+| `firecrawl-lead-gen`             | データベースやディレクトリからの見込み客リスト作成                       |
+| `firecrawl-qa`                   | 問題点と再現手順を含む本番サイトの QA レポート                       |
+| `firecrawl-competitive-intel`    | 価格、機能、変更履歴の継続的なモニタリング                           |
+| `firecrawl-market-research`      | 市場、財務、決算、業界の調査                                  |
+| `firecrawl-research-papers`      | 論文、PDF、ホワイトペーパーに基づく文献レビュー                       |
+| `firecrawl-company-directories`  | ディレクトリから構造化された企業リストを抽出する                        |
+| `firecrawl-dashboard-reporting`  | ダッシュボードや社内 Web ツールからの指標抽出                       |
+| `firecrawl-knowledge-base`       | LLM 対応のリファレンスドキュメント、RAG チャンク、学習データ、またはドキュメントミラー |
+| `firecrawl-knowledge-ingest`     | 認証が必要な、または JS 依存の強いドキュメントポータルの取り込み              |
+| `firecrawl-demo-walkthrough`     | プロダクトフローのウォークスルーと UX 分析レポート                     |
+| `firecrawl-shop`                 | 商品調査とショッピングのレコメンド                               |
+| `firecrawl-website-design-clone` | Web サイトのデザインシステムをエージェント対応の `DESIGN.md` に抽出する    |
+
+<div id="choose-your-path">
+  ### 進む先を選ぶ
+</div>
+
+3 つすべてのスキルカテゴリで、インストール方法は同じです。違うのは、その次に何をするかです。
+
+<Steps>
+  <Step title="ライブWebツール（CLIスキル）">
+    現在のセッション中にWebデータが必要な場合に使います。たとえば、Web検索、既知のURLのスクレイピング、スクレイピング済みページのInteract、ドキュメントのクロール、サイトのMap、エージェントジョブの実行などです。
+
+    デフォルトの流れ:
+
+    1. 探索が必要なら **検索** から始める
+    2. URL があるなら **スクレイピング** に進む
+    3. スクレイピング済みページで追加のアクションが必要な場合は **Interact** を使う
+    4. 多数のURLやページが必要な場合は **Map** または **クロール** を使う
+    5. タスクがオープンエンドで自律的な探索が必要な場合は **agent** を使う
+
+    ```bash
+    # Web を検索
+    firecrawl search "best open-source web crawlers"
+
+    # ページをクリーンなMarkdownにスクレイピング
+    firecrawl scrape https://docs.firecrawl.dev
+
+    # サイト全体をクロール
+    firecrawl crawl https://docs.firecrawl.dev
+    ```
+  </Step>
+
+  <Step title="アプリ連携（Buildスキル）">
+    コードから Firecrawl API を呼び出すアプリケーション、エージェント、またはワークフローを構築している場合に使います。Buildスキルは、適切なエンドポイントの選定、SDK の組み込み、スモークテストの実行を支援します。
+
+    エージェントは 1 つの重要な問い、*プロダクト内で Firecrawl に何をさせるべきか？*、に答え、Buildスキルはそれに応じて `/search`、`/scrape`、`/interact`、`/parse`、`/crawl`、`/map`、`/agent` に振り分けます。
+  </Step>
+
+  <Step title="反復可能な成果物（Workflowスキル）">
+    生のWebデータやプロダクトコードではなく、完成した成果物—調査レポート、SEO監査、QAレポート、リードリスト、ナレッジベース、競合インテリジェンスの要約、または複製されたデザインシステム—を目標とする場合に使います。
+
+    Workflowスキルは、まずコンテキストから推測し、入力が作業を妨げる場合にのみ短い確認質問を行います。また、独立して並列化できる単位も明示するため、サブエージェントが競合、ページ、またはソースごとに並列展開できます。
+
+    ワークフローを直接選ぶことも、包括的な `firecrawl-workflows` スキルにリクエストを振り分けさせることもできます:
+
+    ```bash
+    # あるトピックに関する複数ソースの調査ブリーフ
+    "Use firecrawl-deep-research to write a brief on AI agent frameworks"
+
+    # 営業電話の事前情報収集
+    "Use firecrawl-lead-research to brief me on stripe.com before my 3pm call"
+
+    # 優先順位付き修正項目を含むオンページSEO監査
+    "Use firecrawl-seo-audit on https://example.com"
+
+    # サイトのデザインシステムを DESIGN.md に複製
+    "Use firecrawl-website-design-clone on https://linear.app"
+    ```
+  </Step>
+
+  <Step title="REST API（インストール不要）">
+    何もインストールしたくない場合は、エージェントから Firecrawl REST API を直接呼び出せます。API キーを設定し、各エンドポイントを呼び出します。
+
+    * `POST https://api.firecrawl.dev/v2/search` — クエリでページを見つける
+    * `POST https://api.firecrawl.dev/v2/scrape` — URL からクリーンなMarkdownを抽出する
+    * `POST https://api.firecrawl.dev/v2/scrape/{scrapeId}/interact` — スクレイピング済みページをInteractする
+    * `POST https://api.firecrawl.dev/v2/crawl` — サイト全体を一括抽出する
+    * `POST https://api.firecrawl.dev/v2/map` — ドメイン上のURLをMapする
+    * `POST https://api.firecrawl.dev/v2/agent` — 自律的なWebデータ収集を実行する
+
+    認証ヘッダー: `Authorization: Bearer fc-YOUR_API_KEY`
+  </Step>
+</Steps>
+
+完全なオンボーディング定義は次で確認できます:
+
+* Browser サインイン、CLI セットアップ、スキル、MCP、dashboard キー: [`firecrawl.dev/agent-onboarding/SKILL.md`](https://www.firecrawl.dev/agent-onboarding/SKILL.md)
+* WorkOS ID-JAG を使ったエージェント登録: [`firecrawl.dev/auth.md`](https://www.firecrawl.dev/auth.md)
+
+エージェントはどちらのドキュメントも直接取得できます。人間参加型の CLI/browser オンボーディングには [`agent-onboarding/SKILL.md`](https://www.firecrawl.dev/agent-onboarding/SKILL.md) を、WorkOS ID-JAG 登録には [`auth.md`](https://www.firecrawl.dev/auth.md) を使ってください。
+
+<CardGroup cols={3}>
+  <Card title="CLIスキル" icon="terminal" href="https://github.com/firecrawl/cli">
+    エージェントセッション中のライブWeb作業—ターミナルから search、スクレイピング、Interact、Map、クロールを行い、エージェントジョブを実行します。
+  </Card>
+
+  <Card title="Buildスキル" icon="code" href="https://github.com/firecrawl/skills">
+    Firecrawl をアプリケーションコードに連携—適切なエンドポイントを選び、SDK を組み込み、検証済みの連携をリリースします。
+  </Card>
+
+  <Card title="Workflowスキル" icon="diagram-project" href="https://github.com/firecrawl/firecrawl-workflows">
+    反復可能な成果物を作成—調査ブリーフ、SEO監査、QAレポート、リードリスト、ナレッジベース、デザインクローン。
+  </Card>
+</CardGroup>
+
+<div id="using-firecrawl-as-a-tool">
+  ## Firecrawlをツールとして使う
+</div>
+
+Firecrawlは、エージェントがウェブを扱うための5つの主要なツールを提供します。各ツールはAPIエンドポイントとCLIコマンドに対応しており、必要に応じて適切なものを選べます。
+
+<AccordionGroup>
+  <Accordion title="Search — クエリでページを見つける" icon="magnifying-glass">
+    まだURLがわからない場合は、まずここから始めます。Searchは自然言語クエリに関連するウェブページを返し、任意でページ全体のコンテンツを結果に含めることもできます。
+
+    ```bash
+    # CLI
+    firecrawl search "latest OpenAI API pricing"
+    ```
+
+    ```bash
+    # REST API
+    curl -X POST https://api.firecrawl.dev/v2/search \
+      -H "Authorization: Bearer fc-YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"query": "latest OpenAI API pricing"}'
+    ```
+
+    **使用する場面:** 調査タスク、ドキュメントの検索、競合分析、最新のウェブ情報が必要な質問への回答。
+  </Accordion>
+
+  <Accordion title="スクレイピング — URLからコンテンツを抽出する" icon="file-lines">
+    すでにURLがあり、クリーンでLLM向けのコンテンツが必要な場合に使います。スクレイピングはあらゆるウェブページをMarkdown、HTML、または構造化データに変換し、JavaScriptレンダリング、bot対策、乱雑なHTMLも自動で処理します。
+
+    ```bash
+    # CLI
+    firecrawl scrape https://docs.stripe.com/api/charges
+    ```
+
+    ```bash
+    # REST API
+    curl -X POST https://api.firecrawl.dev/v2/scrape \
+      -H "Authorization: Bearer fc-YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"url": "https://docs.stripe.com/api/charges"}'
+    ```
+
+    **使用する場面:** ドキュメントの読み取り、記事コンテンツの抽出、既知のページからのデータ取得、LLM用コンテキストへのウェブページ変換。
+  </Accordion>
+
+  <Accordion title="クロール — サイト全体を一括抽出する" icon="spider">
+    クロールは開始URLからリンクを再帰的にたどり、見つかったすべてのページをスクレイピングします。単一ページではなく、サイト全体やドキュメント一式のコンテンツが必要な場合に使います。
+
+    ```bash
+    # CLI
+    firecrawl crawl https://docs.firecrawl.dev --limit 50
+    ```
+
+    ```bash
+    # REST API
+    curl -X POST https://api.firecrawl.dev/v2/crawl \
+      -H "Authorization: Bearer fc-YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"url": "https://docs.firecrawl.dev", "limit": 50}'
+    ```
+
+    **使用する場面:** ドキュメントサイト全体の取り込み、ナレッジベースの構築、コンテンツ移行、学習データの収集。
+  </Accordion>
+
+  <Accordion title="Map — ドメイン上のすべてのURLを見つける" icon="sitemap">
+    Mapは、コンテンツをスクレイピングせずに、ドメイン上のインデックス済みURLをすばやく見つけます。サイト構造を把握したい場合や、スクレイピング前に特定のページを探したい場合に使います。
+
+    ```bash
+    # CLI
+    firecrawl map https://docs.firecrawl.dev
+    ```
+
+    ```bash
+    # REST API
+    curl -X POST https://api.firecrawl.dev/v2/map \
+      -H "Authorization: Bearer fc-YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"url": "https://docs.firecrawl.dev"}'
+    ```
+
+    **使用する場面:** サイト監査、大規模サイト内での特定ページの発見、対象を絞ったクロール前のサイト構造の把握。
+  </Accordion>
+
+  <Accordion title="Interact — スクレイピング済みページを操作する" icon="hand-pointer">
+    Interactを使うと、エージェントはプロンプトやコードを使ってスクレイピングの続きから処理できます。スクレイピング済みのページで、クリック、フォーム入力、画面遷移、または追加の抽出が必要な場合に使います。
+
+    ```bash
+    # CLI
+    firecrawl scrape https://example.com
+    firecrawl interact "Click the pricing tab and extract the plan names"
+    ```
+
+    ```bash
+    # REST API
+    # scrapeIdはスクレイピングのレスポンス（data.metadata.scrapeId）から取得します
+    curl -X POST https://api.firecrawl.dev/v2/scrape/SCRAPE_ID/interact \
+      -H "Authorization: Bearer fc-YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"prompt": "Click the pricing tab and extract the plan names"}'
+    ```
+
+    **使用する場面:** スクレイピングからの継続、動的ページの操作、フォーム入力、ページ操作後のデータ抽出。
+  </Accordion>
+</AccordionGroup>
+
+<div id="how-agents-chain-tools-together">
+  ### エージェントがツールを連携して使う方法
+</div>
+
+ほとんどのエージェントのワークフローでは、複数のツールを組み合わせます。一般的なパターンは次のとおりです。
+
+1. **Search** で関連するページを見つける → URL の一覧を取得
+2. 関連性の高い URL を **スクレイピング** する → 整理されたコンテンツを取得
+3. スクレイピングしたページで後続のアクションが必要な場合は **Interact** する
+4. 自律的な探索や、複数ページにまたがる構造化データの抽出が必要なタスクでは **Agent** を使う
+
+大量に処理する場合、エージェントはまず **Map** で URL を見つけ、その後、必要なページを **クロール** または選択的に **スクレイピング** します。
+
+<div id="agentic-debugging">
+  ## エージェント型デバッグ
+</div>
+
+Firecrawl の呼び出しが失敗したり、想定外の結果が返されたりしても、エージェントが人間にエスカレーションする必要はありません。[`/support/ask`](/ja/api-reference/endpoint/ask) エンドポイントは、**エージェント間**コミュニケーション向けに設計された AI サポートエージェントです。ジョブ、アカウント、API の利用状況に関する問題を診断し、エージェントがそのまま適用できる機械可読な修正用パラメータとともに、検証済みの回答を返します。
+
+これをエージェントのエラーハンドリングフローに組み込めば、スクレイピングの失敗、クロールの問題、設定ミスから自動的に復旧できるようになります。通常は 15〜30 秒で完了し、人間が介在する必要はありません。
+
+<div id="how-it-works">
+  ### 仕組み
+</div>
+
+1. **あなたのエージェントが問題を説明します** — 問題の内容を自然言語で説明する質問です。
+2. **サポートエージェントが調査します** — job のログ、アカウントの状態、ドキュメント、ソースコードを確認します。
+3. **サポートエージェントが検証します** — 可能な場合は、実際の Firecrawl API に対して修正をテストします (例: パラメータを調整してスクレイピングを再試行する) 。
+4. **あなたのエージェントが検証済みの回答を受け取ります** — 文章による `answer`、そのまま直接適用できる機械可読な `fixParameters`、および修正がテストされたかどうかを示す `validation` 結果です。
+
+<div id="example">
+  ### 例
+</div>
+
+質問に加えて、エンドユーザーが何をしようとしているのかという文脈をサポートエージェントに伝えるため、任意の `rationale` も送信します。
+
+```bash
+curl -X POST https://api.firecrawl.dev/v2/support/ask \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "my crawl returned 3 pages but I expected 50",
+    "rationale": "user is on their third failed crawl attempt today"
+  }'
+```
+
+レスポンスには、`answer`、`confidence` の評価、エージェントが次の呼び出しに渡せる任意の `fixParameters` (例: `{"waitFor": 5000}`) 、および修正がライブ API に対してテスト済みかどうかを示す `validation` が含まれます。
+
+<Card title="Ask エンドポイントのリファレンス" icon="life-ring" href="/ja/api-reference/endpoint/ask">
+  `/support/ask` のリクエストとレスポンスの完全なスキーマに加え、ステータスコードや、エージェントが行き詰まった際に返されるフィードバックのエンベロープも確認できます。
+</Card>
+
+<div id="firecrawl-mcp-server">
+  ## Firecrawl MCP Server
+</div>
+
+MCP は、互換性のあるアプリケーションからモデルがツールを利用できるようにするオープンプロトコルです。オープンソースの [Firecrawl MCP server](https://github.com/firecrawl/firecrawl-mcp-server) は、検索、スクレイピング、ブラウジング、クロール、マッピング、Scrape JSON による構造化抽出、自律型エージェントジョブをサポートしています。
+
+<Card title="MCP 接続を選択" icon="plug" href="/ja/mcp-server">
+  キーレスアクセスを試す、対話型クライアントでサインインする、またはエージェント、CI、バックエンドサービス用に API キーを設定します。
+</Card>
+
+<div id="firecrawl-docs-for-agents">
+  ## エージェント向け Firecrawl ドキュメント
+</div>
+
+Firecrawl の最新ドキュメントを、コンテキストを保ったままエージェントに渡せます。エージェントはこれらのリソースを直接取得して自力で使い始められるため、人間が手作業で設定する必要はありません。
+
+<Steps>
+  <Step title="認証情報を取得する">
+    まずは [認証情報を取得する](/ja/ai-onboarding#get-credentials) から始めて、dashboard/CLI のセットアップと WorkOS ID-JAG の登録のどちらかを選択してください。ID-JAG の登録については、[`auth.md`](https://www.firecrawl.dev/auth.md) に従ってください。
+  </Step>
+
+  <Step title="Markdown ドキュメント">
+    すべてのページには Markdown 版があります。任意のドキュメント URL の末尾に `.md` を付けるか、ページのアクションメニューから Markdown としてコピーしてください。
+
+    ```
+    Docs for this page: https://docs.firecrawl.dev/ai-onboarding.md
+    ```
+  </Step>
+
+  <Step title="完全版 llms.txt">
+    すべてのドキュメントを 1 つのファイルとしてエージェントに渡せます。
+
+    ```
+    Here are the Firecrawl docs: https://docs.firecrawl.dev/llms-full.txt
+    ```
+
+    より短いインデックスは `https://docs.firecrawl.dev/llms.txt` でも利用できます。
+  </Step>
+
+  <Step title="MCP ドキュメントサーバー">
+    MCP ツールを使って構造化された形で利用する場合は、Codex、Cursor、Claude Code、Claude Desktop、またはその他の互換クライアントで Firecrawl MCP Server に接続してください。まずは [MCP セットアップ選択ツール](/ja/mcp-server) から始めてください。Windsurf ユーザーは [Windsurf クイックスタート](/ja/quickstarts/windsurf) に従ってください。
+  </Step>
+
+  <Step title="ChatGPT / Claude にコピー">
+    すべてのページにはコンテキスト対応のアクションメニュー (コピー、Markdown として表示、ChatGPT で開く、Claude で開く) があり、エージェントも人間もワンクリックでツール間をまたいでページを移動できます。
+  </Step>
+</Steps>
+
+<div id="quick-start-guides">
+  ## クイックスタートガイド
+</div>
+
+エージェントでよく使われるスタック向けの、そのまま使えるクイックスタートです。これらのいずれかをエージェントに渡せば、動作する Firecrawl インテグレーションのひな形をエンドツーエンドで生成できます。
+
+Cursor に任せるなら、Firecrawl MCP server をワンクリックでインストールして、Cursor でプロンプトを始めましょう：
+
+<a href="cursor://anysphere.cursor-deeplink/mcp/install?name=firecrawl&config=eyJ1cmwiOiJodHRwczovL21jcC5maXJlY3Jhd2wuZGV2L3YyL21jcCJ9">
+  <img src="https://cursor.com/deeplink/mcp-install-dark.png" alt="Cursor で開く — Firecrawl MCP server を追加" style={{ maxHeight: 32 }} />
+</a>
+
+<CardGroup cols={3}>
+  <Card title="Node.js" icon="node-js" href="/ja/quickstarts/nodejs">
+    Firecrawl Node SDK を使ったサーバーサイド JavaScript / TypeScript。
+  </Card>
+
+  <Card title="Next.js" icon="react" href="/ja/quickstarts/nextjs">
+    Next.js のルートハンドラーとサーバーアクションからスクレイピング、検索、クロールを実行します。
+  </Card>
+
+  <Card title="Python" icon="python" href="/ja/quickstarts/python">
+    スクリプト、ノートブック、バックエンドサービスから Firecrawl を使用します。
+  </Card>
+
+  <Card title="FastAPI" icon="bolt" href="/ja/quickstarts/fastapi">
+    検索、スクレイピング、抽出を行う非同期 Python API を構築します。
+  </Card>
+
+  <Card title="Cloudflare Workers" icon="cloudflare" href="/ja/quickstarts/cloudflare-workers">
+    Workers を使ってエッジで Firecrawl を実行します。
+  </Card>
+
+  <Card title="Vercel Functions" icon="triangle" href="/ja/quickstarts/vercel-functions">
+    Vercel Functions から Firecrawl を呼び出します。
+  </Card>
+
+  <Card title="AWS Lambda" icon="aws" href="/ja/quickstarts/aws-lambda">
+    Lambda ハンドラーから Firecrawl を呼び出します。
+  </Card>
+
+  <Card title="Supabase Edge Functions" icon="database" href="/ja/quickstarts/supabase-edge-functions">
+    Supabase の Deno ランタイム内で Firecrawl を使用します。
+  </Card>
+
+  <Card title="Go" icon="golang" href="/ja/quickstarts/go">
+    検索、スクレイピング、クロールに対応した、Go らしい Go SDK。
+  </Card>
+
+  <Card title="Rust" icon="rust" href="/ja/quickstarts/rust">
+    Firecrawl 向けの型安全な Rust SDK。
+  </Card>
+
+  <Card title="Laravel" icon="laravel" href="/ja/quickstarts/laravel">
+    PHP SDK 経由で Laravel アプリに Firecrawl を追加します。
+  </Card>
+
+  <Card title="Rails" icon="gem" href="/ja/quickstarts/rails">
+    Ruby on Rails に Firecrawl を簡単に組み込めます。
+  </Card>
+</CardGroup>
+
+左側のサイドバーで、クイックスタートの完全な一覧 (Express、NestJS、Fastify、Hono、Bun、Remix、Nuxt、SvelteKit、Astro、Mastra、Django、Flask、Elixir、Java、Spring Boot、.NET、ASP.NET Core など) を確認できます。
+
+<div id="agent-harnesses">
+  ## エージェントハーネス
+</div>
+
+Firecrawl は、コーディングエージェント、エージェント SDK、モデルアグリゲーターなど、エージェントが実際に動くランタイムやフレームワークに対応しています。ほとんどのコーディング用ハーネスでは、`npx -y firecrawl-cli@latest init --all --browser` で Firecrawl スキルを自動検出できます。それ以外では、MCP または REST API 経由でツールとして Firecrawl を呼び出します。
+
+<CardGroup cols={3}>
+  <Card title="Claude Code" icon="terminal" href="/ja/quickstarts/claude-code">
+    Anthropic の CLI — Claude Code で Firecrawl MCP をセットアップします。
+  </Card>
+
+  <Card title="Cursor" icon="arrow-pointer" href="/ja/quickstarts/cursor">
+    IDE エージェント — Cursor で Firecrawl MCP をワンクリックでインストールします。
+  </Card>
+
+  <Card title="OpenCode" icon="code-branch" href="/ja/quickstarts/opencode">
+    Firecrawl MCP を OpenCode に組み込みます。
+  </Card>
+
+  <Card title="Codex CLI" icon="code" href="/ja/quickstarts/codex-cli">
+    Firecrawl MCP を OpenAI Codex CLI に組み込みます。
+  </Card>
+
+  <Card title="OpenRouter" icon="route" href="/ja/quickstarts/openrouter">
+    OpenRouter の任意のモデルを Firecrawl の web ツールと組み合わせます。
+  </Card>
+
+  <Card title="Amp" icon="bolt" href="/ja/quickstarts/amp">
+    Firecrawl MCP を Sourcegraph Amp に組み込みます。
+  </Card>
+
+  <Card title="Windsurf" icon="wind" href="/ja/quickstarts/windsurf">
+    エージェント型 IDE — Windsurf で Firecrawl MCP をセットアップします。
+  </Card>
+
+  <Card title="Antigravity" icon="rocket" href="/ja/quickstarts/antigravity">
+    Google のエージェント型 IDE に Firecrawl MCP を追加します。
+  </Card>
+
+  <Card title="Gemini CLI" icon="gem" href="/ja/quickstarts/gemini-cli">
+    Firecrawl MCP を Google Gemini CLI に組み込みます。
+  </Card>
+
+  <Card title="Nous Research" icon="brain" href="/ja/quickstarts/nous-research">
+    Hermes モデルで Firecrawl をツールとして使います。
+  </Card>
+
+  <Card title="AutoGen" icon="robot" href="/ja/quickstarts/autogen">
+    Microsoft AutoGen のマルチエージェントチーム内で Firecrawl ツールを使います。
+  </Card>
+</CardGroup>
+
+<div id="sdks">
+  ## SDKs
+</div>
+
+Firecrawl API の全機能をカバーする、公式の型付き SDK です。利用しているスタックに合った言語の SDK をエージェントから利用できます。
+
+<CardGroup cols={3}>
+  <Card title="Python" icon="python" href="/ja/sdks/python" />
+
+  <Card title="Node" icon="node-js" href="/ja/sdks/node" />
+
+  <Card title="Go" icon="golang" href="/ja/sdks/go" />
+
+  <Card title="Java" icon="java" href="/ja/sdks/java" />
+
+  <Card title="Ruby" icon="gem" href="/ja/sdks/ruby" />
+
+  <Card title="Rust" icon="rust" href="/ja/sdks/rust" />
+
+  <Card title=".NET" icon="microsoft" href="/ja/sdks/dotnet" />
+
+  <Card title="PHP" icon="php" href="/ja/sdks/php" />
+
+  <Card title="Elixir" icon="droplet" href="/ja/sdks/elixir" />
+
+  <Card title="CLI" icon="terminal" href="/ja/sdks/cli" />
+</CardGroup>
+
+Firecrawl は、主要な LLM SDK やエージェントフレームワーク向けに、ネイティブ対応の SDK バインディングも提供しています。OpenAI、Anthropic、Gemini、Google ADK、Vercel AI SDK、LangChain、LangGraph、LlamaIndex、Mastra、ElevenAgents については、[LLM SDKs and Frameworks](/ja/developer-guides/llm-sdks-and-frameworks/openai) を参照してください。

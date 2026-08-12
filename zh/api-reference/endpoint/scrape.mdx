@@ -1,0 +1,16 @@
+---
+title: "Scrape"
+openapi: '/zh/api-reference/v2-openapi.json POST /scrape'
+---
+
+<div id="interactions">
+  ## 交互
+</div>
+
+对于浏览器交互 (点击、输入、导航、提取动态内容) ，请使用[交互端点](/zh/features/interact)。先抓取页面，然后调用 `POST /v2/scrape/{scrapeId}/interact`，并使用自然语言提示或 Playwright 代码在页面上执行操作。
+
+完整详情和示例，请参见[交互文档](/zh/features/interact)。
+
+你也可以选择使用 `actions` 参数，但不建议将其用于复杂交互。
+
+> 你是需要 Firecrawl API 密钥的 AI 代理吗？请参见 [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) 获取自动化引导说明。

@@ -1,0 +1,675 @@
+---
+title: "Busca"
+description: "Pesquise na web e obtenha o conteúdo completo dos resultados"
+og:title: "Busca | Firecrawl"
+og:description: "Pesquise na web e obtenha o conteúdo completo das páginas a partir dos resultados"
+icon: "magnifying-glass"
+---
+
+import InstallationPython from "/snippets/pt-BR/v2/installation/python.mdx";
+import InstallationNode from "/snippets/pt-BR/v2/installation/js.mdx";
+import InstallationCLI from "/snippets/pt-BR/v2/installation/cli.mdx";
+import SearchPython from "/snippets/pt-BR/v2/search/base/python.mdx";
+import SearchNode from "/snippets/pt-BR/v2/search/base/js.mdx";
+import SearchCURL from "/snippets/pt-BR/v2/search/base/curl.mdx";
+import SearchCLI from "/snippets/pt-BR/v2/search/base/cli.mdx";
+import SearchContentPython from "/snippets/pt-BR/v2/search/content/python.mdx";
+import SearchContentNode from "/snippets/pt-BR/v2/search/content/js.mdx";
+import SearchContentCURL from "/snippets/pt-BR/v2/search/content/curl.mdx";
+import SearchContentCLI from "/snippets/pt-BR/v2/search/content/cli.mdx";
+import SearchLocationPython from "/snippets/pt-BR/v2/search/location/python.mdx";
+import SearchLocationNode from "/snippets/pt-BR/v2/search/location/js.mdx";
+import SearchLocationCURL from "/snippets/pt-BR/v2/search/location/curl.mdx";
+import SearchLocationCLI from "/snippets/pt-BR/v2/search/location/cli.mdx";
+import SearchTimePython from "/snippets/pt-BR/v2/search/time/python.mdx";
+import SearchTimeNode from "/snippets/pt-BR/v2/search/time/js.mdx";
+import SearchTimeCURL from "/snippets/pt-BR/v2/search/time/curl.mdx";
+import SearchTimeCLI from "/snippets/pt-BR/v2/search/time/cli.mdx";
+import SearchResponse from "/snippets/pt-BR/v2/search/base/output.mdx";
+import PlaygroundCTA from "/snippets/pt-BR/shared/playground-cta-search.mdx";
+import GovLegalFeedbackCTA from "/snippets/pt-BR/gov-legal-feedback-cta.mdx";
+
+Pesquise na web e obtenha conteúdo limpo e estruturado de cada resultado em uma única chamada de API. Envie uma consulta para `/search` e o Firecrawl retorna títulos, descrições e URLs. Adicione `scrapeOptions` para também recuperar, para cada resultado, o markdown, HTML, links ou capturas de tela da página completa.
+
+Os resultados de busca incluem [Highlights](/pt-BR/features/search-highlights) relevantes para a consulta por padrão. Defina `highlights` como `false` quando quiser a descrição simples ou o snippet de cada site.
+
+Para a lista completa de parâmetros, consulte a [Referência da API do endpoint /search](https://docs.firecrawl.dev/api-reference/endpoint/search).
+
+<PlaygroundCTA />
+
+<div id="performing-a-search-with-firecrawl">
+  ## Fazendo uma pesquisa com o Firecrawl
+</div>
+
+<div id="search-endpoint">
+  ### endpoint /search
+</div>
+
+Usado para realizar pesquisas na web e, opcionalmente, obter conteúdo dos resultados.
+
+<div id="installation">
+  ### Instalação
+</div>
+
+<CodeGroup>
+  <InstallationPython />
+
+  <InstallationNode />
+
+  <InstallationCLI />
+</CodeGroup>
+
+<GovLegalFeedbackCTA src="docs-search" />
+
+<div id="basic-usage">
+  ### Uso básico
+</div>
+
+<CodeGroup>
+  <SearchPython />
+
+  <SearchNode />
+
+  <SearchCURL />
+
+  <SearchCLI />
+</CodeGroup>
+
+<div id="response">
+  ### Resposta
+</div>
+
+Os SDKs retornam o objeto de dados diretamente. O cURL retorna o payload completo.
+
+<SearchResponse />
+
+<Note>
+  **Usuários de SDKs:** os resultados de busca são agrupados por tipo de origem, não em um array genérico `.data`. Acesse os resultados da web com `result.web`, os de notícias com `result.news` e os de imagens com `result.images`.
+
+  ```python Python
+  result = firecrawl.search("query")
+  for item in result.web or []:
+      print(item.url, item.title)
+  ```
+
+  ```js JavaScript
+  const result = await firecrawl.search("query");
+  for (const item of result.web ?? []) {
+    console.log(item.url, item.title);
+  }
+  ```
+</Note>
+
+<div id="search-result-types">
+  ## Tipos de resultados de busca
+</div>
+
+Além dos resultados da web padrão, o Search oferece tipos de resultados especializados por meio do parâmetro `sources`:
+
+* `web`: resultados da web padrão (padrão)
+* `news`: resultados focados em notícias
+* `images`: resultados de busca de imagens
+
+Você pode solicitar várias fontes em uma única chamada (por exemplo, `sources: ["web", "news"]`). Quando fizer isso, o parâmetro `limit` é aplicado **por tipo de fonte** — assim, `limit: 5` com `sources: ["web", "news"]` retorna até 5 resultados da web e até 5 resultados de notícias (10 no total). Se você precisar de parâmetros diferentes por fonte (por exemplo, valores diferentes de `limit` ou `scrapeOptions` diferentes), faça chamadas separadas.
+
+<div id="search-categories">
+  ## Categorias de pesquisa
+</div>
+
+Filtre os resultados por categorias específicas usando o parâmetro `categories`:
+
+* `github`: Pesquise em repositórios do GitHub, código, issues e documentação
+* `research`: Pesquise em sites acadêmicos e de research (arXiv, Nature, IEEE, PubMed, etc.)
+* `pdf`: Pesquise por PDFs
+* `developer`: Pesquise no [Índice para desenvolvedores](/pt-BR/features/developer) — issues, pull requests mescladas e READMEs de repositórios públicos de código, além de sites de documentação selecionados
+
+<div id="github-category-search">
+  ### Pesquisa por categoria no GitHub
+</div>
+
+Pesquise especificamente em repositórios do GitHub:
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "web scraping em Python",
+    "categories": ["github"],
+    "limit": 10
+  }'
+```
+
+<div id="research-category-search">
+  ### Pesquisa por categoria de pesquisa
+</div>
+
+Pesquise sites acadêmicos e de pesquisa:
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "transformers em aprendizado de máquina",
+    "categories": ["pesquisa"],
+    "limit": 10
+  }'
+```
+
+<div id="developer-category-search">
+  ### Busca na categoria Developer
+</div>
+
+Pesquise no [Índice para desenvolvedores](/pt-BR/features/developer) fontes primárias sobre uma questão de programação:
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "how do I configure retries",
+    "categories": ["developer"],
+    "limit": 10
+  }'
+```
+
+Os resultados para desenvolvedores são retornados em seu próprio grupo `developer`, ao lado de `web`, cada um com `category: "developer"`. Para obter resultados ranqueados com as passagens correspondentes e usar os filtros de repositório e fonte de documentação, use o [endpoint de busca para desenvolvedores](/pt-BR/features/developer#search-the-developer-index).
+
+<div id="mixed-category-search">
+  ### Pesquisa com categorias mistas
+</div>
+
+Combine várias categorias em uma única pesquisa:
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "redes neurais",
+    "categories": ["github", "pesquisa"],
+    "limit": 15
+  }'
+```
+
+<div id="domain-filters">
+  ## Filtros de domínio
+</div>
+
+Use `includeDomains` para restringir os resultados da busca a domínios específicos ou `excludeDomains` para remover domínios específicos da busca. Esses campos adicionam internamente os operadores `site:` e `-site:` à consulta, então informe apenas os domínios, sem protocolo nem caminho.
+
+<Note>
+  `includeDomains` e `excludeDomains` são mutuamente exclusivos. Use um ou outro em uma única requisição.
+</Note>
+
+<div id="include-domains">
+  ### Incluir domínios
+</div>
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "web scraping",
+    "includeDomains": ["firecrawl.dev", "docs.firecrawl.dev"],
+    "limit": 10
+  }'
+```
+
+<div id="exclude-domains">
+  ### Domínios a excluir
+</div>
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "web scraping tools",
+    "excludeDomains": ["example.com"],
+    "limit": 10
+  }'
+```
+
+<div id="category-response-format">
+  ### Formato de resposta de categoria
+</div>
+
+Cada resultado de pesquisa inclui um campo `category` indicando sua fonte:
+
+```json
+{
+  "success": true,
+  "data": {
+    "web": [
+      {
+        "url": "https://github.com/example/neural-network",
+        "title": "Implementação de Rede Neural",
+        "description": "Uma implementação de redes neurais em PyTorch",
+        "category": "github"
+      },
+      {
+        "url": "https://arxiv.org/abs/2024.12345",
+        "title": "Avanços na Arquitetura de Redes Neurais",
+        "description": "Artigo científico sobre melhorias em redes neurais",
+        "category": "research"
+      }
+    ]
+  }
+}
+```
+
+Exemplos:
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "openai",
+    "sources": ["news"],
+    "limit": 5
+  }'
+```
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-SUA_CHAVE_DE_API" \
+  -d '{
+    "query": "Júpiter",
+    "sources": ["imagens"],
+    "limit": 8
+  }'
+```
+
+<div id="hd-image-search-with-size-filtering">
+  ### Pesquisa de imagens em alta definição com filtro por tamanho
+</div>
+
+Use operadores de imagem para encontrar imagens em alta resolução:
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "pôr do sol imagesize:1920x1080",
+    "sources": ["images"],
+    "limit": 5
+  }'
+```
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-SUA_API_KEY" \
+  -d '{
+    "query": "papel de parede de montanha larger:2560x1440",
+    "sources": ["images"],
+    "limit": 8
+  }'
+```
+
+**Resoluções HD comuns:**
+
+* `imagesize:1920x1080` - Full HD (1080p)
+* `imagesize:2560x1440` - QHD (1440p)
+* `imagesize:3840x2160` - 4K UHD
+* `larger:1920x1080` - HD ou superior
+* `larger:2560x1440` - QHD ou superior
+
+<div id="search-with-content-scraping">
+  ## Busca com Coleta de Conteúdo
+</div>
+
+Pesquise e recupere conteúdo dos resultados de busca em uma única operação.
+
+<CodeGroup>
+  <SearchContentPython />
+
+  <SearchContentNode />
+
+  <SearchContentCURL />
+
+  <SearchContentCLI />
+</CodeGroup>
+
+Todas as opções do endpoint /scrape são compatíveis neste endpoint de busca por meio do parâmetro `scrapeOptions`.
+
+<div id="response-with-scraped-content">
+  ### Resposta com conteúdo extraído
+</div>
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "title": "Firecrawl - A API definitiva de web scraping",
+      "description": "A Firecrawl é uma poderosa API de web scraping que transforma qualquer site em dados limpos e estruturados para IA e análise.",
+      "url": "https://firecrawl.dev/",
+      "markdown": "# Firecrawl\n\nA API definitiva de web scraping\n\n## Transforme qualquer site em dados limpos e estruturados\n\nA Firecrawl facilita a extração de dados de sites para aplicações de IA, pesquisa de mercado, agregação de conteúdo e muito mais...",
+      "links": [
+        "https://firecrawl.dev/pricing",
+        "https://firecrawl.dev/docs",
+        "https://firecrawl.dev/guides"
+      ],
+      "metadata": {
+        "title": "Firecrawl - A API definitiva de web scraping",
+        "description": "A Firecrawl é uma poderosa API de web scraping que transforma qualquer site em dados limpos e estruturados para IA e análise.",
+        "sourceURL": "https://firecrawl.dev/",
+        "statusCode": 200
+      }
+    }
+  ]
+}
+```
+
+<div id="search-then-scrape-two-step-pattern">
+  ## Buscar e depois fazer scraping (padrão de duas etapas)
+</div>
+
+Se você precisar filtrar ou processar resultados de busca antes de fazer scraping, use uma abordagem em duas etapas: primeiro faça a busca e, depois, faça scraping das URLs que quiser.
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+
+  firecrawl = Firecrawl(api_key="fc-YOUR_API_KEY")
+
+  # Etapa 1: Busca
+  results = firecrawl.search("firecrawl web scraping", limit=5)
+
+  # Etapa 2: Fazer scraping da URL de cada resultado para obter o conteúdo completo
+  for item in results.web or []:
+      page = firecrawl.scrape(item.url, formats=["markdown"])
+      print(page.markdown[:200])
+  ```
+
+  ```js JavaScript
+  import Firecrawl from '@mendable/firecrawl-js';
+
+  const firecrawl = new Firecrawl({ apiKey: "fc-YOUR_API_KEY" });
+
+  // Etapa 1: Busca
+  const results = await firecrawl.search("firecrawl web scraping", { limit: 5 });
+
+  // Etapa 2: Fazer scraping da URL de cada resultado para obter o conteúdo completo
+  for (const item of results.web ?? []) {
+    const page = await firecrawl.scrape(item.url, { formats: ["markdown"] });
+    console.log(page.markdown?.substring(0, 200));
+  }
+  ```
+</CodeGroup>
+
+<Tip>
+  **Quando usar cada abordagem:**
+
+  * **Uma etapa** (`scrapeOptions` na busca): você quer o conteúdo de todos os resultados. É mais simples e mais rápido.
+  * **Duas etapas** (buscar e depois fazer scraping): você quer filtrar, classificar ou fazer scraping seletivo dos resultados. É mais flexível.
+
+  As duas abordagens usam o Firecrawl na etapa de scraping. Não use requisições HTTP genéricas nem gere resumos apenas com base nos snippets da busca -- o conteúdo completo da página obtido pelo scraping do Firecrawl é o que torna os resultados mais embasados e completos.
+</Tip>
+
+<div id="advanced-search-options">
+  ## Opções avançadas de busca
+</div>
+
+A API de busca do Firecrawl oferece diversos parâmetros para personalizar suas buscas:
+
+<div id="location-customization">
+  ### Personalização de localização
+</div>
+
+<CodeGroup>
+  <SearchLocationPython />
+
+  <SearchLocationNode />
+
+  <SearchLocationCURL />
+
+  <SearchLocationCLI />
+</CodeGroup>
+
+<div id="time-based-search">
+  ### Busca por período
+</div>
+
+Use o parâmetro `tbs` para filtrar resultados por período. Observe que `tbs` se aplica apenas a resultados da fonte `web` — ele não filtra resultados de `news` ou `images`. Se você precisar de notícias com filtro de tempo, considere usar a fonte `web` com o operador `site:` para direcionar domínios de notícias específicos.
+
+<CodeGroup>
+  <SearchTimePython />
+
+  <SearchTimeNode />
+
+  <SearchTimeCURL />
+
+  <SearchTimeCLI />
+</CodeGroup>
+
+Valores comuns de `tbs`:
+
+* `qdr:h` - Última hora
+* `qdr:d` - Últimas 24 horas
+* `qdr:w` - Última semana
+* `qdr:m` - Último mês
+* `qdr:y` - Último ano
+* `sbd:1` - Ordenar por data (mais recentes primeiro)
+
+Para um filtro temporal mais preciso, você pode especificar intervalos de datas exatos usando o formato de intervalo personalizado:
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+
+  # Inicialize o cliente com sua API key
+  firecrawl = Firecrawl(api_key="fc-YOUR_API_KEY")
+
+  # Buscar resultados de dezembro de 2024
+  search_result = firecrawl.search(
+      "firecrawl updates",
+      limit=10,
+      tbs="cdr:1,cd_min:12/1/2024,cd_max:12/31/2024"
+  )
+  ```
+
+  ```js JavaScript
+  import { Firecrawl } from 'firecrawl';
+
+  // Inicialize o cliente com sua API key
+  const firecrawl = new Firecrawl({apiKey: "fc-YOUR_API_KEY"});
+
+  // Buscar resultados de dezembro de 2024
+  firecrawl.search("firecrawl updates", {
+    limit: 10,
+    tbs: "cdr:1,cd_min:12/1/2024,cd_max:12/31/2024"
+  })
+  .then(searchResult => {
+    console.log(searchResult.data);
+  });
+  ```
+
+  ```bash cURL
+  curl -X POST https://api.firecrawl.dev/v2/search \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer fc-YOUR_API_KEY" \
+    -d '{
+      "query": "firecrawl updates",
+      "limit": 10,
+      "tbs": "cdr:1,cd_min:12/1/2024,cd_max:12/31/2024"
+    }'
+  ```
+</CodeGroup>
+
+Você pode combinar `sbd:1` com filtros de tempo para obter resultados ordenados por data dentro de um intervalo de tempo. Por exemplo, `sbd:1,qdr:w` retorna resultados da última semana ordenados do mais recente para o mais antigo, e `sbd:1,cdr:1,cd_min:12/1/2024,cd_max:12/31/2024` retorna resultados de dezembro de 2024 ordenados por data.
+
+<div id="custom-timeout">
+  ### Tempo limite personalizado
+</div>
+
+Defina um tempo limite personalizado para operações de busca:
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+
+  # Inicialize o cliente com sua chave de API
+  firecrawl = Firecrawl(api_key="fc-YOUR_API_KEY")
+
+  # Defina um tempo limite de 30 segundos
+  search_result = firecrawl.search(
+      "complex search query",
+      limit=10,
+      timeout=30000  # 30 segundos em milissegundos
+  )
+  ```
+
+  ```js JavaScript
+  import { Firecrawl } from 'firecrawl';
+
+  // Inicialize o cliente com sua chave de API
+  const firecrawl = new Firecrawl({apiKey: "fc-YOUR_API_KEY"});
+
+  // Defina um tempo limite de 30 segundos
+  firecrawl.search("complex search query", {
+    limit: 10,
+    timeout: 30000  // 30 segundos em milissegundos
+  })
+  .then(searchResult => {
+    // Processe os resultados
+    console.log(searchResult.data);
+  });
+  ```
+
+  ```bash cURL
+  curl -X POST https://api.firecrawl.dev/v2/search \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer fc-YOUR_API_KEY" \
+    -d '{
+      "query": "complex search query",
+      "limit": 10,
+      "timeout": 30000
+    }'
+  ```
+</CodeGroup>
+
+<div id="safe-search">
+  ### Busca Segura
+</div>
+
+Defina `safe` como `true` para filtrar conteúdo explícito dos resultados de busca (SafeSearch). Quando omitido, os resultados são retornados sem filtragem, como antes.
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "firecrawl",
+    "safe": true
+  }'
+```
+
+<div id="zero-data-retention-zdr">
+  ## Zero Data Retention (ZDR)
+</div>
+
+Para equipes com requisitos rigorosos de tratamento de dados, a Firecrawl oferece opções de Zero Data Retention (ZDR) para o endpoint `/search` por meio do parâmetro `enterprise`. A busca com ZDR está disponível nos planos Enterprise — visite [firecrawl.dev/enterprise](https://www.firecrawl.dev/enterprise) para começar.
+
+<Note>
+  Isso é diferente da opção de scraping `zeroDataRetention`, que controla o ZDR para operações de scraping. Consulte [Scrape ZDR](/pt-BR/features/scrape#zero-data-retention-zdr) para mais detalhes. O parâmetro `enterprise` se aplica apenas à parte de busca da requisição.
+</Note>
+
+<div id="end-to-end-zdr">
+  ### ZDR de ponta a ponta
+</div>
+
+Com o ZDR de ponta a ponta, tanto o Firecrawl quanto nosso provedor de busca upstream aplicam retenção zero de dados. Nenhum dado de consulta ou de resultado é armazenado em nenhum ponto do pipeline.
+
+* **Custo:** 10 créditos por 10 resultados
+* **Parâmetro:** `enterprise: ["zdr"]`
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "sensitive topic",
+    "limit": 10,
+    "enterprise": ["zdr"]
+  }'
+```
+
+<div id="anonymized-zdr">
+  ### ZDR anonimizado
+</div>
+
+Com o ZDR anonimizado, o Firecrawl aplica retenção zero total de dados do nosso lado. Nosso provedor de busca pode armazenar a consulta em cache, mas ela é totalmente anonimizada — nenhuma informação identificável é anexada.
+
+* **Custo:** 2 créditos por 10 resultados
+* **Parâmetro:** `enterprise: ["anon"]`
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "sensitive topic",
+    "limit": 10,
+    "enterprise": ["anon"]
+  }'
+```
+
+<div id="combining-search-zdr-with-scrape-zdr">
+  ### Combinando ZDR de busca com ZDR de scraping
+</div>
+
+Se você estiver usando busca com scraping de conteúdo (`scrapeOptions`), o parâmetro `enterprise` cobre a parte da busca, enquanto `zeroDataRetention` em `scrapeOptions` cobre a parte do scraping. Para obter ZDR completo em ambos, defina os dois:
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "sensitive topic",
+    "limit": 5,
+    "enterprise": ["zdr"],
+    "scrapeOptions": {
+      "formats": ["markdown"],
+      "zeroDataRetention": true
+    }
+  }'
+```
+
+<div id="cost-implications">
+  ## Implicações de custos
+</div>
+
+O custo de uma busca é de 2 créditos por 10 resultados, arredondado para cima (1–10 resultados = 2 créditos, 11–20 = 4 créditos, e assim por diante). Se as opções de scraping estiverem ativadas, os custos padrão de scraping se aplicam a cada resultado de busca:
+
+* **Basic scrape**: 1 crédito por página da web
+* **PDF parsing**: 1 crédito por página de PDF
+* **Enhanced proxy mode**: 4 créditos adicionais por página da web
+* **JSON mode**: 4 créditos adicionais por página da web
+
+Para ajudar a controlar os custos:
+
+* Defina `parsers: []` se a análise de PDF não for necessária
+* Use `proxy: "basic"` em vez de `"enhanced"` quando possível, ou defina como `"auto"`
+* Limite o número de resultados de busca com o parâmetro `limit`
+
+<div id="advanced-scraping-options">
+  ## Opções avançadas de scraping
+</div>
+
+Para mais detalhes sobre as opções de scraping, consulte a [documentação do recurso Scrape](https://docs.firecrawl.dev/features/scrape). Tudo, exceto o Agente FIRE-1 e os recursos de rastreamento de alterações, é compatível com este endpoint de busca.
+
+> Você é um agente de IA que precisa de uma chave de API da Firecrawl? Consulte [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) para obter instruções de onboarding automatizado.
+
+<div id="search-feedback">
+  ## Feedback sobre busca
+</div>
+
+Quando um resultado de busca é útil ou deixa de fora conteúdo importante, envie feedback com `POST /v2/search/{jobId}/feedback`. O primeiro envio de feedback para um job de busca pode reembolsar 1 crédito, sujeito aos limites da equipe, e ajuda a melhorar a qualidade da busca do Firecrawl. Consulte [Feedback sobre busca](/pt-BR/api-reference/endpoint/search-feedback).

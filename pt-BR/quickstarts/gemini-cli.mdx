@@ -1,0 +1,46 @@
+---
+title: "Busca na web e scraping via MCP no Gemini CLI"
+description: "Adicione a busca na web e o scraping do Firecrawl ao Google Gemini CLI"
+sidebarTitle: "Gemini CLI"
+---
+
+Adicione as ferramentas sem chave de busca, scraping e Parse do Firecrawl ao [Google Gemini CLI](https://github.com/google-gemini/gemini-cli) por meio do servidor MCP hospedado.
+
+<div id="quick-setup">
+  ## Configuração rápida
+</div>
+
+Adicione isto a `~/.gemini/settings.json` ou ao `.gemini/settings.json` do seu projeto:
+
+```json
+{
+  "mcpServers": {
+    "firecrawl": {
+      "httpUrl": "https://mcp.firecrawl.dev/v2/mcp"
+    }
+  }
+}
+```
+
+Reinicie o Gemini CLI, execute `/mcp list` e confirme que `firecrawl_search`, `firecrawl_scrape` e `firecrawl_parse` estão disponíveis.
+
+O acesso sem chave tem limites compartilhados entre usuários do mesmo IP público. Faça login usando um cliente interativo com o [For Humans](/pt-BR/mcp-server/oauth) ou [adicione uma API key](/pt-BR/mcp-server/keyless#add-an-api-key) para uso não assistido.
+
+<div id="try-it">
+  ## Experimente
+</div>
+
+```text
+Use Firecrawl to search the web for "Gemini context window" and summarize the sources.
+```
+
+```text
+Scrape https://ai.google.dev/gemini-api/docs and outline the sections.
+```
+
+<div id="troubleshooting">
+  ## Solução de problemas
+</div>
+
+* **As ferramentas não aparecem:** reinicie o Gemini CLI após editar `settings.json`; os servidores MCP são carregados ao iniciar.
+* **Crawl ou outra ferramenta está ausente:** o modo sem chave expõe exatamente busca, scraping e Parse. Conecte-se com OAuth ou uma API key para obter um conjunto de ferramentas mais amplo.

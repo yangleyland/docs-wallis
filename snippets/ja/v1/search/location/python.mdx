@@ -1,0 +1,21 @@
+```python Python
+from firecrawl import FirecrawlApp
+
+# APIキーを使ってクライアントを初期化
+app = FirecrawlApp(
+  # 開始にAPIキーは不要 — より高いrate limitsを得るには追加してください:
+  # api_key="fc-YOUR_API_KEY",
+)
+
+# 位置情報（ドイツ）を指定して検索
+search_result = app.search(
+    "web scraping tools",
+    limit=5,
+    location="Germany"
+)
+
+# 結果を処理
+for result in search_result.data:
+    print(f"Title: {result['title']}")
+    print(f"URL: {result['url']}") 
+```

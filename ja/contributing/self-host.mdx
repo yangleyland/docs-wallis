@@ -1,0 +1,295 @@
+---
+title: "Firecrawl のセルフホスティング"
+sidebarTitle: "セルフホスティング"
+description: "Docker Compose で Firecrawl をセルフホストし、ローカルでのスクレイピングを確認し、オープンソース版の制限を把握して、本番環境に向けてスタックを準備します。"
+og:title: "Firecrawl のセルフホスティング | Firecrawl"
+og:description: "Docker Compose で Firecrawl をセルフホストし、ローカルでのスクレイピングを確認し、オープンソース版の制限を把握して、本番環境に向けてスタックを準備します。"
+---
+
+<span id="self-hosting-firecrawl" />
+
+ソースコードやインフラを管理する必要がある場合は、Docker Compose を使用して Firecrawl をセルフホストします。このガイドではリリース `v2.11.162` を固定し、`http://localhost:3002` で API を起動して、Markdown を含む `POST /v2/scrape` の正常なレスポンスを確認します。
+
+<Warning>
+  この信頼済みネットワーク向けクイックスタートでは API 認証を無効にしており、
+  本番環境向けのアーキテクチャではありません。永続ストレージ、TLS、高可用性、
+  または Firecrawl Cloud のすべての機能を備えずに起動します。
+</Warning>
+
+<div id="choose-self-hosting-or-firecrawl-cloud">
+  ## セルフホスティングまたは Firecrawl Cloud を選択
+</div>
+
+<div id="self-host-firecrawl-when">
+  ### 次の場合は Firecrawl をセルフホストしてください
+</div>
+
+* **ソースコードやインフラを自分で管理したい場合。** このガイドでは、API とその関連サービスをお使いのマシンで実行します。
+* **スタックの運用に慣れている場合。** アップグレード、セキュリティ、ストレージ、監視、復旧はお客様の責任となります。
+* **Firecrawl を自社環境で検証したい場合。** まずここでベースラインを動作させ、その後 [本番環境に移行する前に](#before-production) で必要な管理策を設計してください。
+
+インフラを運用せずにスクレイピングを始めたい場合は、[Firecrawl Cloud](https://firecrawl.dev) を選択してください。機能の違いについては、[Open Source vs Cloud](/ja/contributing/open-source-or-cloud) を参照してください。
+
+**推奨事項:** ソースコードへのアクセスやインフラの管理が運用負荷に見合う場合は、セルフホストを選択してください。本番環境への最短のサポート対象パスを求める場合は、Firecrawl Cloud から始めてください。
+
+<div id="what-self-hosting-requires">
+  ### セルフホスティングで必要となること
+</div>
+
+* アップグレード、シークレット、ストレージ、監視、復旧、インシデント対応はすべてご自身で担います。
+* スクレイピングでは、対象 Web サイトへのアウトバウンドリクエストが引き続き送信されます。任意のプロキシ、解析、AI プロバイダーを追加すると、データフローも増えます。
+* このガイドでは、最初の実行を意図的にシンプルにしています。まず 1 回のスクレイピングを動作させ、その後は一度に 1 つの設定を変更してください。
+* コマンドは `v2.11.162` に固定されています。別のリリースでは、異なる Compose コントラクトが使用される場合があります。
+
+<div id="self-host-firecrawl-with-docker-compose">
+  ## Docker Compose で Firecrawl をセルフホストする
+</div>
+
+<div id="start-with-these-defaults">
+  ### まずは以下のデフォルトで始める
+</div>
+
+* **リリース: Firecrawl `v2.11.162`。** まずコードと構成を固定します。対象リリースの `docker-compose.yaml` とセルフホスティングに関する注意事項を確認してからアップグレードしてください。
+* **API 認証: このローカル実行では無効。** サポート対象の完全な ID 管理とデータベース設計を用意できる場合にのみ追加してください。環境変数 1 つだけでは不十分です。
+* **キュー: PostgreSQL。** 任意の FoundationDB バックエンドを意図して運用する場合を除き、そのまま使用してください。
+* **キュー管理 UI: 無効。** 強力な `BULL_AUTH_KEY` とネットワーク制御を設定できる場合にのみ有効にしてください。
+* **AI および高度なスクレイピングプロバイダー: 未構成。** 必要な機能で求められる場合にプロバイダーを追加してください。
+
+最初の実行はシンプルに保ちましょう。まず 1 件のスクレイピングを動作させ、その後ユースケースに必要なものを追加してください。
+
+<div id="prerequisites">
+  ### 前提条件
+</div>
+
+開始前に、以下をインストールしてください。
+
+* [Git](https://git-scm.com/downloads)
+* [Docker Engine](https://docs.docker.com/engine/install/) または Docker Desktop
+* `docker compose` として実行する Docker Compose v2
+* 確認リクエストに使用する `curl`
+
+ポート `3002` が使用可能であり、Docker が複数のサービスをビルド・実行できる十分なリソースを備えていることを確認してください。Firecrawl は、このスタックに必要な最小ホスト要件を検証・公開していません。
+
+<div id="clone-the-verified-release">
+  ### 検証済みのリリースをクローンする
+</div>
+
+このガイドは Firecrawl `v2.11.162` で検証されています。コード、コマンド、構成の整合性を保つため、該当するリリースをチェックアウトしてください。
+
+```bash
+git clone https://github.com/firecrawl/firecrawl.git
+cd firecrawl
+git checkout v2.11.162
+```
+
+別のリリースを使用する場合は、これらの値を再利用する前に、そのリリースの `docker-compose.yaml` とセルフホスティングに関する注意事項を確認してください。
+
+<div id="configure-the-evaluation-deployment">
+  ### 評価環境のデプロイを設定する
+</div>
+
+リポジトリのルートに、動作に必要な最小限の `.env` ファイルを作成します。
+
+```bash
+cat > .env <<'EOF'
+USE_DB_AUTHENTICATION=false
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=replace-with-at-least-32-random-characters
+POSTGRES_DB=postgres
+EOF
+```
+
+スタックを起動する前にPostgreSQLのパスワードを変更し、`.env`はコミットしないでください。バンドルされている`pg_cron`の構成がそのデータベースを対象としているため、`v2.11.162`では`POSTGRES_DB=postgres`のままにしてください。Composeはこれらの値をAPIサービスとPostgreSQLサービスの両方に渡します。
+
+<Note>
+  `apps/api/.env.example`はAPI開発用であり、Composeファイルとしてそのまま使用するものではありません。
+  初回の実行ではデータベース認証が無効になるため、リクエストに
+  APIキーや`Authorization`ヘッダーは必要ありません。
+</Note>
+
+`NUQ_BACKEND`と`BULL_AUTH_KEY`は未設定のままにしてください。キュー管理UIを起動せずにPostgreSQLキューを使用します。初回のスクレイピングでは、構成要素を減らせます。
+
+<div id="build-and-start-firecrawl">
+  ### Firecrawl をビルドして起動する
+</div>
+
+チェックアウトしたソースをビルドし、すべてのサービスをバックグラウンドで起動します。
+
+```bash
+docker compose up --build -d
+docker compose ps --all
+```
+
+このベースラインでは、未設定の任意変数に関する警告が表示されるのは想定どおりです。`docker compose ps --all` では、API と関連サービスが実行中で、1 回限りの初期化サービスが完了していることを確認できます。サービスがまだ起動中の場合は、スタックが立ち上がるまで少し待ってください。
+
+<div id="check-api-reachability">
+  ### API に到達できることを確認する
+</div>
+
+まず、API が HTTP リクエストに応答できることを確認します。
+
+```bash
+curl \
+  --fail \
+  --silent \
+  --show-error \
+  --max-time 5 \
+  http://localhost:3002/v0/health/readiness
+```
+
+想定されるレスポンス：
+
+```json
+{"status":"ok"}
+```
+
+<Warning>
+  これは死活確認であり、エンドツーエンドテストではありません。Redis、
+  PostgreSQL、RabbitMQ、Playwright、ワーカー、外部ネットワークへのアクセスは確認されません。デプロイが使用可能と判断する前に、
+  以下のスクレイピングを実行してください。
+</Warning>
+
+<div id="run-a-functional-smoke-test">
+  ### 機能スモークテストを実行する
+</div>
+
+次に、重要なパスである実際のスクレイピングを1回テストします。リクエストのタイムアウトはミリ秒単位です。curl&#39;sのクライアントタイムアウトは秒単位で、少し長めに設定されています：
+
+```bash
+curl \
+  --fail-with-body \
+  --silent \
+  --show-error \
+  --max-time 75 \
+  -X POST \
+  http://localhost:3002/v2/scrape \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "url": "https://example.com",
+    "formats": ["markdown"],
+    "timeout": 60000
+  }'
+```
+
+正常なレスポンスは次の形式です。
+
+```json
+{
+  "success": true,
+  "data": {
+    "markdown": "...",
+    "metadata": {
+      "statusCode": 200
+    }
+  }
+}
+```
+
+これにより、API、スクレイピングパイプライン、スクレイピングエンジンの一つの経路、外部へのアクセスをまとめて確認できます。メタデータの詳細は、対象からのレスポンスによって異なる場合があります。
+
+これらの成功フィールドが返れば、Firecrawl はお客様のインフラ上でエンドツーエンドで動作しています。このベースラインを保持し、次に追加する機能を選択してください。
+
+<div id="self-hosted-feature-support">
+  ## セルフホスト環境での機能サポート
+</div>
+
+最初のスクレイピングは動作します。機能があるから追加するのではなく、必要になった時点で追加してください。
+
+| 必要なもの                                                       | 判断                                                                       |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 基本的なスクレイピング、クロール、マップ、検索ルート                                  | デフォルトのスタックを使用します。Fetch と Playwright による処理が含まれます。                         |
+| LLM を利用した抽出またはフォーマット                                        | OpenAI 互換プロバイダーまたは Ollama に接続し、その経路を個別にテストしてください。                        |
+| Fire-engine または高度なアンチボット機能                                  | そのサービスを個別に実行・構成してください。デフォルトでは含まれません。                                     |
+| スクリーンショットまたはページアクション                                        | デフォルトのスタックでは利用できません。Fetch と Playwright はどちらも非対応で、いずれも Fire-engine が必要です。 |
+| Agent、Browser、Interact、フィードバック、または製品、メニュー、音声、動画向けの特殊なフォーマット | Firecrawl Cloud を使用するか、対象機能に必要な外部サービスの要件を確認してください。                       |
+
+より広範な製品比較については、[Open Source vs Cloud](/ja/contributing/open-source-or-cloud) を参照してください。リリース固有の構成については、固定バージョンの [`docker-compose.yaml`](https://github.com/firecrawl/firecrawl/blob/v2.11.162/docker-compose.yaml) を参照してください。
+
+<div id="before-production">
+  ## 本番環境に移行する前に
+</div>
+
+Compose を使えば、まずは動作させるところまで到達できます。本番環境では、API を信頼されたネットワークの外部に公開する前に、いくつかの明確な判断が必要です。
+
+* **サービスの置き換え後もデータを保持する必要がある場合は、** PostgreSQL、Redis、RabbitMQ 用の永続ストレージを追加し、バックアップと復元の手順を定義してテストしてください。提供されている Compose ファイルには、これらのボリュームは含まれていません。
+* **ユーザーや信頼できないネットワークから API にアクセスできる場合は、** サポート対象の認証方式、ネットワークアクセス制御、リバースプロキシまたは Ingress での TLS を導入してください。この認証されていないベースラインをインターネット上に公開しないでください。
+* **可用性や容量に関する要件がある場合は、** 稼働率の目標、監視、リソースのサイジング、スケーリングのトリガー、アップグレードおよびロールバックの手順を設定してください。Compose の制限値は、検証済みの最小要件ではありません。
+* **データのロケーションやコンプライアンスが重要な場合は、** 有効化する前に、対象 Web サイトへのリクエストと、任意の AI、プロキシ、解析プロバイダーをすべて対応付けてください。
+* **シークレットを一元管理する必要がある場合は、** データベースのパスワードを `.env` からプラットフォームのシークレット管理システムへ移行してください。
+
+これらはインフラストラクチャに関する判断です。単一の `.env` 設定だけで、スタックが本番環境対応になるわけではありません。
+
+<div id="where-to-go-next">
+  ## 次のステップ
+</div>
+
+* **まだ評価中ですか？** API は信頼されたネットワーク内で運用し、完了したら `docker compose down` を実行してください。
+* **オープンソース機能を追加しますか？** [セルフホスト機能のサポート](#self-hosted-feature-support) で必要なプロバイダーまたはサービスを確認し、その構成を単独でテストしてください。
+* **Firecrawl のコードを変更しますか？** コントリビューター向け開発環境については、[ローカルで実行](/ja/contributing/guide) を参照してください。
+* **クライアントを接続しますか？** [Firecrawl CLI](/ja/sdks/cli#connect-the-cli-to-self-hosted-firecrawl) または [ローカル MCP サーバー](/ja/mcp-server/local#connect-mcp-to-self-hosted-firecrawl) の接続先に、検証済みの API URL を指定してください。
+* **Kubernetes に移行しますか？** まず [`SELF_HOST.md`](https://github.com/firecrawl/firecrawl/blob/main/SELF_HOST.md) からリンクされているバージョン対応の Kubernetes または Helm リファレンスを確認し、次に上記の本番環境向けの判断をプラットフォームに合わせて明確にしてください。
+* **マネージドインフラストラクチャまたは Cloud 専用機能が必要ですか？** [Open Source vs Cloud](/ja/contributing/open-source-or-cloud) を確認してください。
+* **本番環境に移行しますか？** API を公開する前に、[本番環境に移行する前に](#before-production) のすべての項目を決定してください。
+
+<div id="troubleshooting">
+  ## トラブルシューティング
+</div>
+
+<div id="youre-bypassing-authentication">
+  ### 認証をバイパスしています
+</div>
+
+`USE_DB_AUTHENTICATION=false` でこの警告が表示される場合、想定された初回実行時の動作です。リクエストにはセルフホストのIDが使用されるため、APIキーは不要です。信頼できないネットワークからAPIにアクセスできる場合は、停止して[本番環境に移行する前に](#before-production)の対策を追加してください。
+
+<div id="docker-containers-fail-to-start">
+  ### Docker コンテナが起動しない
+</div>
+
+長時間稼働するサービスが終了した場合は、コンテナの状態と直近のログを確認してください。
+
+```bash
+docker compose ps --all
+docker compose logs --tail=200
+```
+
+* ソースのリビジョンが異なる場合は、`v2.11.162` をチェックアウトするか、そのリリースの構成を使用してください。
+* ビルドまたはコンテナのリソースが不足している場合は、Docker の CPU、メモリ、またはディスク容量を増やしてください。
+* PostgreSQL が失敗する場合は、`.env` の構文を確認し、`POSTGRES_DB=postgres` を維持したうえで、ユーザー名とパスワードの値が一致していることを確認してください。
+
+<div id="connection-issues-with-redis">
+  ### Redis への接続に関する問題
+</div>
+
+コンテナから Redis に接続できない場合は、Compose サービスのアドレスを `redis://redis:6379` のままにしてください。`localhost` は Redis サービスではなく、そのコンテナ自身を指します。
+
+```bash
+docker compose ps redis
+docker compose logs --tail=100 redis
+```
+
+`REDIS_URL` または `REDIS_RATE_LIMIT_URL` を追加した場合は、オーバーライドを削除してデフォルト設定に戻すか、Compose ネットワーク内から名前解決できるアドレスを使用してください。
+
+<div id="api-endpoint-does-not-respond">
+  ### API エンドポイントが応答しない
+</div>
+
+ポート `3002` が応答しない場合は、API コンテナとそのログを確認してください。
+
+```bash
+docker compose ps api
+docker compose logs --tail=200 api
+```
+
+別のプロセスがポート `3002` を使用している場合は、そのプロセスを停止するか、公開ポートを適宜変更してください。初回起動時は、API コンテナが実行中になったことを確認してから再試行してください。
+
+`/v0/health/readiness` が成功しても `/v2/scrape` が失敗する場合は、到達可能性エンドポイントではこれらの依存関係を検証しないため、API と Playwright のログを確認してください。
+
+```bash
+docker compose logs --tail=200 api playwright-service
+```
+
+<div id="scrape-request-times-out">
+  ### スクレイピングリクエストがタイムアウトする
+</div>
+
+スクレイピングがタイムアウトする場合は、デプロイ環境から `https://example.com` にアクセスできること、および API と Playwright サービスが稼働していることを確認してください。API が独自のタイムアウトレスポンスを返せるよう、curl の `--max-time` はリクエストボディの `timeout` より長く設定してください。

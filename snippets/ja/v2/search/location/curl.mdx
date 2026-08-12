@@ -1,0 +1,10 @@
+```bash cURL
+# 開始にAPI keyは不要です — より高いrate limitsを得るには -H "Authorization: Bearer fc-YOUR_API_KEY" を追加してください:
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "web scraping tools",
+    "limit": 5,
+    "location": "Germany"
+  }'
+```

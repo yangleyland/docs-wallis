@@ -1,0 +1,46 @@
+---
+title: "Gemini CLI で MCP Web Search とスクレイピング"
+description: "Google Gemini CLI に Firecrawl の Web スクレイピングと検索機能を追加"
+sidebarTitle: "Gemini CLI"
+---
+
+ホスト型 MCP サーバーを通じて、Firecrawl のキーレス Search、スクレイピング、Parse ツールを [Google Gemini CLI](https://github.com/google-gemini/gemini-cli) に追加します。
+
+<div id="quick-setup">
+  ## クイックセットアップ
+</div>
+
+以下を `~/.gemini/settings.json` またはプロジェクトの `.gemini/settings.json` に追加します。
+
+```json
+{
+  "mcpServers": {
+    "firecrawl": {
+      "httpUrl": "https://mcp.firecrawl.dev/v2/mcp"
+    }
+  }
+}
+```
+
+Gemini CLI を再起動し、`/mcp list` を実行して、`firecrawl_search`、`firecrawl_scrape`、`firecrawl_parse` が利用可能であることを確認します。
+
+キーレスアクセスには、同じパブリック IP を共有するユーザー間で共通の制限が適用されます。対話型クライアントから [人間向け](/ja/mcp-server/oauth) でサインインするか、ユーザー操作なしで利用する場合は [API キーを追加](/ja/mcp-server/keyless#add-an-api-key) してください。
+
+<div id="try-it">
+  ## 試してみる
+</div>
+
+```text
+Use Firecrawl to search the web for "Gemini context window" and summarize the sources.
+```
+
+```text
+Scrape https://ai.google.dev/gemini-api/docs and outline the sections.
+```
+
+<div id="troubleshooting">
+  ## トラブルシューティング
+</div>
+
+* **ツールが表示されない:** `settings.json` を編集したら Gemini CLI を再起動してください。MCP サーバーは起動時に読み込まれます。
+* **Crawl または別のツールがない:** キーレスで利用できるのは Search、スクレイピング、Parse のみです。より広範なツール群を利用するには、OAuth または API キーで接続してください。

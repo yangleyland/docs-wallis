@@ -1,0 +1,63 @@
+---
+title: "LlamaIndex"
+description: "Utiliser Firecrawl avec LlamaIndex pour des applications RAG"
+---
+
+Intégrez Firecrawl à LlamaIndex pour créer des applications d’IA avec recherche vectorielle et embeddings, alimentées par du contenu web.
+
+<div id="setup">
+  ## Configuration
+</div>
+
+```bash
+npm install llamaindex @llamaindex/openai firecrawl
+```
+
+Créez le fichier `.env` :
+
+```bash
+FIRECRAWL_API_KEY=your_firecrawl_key
+OPENAI_API_KEY=your_openai_key
+```
+
+> **Remarque :** Si vous utilisez Node &lt; 20, installez `dotenv` et ajoutez `import 'dotenv/config'` à votre code.
+
+<div id="rag-with-vector-search">
+  ## RAG avec recherche vectorielle
+</div>
+
+Cet exemple illustre comment utiliser LlamaIndex avec Firecrawl pour explorer un site web, créer des embeddings et interroger le contenu à l’aide de RAG.
+
+```typescript
+import { Firecrawl } from 'firecrawl';
+import { Document, VectorStoreIndex, Settings } from 'llamaindex';
+import { OpenAI, OpenAIEmbedding } from '@llamaindex/openai';
+
+Settings.llm = new OpenAI({ model: "gpt-4o" });
+Settings.embedModel = new OpenAIEmbedding({ model: "text-embedding-3-small" });
+
+const firecrawl = new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY });
+const crawlResult = await firecrawl.crawl('https://firecrawl.dev', {
+  limit: 10,
+  scrapeOptions: { formats: ['markdown'] }
+});
+console.log(`Crawled ${crawlResult.data.length } pages`);
+
+const documents = crawlResult.data.map((page: any, i: number) =>
+  new Document({
+    text: page.markdown,
+    id_: `page-${i}`,
+    metadata: { url: page.metadata?.sourceURL }
+  })
+);
+
+const index = await VectorStoreIndex.fromDocuments(documents);
+console.log('Vector index created with embeddings');
+
+const queryEngine = index.asQueryEngine();
+const response = await queryEngine.query({ query: 'What is Firecrawl and how does it work?' });
+
+console.log('\nAnswer:', response.toString());
+```
+
+Pour d&#39;autres exemples, consultez la [documentation de LlamaIndex](https://ts.llamaindex.ai/).

@@ -1,0 +1,162 @@
+---
+title: "Scrape par lots"
+description: "Scraper plusieurs URL en une seule tâche par lots"
+og:title: "Scrape par lots | Firecrawl"
+og:description: "Scraper plusieurs URL en une seule tâche par lots"
+---
+
+import BatchScrapePython from '/snippets/fr/v2/batch-scrape/base/python.mdx';
+import BatchScrapeNode from '/snippets/fr/v2/batch-scrape/base/js.mdx';
+import BatchScrapeCURL from '/snippets/fr/v2/batch-scrape/base/curl.mdx';
+import BatchScrapeOutput from '/snippets/fr/v2/batch-scrape/base/output.mdx';
+import BatchScrapeAsyncOutput from '/snippets/fr/v2/batch-scrape/base/async-output.mdx';
+import BatchScrapeExtractPython from '/snippets/fr/v2/batch-scrape/json/python.mdx';
+import BatchScrapeExtractNode from '/snippets/fr/v2/batch-scrape/json/js.mdx';
+import BatchScrapeExtractCURL from '/snippets/fr/v2/batch-scrape/json/curl.mdx';
+import BatchScrapeExtractOutput from '/snippets/fr/v2/batch-scrape/json/output.mdx';
+import BatchScrapeExtractAsyncOutput from '/snippets/fr/v2/batch-scrape/json/async-output.mdx';
+import BatchScrapeWebhookCURL from '/snippets/fr/v1/batch-scrape-webhook/base/curl.mdx';
+
+Le scrape par lots vous permet de scraper plusieurs URL en une seule tâche. Transmettez une liste d’URL et des paramètres facultatifs, et Firecrawl les traite en parallèle avant de renvoyer tous les résultats ensemble.
+
+* Fonctionne comme `/crawl`, mais pour une liste explicite d’URL
+* Modes synchrone et asynchrone
+* Prend en charge toutes les options de scrape, y compris l’extraction structurée
+* Concurrence configurable par tâche
+
+<div id="operations">
+  ## Opérations
+</div>
+
+| Tâche                                 | Référence API                                                                | Terminologie SDK                                                          |
+| ------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Démarrer un lot                       | [`batch-scrape`](/fr/api-reference/endpoint/batch-scrape)                       | `batchScrape` / `batch_scrape`, `startBatchScrape` / `start_batch_scrape` |
+| Vérifier l’état et les résultats      | [`batch-scrape-get`](/fr/api-reference/endpoint/batch-scrape-get)               | `getBatchScrapeStatus` / `get_batch_scrape_status`                        |
+| Annuler un lot en cours d’exécution | [`batch-scrape-delete`](/fr/api-reference/endpoint/batch-scrape-delete)         | Annuler ou supprimer le job lot par ID                                  |
+| Consulter les erreurs                 | [`batch-scrape-get-errors`](/fr/api-reference/endpoint/batch-scrape-get-errors) | Utilitaire d’erreur/état pour les URL en échec                            |
+
+<div id="how-it-works">
+  ## Fonctionnement
+</div>
+
+Vous pouvez exécuter un scraping par lot de deux façons :
+
+| Mode       | Méthode SDK (JS / Python)                 | Comportement                                                                      |
+| ---------- | ----------------------------------------- | --------------------------------------------------------------------------------- |
+| Synchrone  | `batchScrape` / `batch_scrape`            | Démarre le lot et attend la fin de l’opération, en renvoyant tous les résultats   |
+| Asynchrone | `startBatchScrape` / `start_batch_scrape` | Démarre le lot et renvoie un identifiant de tâche pour le polling ou les webhooks |
+
+<div id="basic-usage">
+  ## Utilisation de base
+</div>
+
+<CodeGroup>
+  <BatchScrapePython />
+
+  <BatchScrapeNode />
+
+  <BatchScrapeCURL />
+</CodeGroup>
+
+<div id="response">
+  ### Réponse
+</div>
+
+Appeler `batchScrape` / `batch_scrape` renvoie les résultats complets une fois le lot terminé.
+
+<BatchScrapeOutput />
+
+Appeler `startBatchScrape` / `start_batch_scrape` renvoie un ID de tâche que vous pouvez suivre via `getBatchScrapeStatus` / `get_batch_scrape_status`, le point de terminaison API `/batch/scrape/{id}` ou des webhooks. Les résultats de la tâche sont accessibles via l&#39;API pendant 24 heures après son achèvement. Passé ce délai, vous pouvez toujours consulter l&#39;historique et les résultats de vos batch scrapes dans les [journaux d&#39;activité](https://www.firecrawl.dev/app/logs).
+
+<BatchScrapeAsyncOutput />
+
+<div id="concurrency">
+  ## Concurrence
+</div>
+
+Par défaut, un job de scraping par lot utilise l&#39;intégralité de la limite de navigateurs concurrents de votre équipe (voir [Rate Limits](/fr/rate-limits)). Vous pouvez la réduire pour chaque job avec le paramètre `maxConcurrency`.
+
+Par exemple, `maxConcurrency: 50` limite ce job à 50 opérations de scraping simultanées. Fixer une valeur trop basse pour de gros lots ralentira significativement le traitement, donc ne la réduisez que si vous devez conserver de la capacité pour d&#39;autres jobs concurrents.
+
+<div id="structured-extraction">
+  ## Extraction structurée
+</div>
+
+Vous pouvez utiliser le grattage en lot pour extraire des données structurées depuis chaque page du lot. C’est utile si vous voulez appliquer le même schéma à une liste d’URL.
+
+<CodeGroup>
+  <BatchScrapeExtractPython />
+
+  <BatchScrapeExtractNode />
+
+  <BatchScrapeExtractCURL />
+</CodeGroup>
+
+<div id="response">
+  ### Réponse
+</div>
+
+`batchScrape` / `batch_scrape` retourne les résultats complets :
+
+<BatchScrapeExtractOutput />
+
+`startBatchScrape` / `start_batch_scrape` retourne un ID de tâche :
+
+<BatchScrapeExtractAsyncOutput />
+
+<div id="webhooks">
+  ## Webhooks
+</div>
+
+Vous pouvez configurer des webhooks pour recevoir des notifications en temps réel à mesure que chaque URL de votre lot est récupérée. Cela vous permet de traiter les résultats immédiatement, sans attendre la fin de l’ensemble du lot.
+
+<BatchScrapeWebhookCURL />
+
+<div id="event-types">
+  ### Types d’événements
+</div>
+
+| Événement                | Description                                         |
+| ------------------------ | --------------------------------------------------- |
+| `batch_scrape.started`   | La tâche de scraping par lot a démarré              |
+| `batch_scrape.page`      | Une URL a été scrapée avec succès                   |
+| `batch_scrape.completed` | Toutes les URL ont été traitées                     |
+| `batch_scrape.failed`    | La tâche de scraping par lot a rencontré une erreur |
+
+<div id="payload">
+  ### Charge utile
+</div>
+
+Chaque livraison de webhook inclut un corps JSON avec la structure suivante :
+
+```json
+{
+  "success": true,
+  "type": "batch_scrape.page",
+  "id": "batch-job-id",
+  "data": [...],
+  "metadata": {},
+  "error": null
+}
+```
+
+<div id="verifying-webhook-signatures">
+  ### Vérification des signatures de webhook
+</div>
+
+Chaque requête de webhook provenant de Firecrawl inclut un en-tête `X-Firecrawl-Signature` contenant une signature HMAC-SHA256. Vérifiez toujours cette signature pour vous assurer que le webhook est authentique et n&#39;a pas été altéré.
+
+1. Récupérez votre secret de webhook dans l&#39;[onglet Advanced](https://www.firecrawl.dev/app/settings?tab=advanced) des paramètres de votre compte
+2. Extrayez la signature depuis l&#39;en-tête `X-Firecrawl-Signature`
+3. Calculez le HMAC-SHA256 du corps brut de la requête en utilisant votre secret
+4. Comparez-la à l&#39;en-tête de signature à l&#39;aide d&#39;une fonction sécurisée vis-à-vis du temps d&#39;exécution (timing-safe)
+
+<Warning>
+  Ne traitez jamais un webhook sans vérifier d&#39;abord sa signature. L&#39;en-tête `X-Firecrawl-Signature` contient la signature au format : `sha256=abc123def456...`
+</Warning>
+
+Pour des exemples d&#39;implémentation complets en JavaScript et Python, consultez la [documentation sur la sécurité des webhooks](/fr/webhooks/security).
+
+Pour une documentation complète sur les webhooks, incluant des payloads d&#39;événement détaillés, une configuration avancée et des conseils de dépannage, consultez la [documentation sur les webhooks](/fr/webhooks/overview).
+
+> Êtes-vous un agent IA qui a besoin d&#39;une API key Firecrawl ? Consultez [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) pour obtenir des instructions d&#39;intégration automatisée.

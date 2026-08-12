@@ -1,0 +1,15 @@
+```js Node
+import { Firecrawl } from 'firecrawl';
+
+const firecrawl = new Firecrawl({
+  // No se necesita API key para comenzar — agrega una para límites de tasa más altos:
+  // apiKey: "fc-YOUR-API-KEY",
+});
+
+const results = await firecrawl.search('firecrawl', {
+  limit: 5,
+  tbs: 'qdr:d', // último día
+});
+
+console.log(results.web);
+```

@@ -1,0 +1,127 @@
+---
+title: Outils Firecrawl MCP
+description: Choisissez un outil Firecrawl MCP et découvrez sa disponibilité et son fonctionnement.
+sidebarTitle: Outils
+---
+
+Firecrawl MCP propose des outils pour rechercher, extraire, interagir avec et surveiller du contenu web. Votre client MCP reçoit le schéma d’entrée exact de chaque outil disponible lorsqu’il se connecte.
+
+<div id="tool-availability">
+  ## Disponibilité des outils
+</div>
+
+| Mode de connexion                          | Outils disponibles                                                                |
+| ------------------------------------------ | --------------------------------------------------------------------------------- |
+| OAuth hébergé                              | Ensemble complet d’outils, sous réserve de l’offre et de la politique de l’équipe |
+| Clé API hébergée                           | Ensemble complet d’outils, sous réserve de l’offre et de la politique de l’équipe |
+| Mode hébergé sans clé                      | `firecrawl_search`, `firecrawl_scrape` et `firecrawl_parse`                       |
+| Local avec l’API cloud Firecrawl           | Outils basés sur l’API ; le Parse direct de fichiers locaux n’est pas disponible  |
+| Local avec une API Firecrawl auto-hébergée | Outils pris en charge par les services activés dans ce déploiement                |
+
+Commencez par [Premiers pas](/fr/mcp-server), puis choisissez [Pour les agents](/fr/mcp-server/keyless) ou [Pour les humains](/fr/mcp-server/oauth). Certains outils facultatifs peuvent être désactivés par l’environnement ou la politique de l’équipe.
+
+<div id="choose-a-tool">
+  ## Choisir un outil
+</div>
+
+| Tâche                                     | Outil                                                | À utiliser lorsque                                                                                                                                          |
+| ----------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lire une page                             | `firecrawl_scrape`                                   | Vous connaissez l’URL et avez besoin du contenu de la page ou de champs structurés.                                                                         |
+| Extraire des données structurées          | `firecrawl_scrape` avec le format JSON               | Vous avez l’URL et souhaitez des données correspondant à un prompt ou à un schéma JSON.                                                                     |
+| Découvrir les URL d’un site               | `firecrawl_map`                                      | Vous devez trouver des pages avant de décider quoi extraire.                                                                                                |
+| Recherche sur le web                      | `firecrawl_search`                                   | Vous avez une requête plutôt qu’une URL connue.                                                                                                             |
+| Parse un fichier                          | `firecrawl_parse`                                    | Vous avez besoin du contenu d’un fichier PDF, d’un document, d’une feuille de calcul ou d’un fichier HTML.                                                  |
+| Extraire de nombreuses pages              | `firecrawl_crawl` and `firecrawl_check_crawl_status` | Vous devez parcourir un site ou une section. L’outil de crawl interroge la tâche jusqu’à ce qu’elle atteigne un état final avant de renvoyer le résultat.   |
+| Effectuer une recherche autonome          | `firecrawl_agent` and `firecrawl_agent_status`       | La tâche couvre plusieurs sources et les pages exactes ne sont pas connues.                                                                                 |
+| Interagir avec une page en direct         | `firecrawl_interact` and `firecrawl_interact_stop`   | Vous avez besoin de clics, de remplissage de formulaires, de navigation ou d’extraction de pages dynamiques.                                                |
+| Rechercher des publications et des dépôts | `firecrawl_research_*`                               | Vous devez découvrir ou lire des publications, trouver des travaux connexes ou rechercher des dépôts publics.                                               |
+| Répondre à une question de programmation  | `firecrawl_developer_search`                         | Vous avez besoin de réponses provenant de sources primaires, notamment de tickets, de pull requests fusionnées, de README et de documentation sélectionnée. |
+| Surveiller les changements                | `firecrawl_monitor_*`                                | Vous avez besoin de vérifications récurrentes, de diffs et de notifications par webhook ou e-mail.                                                          |
+| Envoyer un retour sur le produit          | `firecrawl_search_feedback` and `firecrawl_feedback` | Vous souhaitez évaluer les résultats de recherche ou signaler la qualité d’un point de terminaison.                                                         |
+
+<Note>
+  L’ancien outil MCP Extract est obsolète et ne fait pas partie de l’ensemble d’outils actuel. Utilisez Scrape avec le format JSON pour une page connue, ou Agent lorsque Firecrawl doit découvrir les sources. Consultez [Choisir l’extracteur de données](/fr/developer-guides/usage-guides/choosing-the-data-extractor) pour la comparaison complète.
+</Note>
+
+<Tip>
+  Utilisez le schéma affiché par votre client MCP pour les arguments actuels. Les guides des fonctionnalités ci-dessous expliquent le fonctionnement interne de Firecrawl sans dupliquer ces schémas ici.
+</Tip>
+
+<div id="important-behavior">
+  ## Comportement important
+</div>
+
+<AccordionGroup>
+  <Accordion title="Parse un fichier local">
+    Un serveur MCP local connecté à une API Firecrawl auto-hébergée peut lire directement `filePath`. Le serveur hébergé ne peut pas accéder aux fichiers de votre machine ; il utilise donc un transfert en deux appels :
+
+    1. Appelez `firecrawl_parse` avec `filePath` pour recevoir une commande de téléversement et `uploadRef`.
+    2. Exécutez la commande de téléversement sur la machine pouvant lire le fichier.
+    3. Appelez de nouveau `firecrawl_parse` avec l’`uploadRef` renvoyé.
+
+    La commande de téléversement utilise une cible signée à courte durée de validité et ne contient pas votre clé API Firecrawl. Utilisez `firecrawl_scrape` pour l’URL d’un document public.
+  </Accordion>
+
+  <Accordion title="Vérifier un crawl en cours">
+    `firecrawl_crawl` démarre normalement un crawl et l’interroge jusqu’à ce qu’il atteigne un état final avant de renvoyer une réponse. Si ce délai d’attente expire, reprenez la tâche avec `firecrawl_check_crawl_status` et l’ID du crawl. Utilisez le même outil d’état pour un crawl créé en dehors de l’appel MCP actuel.
+
+    `firecrawl_agent` est asynchrone : il renvoie un identifiant de tâche, et `firecrawl_agent_status` interroge cette tâche jusqu’à ce qu’elle se termine ou échoue.
+  </Accordion>
+
+  <Accordion title="Fermer les sessions Interact">
+    Commencez avec une `url` ou réutilisez le `scrapeId` d’un appel Scrape précédent. Une fois le workflow terminé, appelez `firecrawl_interact_stop` avec le `scrapeId` pour libérer la session.
+  </Accordion>
+
+  <Accordion title="Gérer les monitors en toute sécurité">
+    La famille `firecrawl_monitor_*` permet de créer, lister, mettre à jour, exécuter et inspecter des monitors récurrents. `firecrawl_monitor_delete` supprime définitivement un monitor et ne doit être appelé que si l’utilisateur souhaite explicitement le supprimer.
+  </Accordion>
+
+  <Accordion title="Activer les outils de retour facultatifs">
+    Définissez `FIRECRAWL_NO_SEARCH_FEEDBACK=1` pour empêcher l’enregistrement de `firecrawl_search_feedback`. Définissez `FIRECRAWL_NO_ENDPOINT_FEEDBACK=1` pour empêcher l’enregistrement de `firecrawl_feedback`.
+  </Accordion>
+</AccordionGroup>
+
+<div id="feature-guides">
+  ## Guides des fonctionnalités
+</div>
+
+<CardGroup cols={3}>
+  <Card title="Scrape" href="/fr/features/scrape" icon="file-lines">
+    Extrayez du contenu ou des champs structurés depuis une URL.
+  </Card>
+
+  <Card title="Recherche" href="/fr/features/search" icon="magnifying-glass">
+    Trouvez des sources web, d&#39;actualités, d&#39;images et pour développeurs pertinentes.
+  </Card>
+
+  <Card title="Crawl" href="/fr/features/crawl" icon="spider-web">
+    Parcourez et extrayez un site ou une section.
+  </Card>
+
+  <Card title="Parse" href="/fr/features/parse" icon="file-import">
+    Convertissez des fichiers en sortie exploitable par les LLM.
+  </Card>
+
+  <Card title="Interact" href="/fr/features/interact" icon="arrow-pointer">
+    Interagissez avec des pages dynamiques dans une session de navigateur active.
+  </Card>
+
+  <Card title="Agent" href="/fr/features/agent" icon="sparkles">
+    Menez des recherches autonomes à partir de plusieurs sources.
+  </Card>
+
+  <Card title="Monitoring" href="/fr/features/monitoring" icon="bell">
+    Suivez les modifications des pages et recevez des notifications.
+  </Card>
+</CardGroup>
+
+<div id="troubleshooting">
+  ## Dépannage
+</div>
+
+* **Un outil est manquant :** vérifiez le mode de connexion dans [Premiers pas](/fr/mcp-server), reconnectez-vous ou redémarrez le client, puis vérifiez si la politique de l’équipe désactive les outils facultatifs.
+* **Le client renvoie `401` :** vérifiez d’abord l’URL du serveur configurée.
+  * Si l’URL configurée est `/v2/mcp-oauth`, reconnectez-vous via le client.
+  * Si elle est `/v2/mcp`, remplacez la clé API de ce serveur ou mettez à jour l’URL du serveur existant vers `/v2/mcp-oauth` et finalisez la connexion.
+  * Démarrez une nouvelle session client après l’une ou l’autre de ces modifications.
+* **Le client est limité en débit :** consultez les [limites de débit](/fr/rate-limits) actuelles, attendez l’intervalle de nouvelle tentative ou passez d’un accès sans clé à un accès authentifié.

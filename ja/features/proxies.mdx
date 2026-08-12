@@ -1,0 +1,65 @@
+---
+title: "プロキシ"
+description: "プロキシの種類やロケーション、Firecrawl がリクエストに対してプロキシを選択する方法について解説します。"
+og:title: "プロキシ | Firecrawl"
+og:description: "プロキシの種類やロケーション、Firecrawl がリクエストに対してプロキシを選択する方法について解説します。"
+---
+
+import LocationPython from "/snippets/ja/v2/scrape/location/python.mdx";
+import LocationNode from "/snippets/ja/v2/scrape/location/js.mdx";
+import LocationCURL from "/snippets/ja/v2/scrape/location/curl.mdx";
+import ProxyLocationsTable from "/snippets/ja/shared/proxy-locations-table.mdx";
+
+Firecrawl は、複雑さが異なるウェブサイトのスクレイピングを支援するために、複数のプロキシタイプを提供しています。プロキシタイプは `proxy` パラメータで指定できます。
+
+> 既定では、プロキシタイプやロケーションを指定しなくても、信頼性とアクセス性を確保するために、Firecrawl はすべてのリクエストをプロキシ経由でルーティングします。
+
+<div id="location-based-proxy-selection">
+  ## ロケーションベースのプロキシ選択
+</div>
+
+Firecrawl は、指定または自動検出されたロケーションに基づいて最適なプロキシを自動的に選択します。これにより、スクレイピングのパフォーマンスと信頼性が向上します。ただし、現時点ではすべてのロケーションに対応しているわけではありません。利用可能なロケーションは次のとおりです:
+
+<ProxyLocationsTable />
+
+<Warning>対応プロキシロケーションの一覧は今後変更される可能性があります。</Warning>
+
+上記にないロケーションのプロキシが必要な場合は、[こちらからご連絡](mailto:help@firecrawl.com)のうえ、要件をお知らせください。
+
+プロキシやロケーションを指定しない場合、Firecrawl は自動的に US のプロキシを使用します。
+
+<div id="how-to-specify-proxy-location">
+  ## プロキシのロケーション指定方法
+</div>
+
+リクエストで `location.country` パラメータを設定すると、特定のプロキシロケーションを指定できます。たとえば、ドイツのプロキシを使う場合は `location.country` に `DE` を指定します。
+
+詳細は [APIリファレンスの `location.country`](https://docs.firecrawl.dev/api-reference/endpoint/scrape#body-location) を参照してください。
+
+<CodeGroup>
+  <LocationPython />
+
+  <LocationNode />
+
+  <LocationCURL />
+</CodeGroup>
+
+<Info>プロキシが利用できない国を指定した場合、Firecrawl は利用可能な最寄りのリージョン (EU または US) を使用し、ブラウザのロケーションは指定した国に設定します。</Info>
+
+<Warning>`location` は必要だと確信できる場合を除き、指定しないことを強く推奨します。</Warning>
+
+<div id="proxy-types">
+  ## プロキシタイプ
+</div>
+
+Firecrawl は3種類のプロキシをサポートしています：
+
+* **basic**: ほとんどのサイトをスクレイピングするためのプロキシ。高速で、通常は問題なく動作します。
+* **enhanced**: プライバシーを維持しながら複雑なサイトをスクレイピングするための強化プロキシ。速度は遅くなりますが、特定のサイトではより信頼性があります。[Enhanced Mode の詳細はこちら →](/ja/features/enhanced-mode)
+* **auto**: basic プロキシが失敗した場合、Firecrawl は自動的に強化プロキシでスクレイピングを再試行します。強化プロキシでの再試行が成功した場合、そのスクレイピングには5クレジットが請求されます。最初の basic での試行が成功した場合は、通常のコストのみが請求されます。
+
+***
+
+> **Note:** クレジットコストや再試行戦略を含む強化プロキシの詳細な使用方法については、[Enhanced Mode のドキュメント](/ja/features/enhanced-mode)を参照してください。
+
+> Firecrawl API キーが必要な AI agent ですか？ 自動オンボーディング手順については、[firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md)を参照してください。

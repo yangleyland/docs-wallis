@@ -1,0 +1,34 @@
+```bash CLI
+# Limit crawl depth and pages
+firecrawl crawl https://example.com --limit 100 --max-depth 3 --wait
+
+# Include only specific paths
+firecrawl crawl https://example.com --include-paths /blog,/docs --wait
+
+# Exclude specific paths
+firecrawl crawl https://example.com --exclude-paths /admin,/login --wait
+
+# Include subdomains
+firecrawl crawl https://example.com --allow-subdomains --wait
+
+# Crawl entire domain
+firecrawl crawl https://example.com --crawl-entire-domain --wait
+
+# Rate limiting
+firecrawl crawl https://example.com --delay 1000 --max-concurrency 2 --wait
+
+# 将爬取选项传递给每个已爬取的页面
+firecrawl crawl https://example.com --scrape-options '{"formats":["markdown"],"onlyMainContent":true}'
+
+# 将爬取完成事件发送到 webhook
+firecrawl crawl https://example.com --webhook '{"url":"https://example.com/webhook","events":["completed"]}'
+
+# 取消正在进行的爬取任务
+firecrawl crawl <job-id> --cancel
+
+# 自定义轮询间隔和超时时间
+firecrawl crawl https://example.com --wait --poll-interval 10 --timeout 300
+
+# Save results to file
+firecrawl crawl https://example.com --wait --pretty -o results.json
+```

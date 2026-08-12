@@ -1,0 +1,430 @@
+---
+title: "Tipos de eventos"
+description: "Referência de eventos de webhook"
+og:title: "Tipos de eventos de webhook | Firecrawl"
+og:description: "Referência de eventos de webhook"
+icon: "bolt"
+---
+
+import MonitorPagePayload from "/snippets/pt-BR/v2/monitor/notification/page-payload.mdx";
+import MonitorCheckCompletedPayload from "/snippets/pt-BR/v2/monitor/notification/check-completed-payload.mdx";
+
+O Firecrawl envia eventos de webhook em cada etapa do ciclo de vida de um job, para que você possa acompanhar o progresso, capturar resultados e lidar com falhas em tempo real sem precisar fazer consultas.
+
+<div id="quick-reference">
+  ## Referência rápida
+</div>
+
+| Evento                    | Gatilho                                                                                 |
+| ------------------------- | --------------------------------------------------------------------------------------- |
+| `crawl.started`           | O job de rastreamento começa a ser processado                                           |
+| `crawl.page`              | Uma página é extraída durante um rastreamento                                           |
+| `crawl.completed`         | O job de rastreamento é concluído e todas as páginas foram processadas                  |
+| `batch_scrape.started`    | O job de extração em lote começa a ser processado                                       |
+| `batch_scrape.page`       | Uma URL é extraída durante uma extração em lote                                         |
+| `batch_scrape.completed`  | Todas as URLs do lote foram processadas                                                 |
+| `extract.started`         | O job de extração começa a ser processado                                               |
+| `extract.completed`       | A extração é concluída com sucesso                                                      |
+| `extract.failed`          | A extração falha                                                                        |
+| `agent.started`           | O job do agente começa a ser processado                                                 |
+| `agent.action`            | O agente executa uma ferramenta (scraping, busca etc.)                                  |
+| `agent.completed`         | O agente é concluído com sucesso                                                        |
+| `agent.failed`            | O agente encontra um erro                                                               |
+| `agent.cancelled`         | O job do agente é cancelado pelo usuário                                                |
+| `monitor.page`            | O scraping de uma página monitorada é concluído                                         |
+| `monitor.check.completed` | A verificação do monitor é concluída e as mudanças no nível da página ficam disponíveis |
+
+<div id="payload-structure">
+  ## Estrutura do payload
+</div>
+
+Todos os eventos de webhook compartilham esta estrutura:
+
+```json
+{
+  "success": true,
+  "type": "crawl.page",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [...],
+  "metadata": {}
+}
+```
+
+| Field      | Type            | Description                                             |
+| ---------- | --------------- | ------------------------------------------------------- |
+| `success`  | boolean         | Se a operação foi bem-sucedida                          |
+| `type`     | string          | Tipo de evento (por exemplo, `crawl.page`)              |
+| `id`       | string          | ID do job                                               |
+| `data`     | array or object | Dados específicos do evento (veja exemplos abaixo)      |
+| `metadata` | object          | Metadados personalizados da sua configuração de webhook |
+| `error`    | string          | Mensagem de erro (quando `success` é `false`)           |
+
+<div id="crawl-events">
+  ## Eventos de Crawl
+</div>
+
+<div id="crawlstarted">
+  ### `crawl.started`
+</div>
+
+Enviado quando a operação de rastreamento começa a ser processada.
+
+```json
+{
+  "success": true,
+  "type": "crawl.started",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [],
+  "metadata": {}
+}
+```
+
+
+<div id="crawlpage">
+  ### `crawl.page`
+</div>
+
+Enviado para cada página extraída. O array `data` contém o conteúdo da página e seus metadados.
+
+```json
+{
+  "success": true,
+  "type": "crawl.page",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    {
+      "markdown": "# Page content...",
+      "metadata": {
+        "title": "Título da página",
+        "description": "Descrição da página",
+        "url": "https://example.com/page",
+        "statusCode": 200,
+        "contentType": "text/html",
+        "scrapeId": "550e8400-e29b-41d4-a716-446655440001",
+        "sourceURL": "https://example.com/page",
+        "proxyUsed": "basic",
+        "cacheState": "hit",
+        "cachedAt": "2025-09-03T21:11:25.636Z",
+        "creditsUsed": 1
+      }
+    }
+  ],
+  "metadata": {}
+}
+```
+
+
+<div id="crawlcompleted">
+  ### `crawl.completed`
+</div>
+
+Enviado quando toda a operação de rastreamento é concluída e todas as páginas foram processadas.
+
+```json
+{
+  "success": true,
+  "type": "crawl.completed",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [],
+  "metadata": {}
+}
+```
+
+
+<div id="batch-scrape-events">
+  ## Eventos de Scrape em Lote
+</div>
+
+<div id="batch_scrapestarted">
+  ### `batch_scrape.started`
+</div>
+
+Enviado quando a tarefa de raspagem em lote começa a ser processada.
+
+```json
+{
+  "success": true,
+  "type": "batch_scrape.started",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [],
+  "metadata": {}
+}
+```
+
+
+<div id="batch_scrapepage">
+  ### `batch_scrape.page`
+</div>
+
+Enviado para cada URL processada na raspagem. O array `data` contém o conteúdo da página e seus metadados.
+
+```json
+{
+  "success": true,
+  "type": "batch_scrape.page",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    {
+      "markdown": "# Page content...",
+      "metadata": {
+        "title": "Page Title",
+        "description": "Descrição da página",
+        "url": "https://example.com",
+        "statusCode": 200,
+        "contentType": "text/html",
+        "scrapeId": "550e8400-e29b-41d4-a716-446655440001",
+        "sourceURL": "https://example.com",
+        "proxyUsed": "basic",
+        "cacheState": "miss",
+        "cachedAt": "2025-09-03T23:30:53.434Z",
+        "creditsUsed": 1
+      }
+    }
+  ],
+  "metadata": {}
+}
+```
+
+
+<div id="batch_scrapecompleted">
+  ### `batch_scrape.completed`
+</div>
+
+Enviado quando todas as URLs do lote tiverem sido processadas.
+
+```json
+{
+  "success": true,
+  "type": "batch_scrape.completed",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [],
+  "metadata": {}
+}
+```
+
+
+<div id="monitor-events">
+  ## Eventos do Monitor
+</div>
+
+<div id="monitorpage">
+  ### `monitor.page`
+</div>
+
+Enviado quando o scraping de cada página monitorada é concluído. Esse evento é emitido pela rota do worker de scraping, portanto chega antes que a verificação completa do monitor seja consolidada.
+
+<MonitorPagePayload />
+
+<div id="monitorcheckcompleted">
+  ### `monitor.check.completed`
+</div>
+
+Enviado quando uma verificação do monitor é concluída. O objeto `data` contém o status da verificação e contagens resumidas. Os resultados por página são enviados apenas por meio de eventos `monitor.page` ou retornados pela API de verificação do monitor.
+
+<MonitorCheckCompletedPayload />
+
+`success` é `true` quando a verificação é concluída sem erros de página. Em verificações parciais ou com falha, `success` é `false` e `error` pode conter uma mensagem.
+
+<div id="extract-events">
+  ## Eventos de Extração
+</div>
+
+<div id="extractstarted">
+  ### `extract.started`
+</div>
+
+Enviado quando a tarefa de extração começa a ser processada.
+
+```json
+{
+  "success": true,
+  "type": "extract.started",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [],
+  "metadata": {}
+}
+```
+
+
+<div id="extractcompleted">
+  ### `extract.completed`
+</div>
+
+Enviado quando uma operação de extração é concluída com sucesso. O array `data` contém os dados extraídos e as informações de uso.
+
+```json
+{
+  "success": true,
+  "type": "extract.completed",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    {
+      "success": true,
+      "data": { "siteName": "Exemplo Site", "category": "Tecnologia" },
+      "extractId": "550e8400-e29b-41d4-a716-446655440000",
+      "llmUsage": 0.0020118,
+      "totalUrlsScraped": 1,
+      "sources": {
+        "siteName": ["https://example.com"],
+        "category": ["https://example.com"]
+      }
+    }
+  ],
+  "metadata": {}
+}
+```
+
+
+<div id="extractfailed">
+  ### `extract.failed`
+</div>
+
+Enviado quando a extração falha. O campo `error` contém o motivo do erro.
+
+```json
+{
+  "success": false,
+  "type": "extract.failed",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [],
+  "error": "Falha na extração de dados: tempo limite excedido",
+  "metadata": {}
+}
+```
+
+
+<div id="agent-events">
+  ## Eventos de agente
+</div>
+
+<div id="agentstarted">
+  ### `agent.started`
+</div>
+
+Enviado quando a tarefa do agente começa a ser processada.
+
+```json
+{
+  "success": true,
+  "type": "agent.started",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [],
+  "metadata": {}
+}
+```
+
+
+<div id="agentaction">
+  ### `agent.action`
+</div>
+
+Enviado após cada execução de uma ferramenta (scrape, search, etc.).
+
+```json
+{
+  "success": true,
+  "type": "agent.action",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    {
+      "creditsUsed": 5,
+      "action": "mcp__tools__scrape",
+      "input": {
+        "url": "https://example.com"
+      }
+    }
+  ],
+  "metadata": {}
+}
+```
+
+<Note>
+  O valor de `creditsUsed` em eventos de `action` é uma **estimativa** do total
+  de créditos usados até o momento. A contagem exata de créditos só está
+  disponível nos eventos `completed`, `failed` ou `cancelled`.
+</Note>
+
+
+<div id="agentcompleted">
+  ### `agent.completed`
+</div>
+
+Enviado quando o agente conclui a execução com sucesso. O array `data` contém os dados extraídos e o total de créditos consumidos.
+
+```json
+{
+  "success": true,
+  "type": "agent.completed",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    {
+      "creditsUsed": 15,
+      "data": {
+        "company": "Example Corp",
+        "industry": "Technology",
+        "founded": 2020
+      }
+    }
+  ],
+  "metadata": {}
+}
+```
+
+
+<div id="agentfailed">
+  ### `agent.failed`
+</div>
+
+Enviado quando o agente encontra um erro. O campo `error` contém o motivo da falha.
+
+```json
+{
+  "success": false,
+  "type": "agent.failed",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    {
+      "creditsUsed": 8
+    }
+  ],
+  "error": "Créditos máximos excedidos",
+  "metadata": {}
+}
+```
+
+
+<div id="agentcancelled">
+  ### `agent.cancelled`
+</div>
+
+Enviado quando a tarefa do agente é cancelada pelo usuário.
+
+```json
+{
+  "success": false,
+  "type": "agent.cancelled",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    {
+      "creditsUsed": 3
+    }
+  ],
+  "metadata": {}
+}
+```
+
+
+<div id="event-filtering">
+  ## Filtragem de eventos
+</div>
+
+Por padrão, você recebe todos os eventos. Para receber apenas eventos específicos, use o array `events` na configuração do seu webhook:
+
+```json
+{
+  "url": "https://your-app.com/webhook",
+  "events": ["concluído", "falhou"]
+}
+```
+
+Isso é útil se você se importa apenas com a conclusão da tarefa e não precisa de atualizações por página.

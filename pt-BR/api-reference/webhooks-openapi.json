@@ -1,0 +1,1369 @@
+{
+  "components": {
+    "parameters": {
+      "FirecrawlSignature": {
+        "description": "Assinatura HMAC-SHA256 do corpo bruto da requisição, formatada como `sha256=<hex>`. Presente quando um segredo HMAC estiver configurado nas [configurações da sua conta](https://www.firecrawl.dev/app/settings?tab=advanced). Consulte [Segurança de Webhooks](/webhooks/security) para detalhes sobre a verificação.",
+        "in": "header",
+        "name": "X-Firecrawl-Signature",
+        "required": false,
+        "schema": {
+          "example": "sha256=abc123def456789...",
+          "type": "string"
+        }
+      }
+    },
+    "schemas": {
+      "MonitorCheckCompletedData": {
+        "properties": {
+          "checkId": {
+            "description": "O ID da verificação do monitor.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "monitorId": {
+            "description": "O ID do monitor.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "description": "Status final da verificação do monitor.",
+            "enum": [
+              "completed",
+              "partial",
+              "failed",
+              "skipped_overlap"
+            ],
+            "type": "string"
+          },
+          "summary": {
+            "properties": {
+              "changed": {
+                "type": "integer"
+              },
+              "error": {
+                "type": "integer"
+              },
+              "new": {
+                "type": "integer"
+              },
+              "removed": {
+                "type": "integer"
+              },
+              "same": {
+                "type": "integer"
+              },
+              "totalPages": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "totalPages",
+              "same",
+              "changed",
+              "new",
+              "removed",
+              "error"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "monitorId",
+          "checkId",
+          "status",
+          "summary"
+        ],
+        "type": "object"
+      },
+      "MonitorPageData": {
+        "properties": {
+          "checkId": {
+            "description": "O ID da verificação do monitor.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "currentScrapeId": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "diff": {
+            "description": "Diff em linha para páginas alteradas. Pode incluir `text`, `json` ou ambos, dependendo do modo de acompanhamento de alterações do monitor.",
+            "nullable": true,
+            "properties": {
+              "json": {
+                "type": "object"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "error": {
+            "nullable": true,
+            "type": "string"
+          },
+          "isMeaningful": {
+            "description": "`true` ou `false` quando a avaliação de mudança significativa for executada em uma página alterada; caso contrário, `null`.",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "judgment": {
+            "$ref": "#/components/schemas/MonitorPageJudgment"
+          },
+          "monitorId": {
+            "description": "O ID do monitor.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "previousScrapeId": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status da página para esta conclusão de scraping.",
+            "enum": [
+              "same",
+              "new",
+              "changed",
+              "error"
+            ],
+            "type": "string"
+          },
+          "url": {
+            "description": "A URL da página.",
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "monitorId",
+          "checkId",
+          "url",
+          "status"
+        ],
+        "type": "object"
+      },
+      "MonitorPageJudgment": {
+        "nullable": true,
+        "properties": {
+          "confidence": {
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "type": "string"
+          },
+          "meaningful": {
+            "type": "boolean"
+          },
+          "meaningfulChanges": {
+            "description": "Mudanças relevantes para o objetivo, selecionadas pelo avaliador com base no diff da página.",
+            "items": {
+              "properties": {
+                "after": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "before": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "type": {
+                  "enum": [
+                    "added",
+                    "removed",
+                    "changed"
+                  ],
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ScrapeDocument": {
+        "description": "Um documento de página extraída. Tem a mesma estrutura do objeto `data` nas respostas de scrape.",
+        "properties": {
+          "html": {
+            "description": "Conteúdo HTML limpo da página.",
+            "type": "string"
+          },
+          "links": {
+            "description": "Links de saída descobertos na página.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "markdown": {
+            "description": "O conteúdo da página convertido em Markdown.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Metadados da página.",
+            "properties": {
+              "description": {
+                "description": "A descrição meta.",
+                "type": "string"
+              },
+              "sourceURL": {
+                "description": "A URL que foi extraída.",
+                "type": "string"
+              },
+              "statusCode": {
+                "description": "Código de status HTTP da resposta.",
+                "type": "integer"
+              },
+              "title": {
+                "description": "O `<title>` da página.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "rawHtml": {
+            "description": "HTML original antes de qualquer processamento.",
+            "type": "string"
+          },
+          "screenshot": {
+            "description": "Captura de tela codificada em Base64, se o formato `screenshot` tiver sido solicitado.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WebhookMetadata": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "O objeto de metadados personalizado que você forneceu na configuração do webhook. Ele é retornado em todas as entregas.",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Firecrawl Webhooks",
+    "version": "v2"
+  },
+  "openapi": "3.1.0",
+  "webhooks": {
+    "agentAction": {
+      "post": {
+        "operationId": "agentAction",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "action": "scrape",
+                    "creditsUsed": 5,
+                    "input": {
+                      "url": "https://example.com"
+                    }
+                  }
+                ],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "agent.action",
+                "webhookId": "d4e5f6a7-0002-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "description": "Array com um único objeto que descreve a ação executada.",
+                    "items": {
+                      "properties": {
+                        "action": {
+                          "description": "A ferramenta executada, por exemplo, `scrape`, `search`, `extract`.",
+                          "type": "string"
+                        },
+                        "creditsUsed": {
+                          "description": "Créditos consumidos estimados até o momento. A contagem final só fica disponível no evento final (`completed`, `failed` ou `cancelled`).",
+                          "type": "number"
+                        },
+                        "input": {
+                          "additionalProperties": true,
+                          "description": "Os parâmetros de entrada passados para a ferramenta.",
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "O ID do job do agente.",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "agent.action",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "Identificador único desta entrega de webhook.",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Retorne qualquer código de status `2xx` para confirmar o recebimento."
+          }
+        },
+        "summary": "Ação do agente",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "agentCancelled": {
+      "post": {
+        "operationId": "agentCancelled",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "creditsUsed": 3
+                  }
+                ],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": false,
+                "type": "agent.cancelled",
+                "webhookId": "d4e5f6a7-0005-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "items": {
+                      "properties": {
+                        "creditsUsed": {
+                          "description": "Total de créditos consumidos antes do cancelamento.",
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "O ID do job do agente.",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": false,
+                    "description": "Sempre `false` para este evento.",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "agent.cancelled",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "Identificador único desta entrega de webhook.",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Retorne qualquer código de status `2xx` para confirmar o recebimento."
+          }
+        },
+        "summary": "Agente cancelado",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "agentCompleted": {
+      "post": {
+        "operationId": "agentCompleted",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "creditsUsed": 15,
+                    "data": {
+                      "company": "Example Corp",
+                      "founded": 2020,
+                      "industry": "Technology"
+                    }
+                  }
+                ],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "agent.completed",
+                "webhookId": "d4e5f6a7-0003-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "items": {
+                      "properties": {
+                        "creditsUsed": {
+                          "description": "Total de créditos consumidos pela execução do agente.",
+                          "type": "number"
+                        },
+                        "data": {
+                          "additionalProperties": true,
+                          "description": "Os dados estruturados extraídos pelo agente, em conformidade com seu schema, se ele tiver sido fornecido.",
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "O ID do job do agente.",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "agent.completed",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "Identificador único desta entrega de webhook.",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Retorne qualquer código de status `2xx` para confirmar o recebimento."
+          }
+        },
+        "summary": "Agente concluído",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "agentFailed": {
+      "post": {
+        "operationId": "agentFailed",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "creditsUsed": 8
+                  }
+                ],
+                "error": "Max credits exceeded",
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": false,
+                "type": "agent.failed",
+                "webhookId": "d4e5f6a7-0004-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "items": {
+                      "properties": {
+                        "creditsUsed": {
+                          "description": "Total de créditos consumidos antes da falha.",
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "error": {
+                    "description": "Mensagem de erro legível por humanos que descreve a falha.",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "O ID do job do agente.",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": false,
+                    "description": "Sempre `false` para este evento.",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "agent.failed",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "Identificador único desta entrega de webhook.",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data",
+                  "error"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Retorne qualquer código de status `2xx` para confirmar o recebimento."
+          }
+        },
+        "summary": "Falha no agente",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "agentStarted": {
+      "post": {
+        "operationId": "agentStarted",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "agent.started",
+                "webhookId": "d4e5f6a7-0001-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "default": [],
+                    "items": {},
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "O ID do job do agente, correspondente ao `id` retornado por `POST /agent`.",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "agent.started",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "Identificador único desta entrega de webhook.",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Retorne qualquer código de status `2xx` para confirmar o recebimento."
+          }
+        },
+        "summary": "Agente iniciado",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "batchScrapeCompleted": {
+      "post": {
+        "operationId": "batchScrapeCompleted",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "batch_scrape.completed",
+                "webhookId": "b2c3d4e5-0003-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "default": [],
+                    "description": "Array vazio. Recupere os resultados via `GET /batch/scrape/{id}`.",
+                    "items": {},
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "O ID do job de extração em lote.",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "batch_scrape.completed",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "Identificador único desta entrega de webhook.",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Retorne qualquer código de status `2xx` para confirmar o recebimento."
+          }
+        },
+        "summary": "Extração em lote concluída",
+        "tags": [
+          "Batch Scrape"
+        ]
+      }
+    },
+    "batchScrapePage": {
+      "post": {
+        "operationId": "batchScrapePage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "markdown": "# Example Page\n\nThis is the page content.",
+                    "metadata": {
+                      "description": "Uma página de exemplo.",
+                      "sourceURL": "https://example.com",
+                      "statusCode": 200,
+                      "title": "Example Page"
+                    }
+                  }
+                ],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "batch_scrape.page",
+                "webhookId": "b2c3d4e5-0002-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "description": "Array que contém o documento da página extraída.",
+                    "items": {
+                      "$ref": "#/components/schemas/ScrapeDocument"
+                    },
+                    "type": "array"
+                  },
+                  "error": {
+                    "description": "Mensagem de erro caso a extração da página falhe.",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "O ID do job de extração em lote.",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "description": "`true` se a página tiver sido extraída com sucesso; caso contrário, `false`.",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "batch_scrape.page",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "Identificador único desta entrega de webhook.",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Retorne qualquer código de status `2xx` para confirmar o recebimento."
+          }
+        },
+        "summary": "Página extraída em lote",
+        "tags": [
+          "Batch Scrape"
+        ]
+      }
+    },
+    "batchScrapeStarted": {
+      "post": {
+        "operationId": "batchScrapeStarted",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "batch_scrape.started",
+                "webhookId": "b2c3d4e5-0001-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "default": [],
+                    "items": {},
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "O ID do job de extração em lote, correspondente ao `id` retornado por `POST /batch/scrape`.",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "batch_scrape.started",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "Identificador único desta entrega de webhook.",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Retorne qualquer código de status `2xx` para confirmar o recebimento."
+          }
+        },
+        "summary": "Extração em lote iniciada",
+        "tags": [
+          "Batch Scrape"
+        ]
+      }
+    },
+    "crawlCompleted": {
+      "post": {
+        "operationId": "crawlCompleted",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "crawl.completed",
+                "webhookId": "a1b2c3d4-0003-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "default": [],
+                    "description": "Array vazio. Recupere os resultados via `GET /crawl/{id}`.",
+                    "items": {},
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "O ID do job de rastreamento.",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": true,
+                    "description": "Sempre `true` para este evento.",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "crawl.completed",
+                    "description": "O tipo do evento.",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "Identificador único desta entrega de webhook.",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Retorne qualquer código de status `2xx` para confirmar o recebimento."
+          }
+        },
+        "summary": "Rastreamento concluído",
+        "tags": [
+          "Crawl"
+        ]
+      }
+    },
+    "crawlPage": {
+      "post": {
+        "operationId": "crawlPage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "markdown": "# Example Page\n\nThis is the page content.",
+                    "metadata": {
+                      "description": "Uma página de exemplo.",
+                      "sourceURL": "https://example.com/page",
+                      "statusCode": 200,
+                      "title": "Example Page"
+                    }
+                  }
+                ],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "crawl.page",
+                "webhookId": "a1b2c3d4-0002-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "description": "Array que contém o documento da página extraída. Tem o mesmo formato do campo `data` na resposta de `GET /scrape`.",
+                    "items": {
+                      "$ref": "#/components/schemas/ScrapeDocument"
+                    },
+                    "type": "array"
+                  },
+                  "error": {
+                    "description": "Mensagem de erro se a extração da página falhar.",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "O ID do job de rastreamento.",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "description": "`true` se a página tiver sido extraída com sucesso; caso contrário, `false`.",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "crawl.page",
+                    "description": "O tipo do evento.",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "Identificador único desta entrega de webhook.",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Retorne qualquer código de status `2xx` para confirmar o recebimento."
+          }
+        },
+        "summary": "Página rastreada",
+        "tags": [
+          "Crawl"
+        ]
+      }
+    },
+    "crawlStarted": {
+      "post": {
+        "operationId": "crawlStarted",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "crawl.started",
+                "webhookId": "a1b2c3d4-0001-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "default": [],
+                    "description": "Array vazio para este evento.",
+                    "items": {},
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "O ID do job de rastreamento, correspondente ao `id` retornado por `POST /crawl`.",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": true,
+                    "description": "Sempre `true` para este evento.",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "crawl.started",
+                    "description": "O tipo do evento.",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "Identificador único desta entrega de webhook. Use para deduplicação — o mesmo valor é enviado em novas tentativas.",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Retorne qualquer código de status `2xx` para confirmar o recebimento."
+          }
+        },
+        "summary": "Rastreamento iniciado",
+        "tags": [
+          "Crawl"
+        ]
+      }
+    },
+    "monitorCheckCompleted": {
+      "post": {
+        "operationId": "monitorCheckCompleted",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "checkId": "019df960-5f2a-75fb-a98b-bd2d32ca67d4",
+                    "monitorId": "019df960-06e7-7383-9d89-82c0113dc31a",
+                    "status": "completed",
+                    "summary": {
+                      "changed": 1,
+                      "error": 0,
+                      "new": 0,
+                      "removed": 0,
+                      "same": 1,
+                      "totalPages": 2
+                    }
+                  }
+                ],
+                "id": "019df960-5f2a-75fb-a98b-bd2d32ca67d4",
+                "metadata": {},
+                "success": true,
+                "type": "monitor.check.completed",
+                "webhookId": "f1e2d3c4-0001-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "items": {
+                      "$ref": "#/components/schemas/MonitorCheckCompletedData"
+                    },
+                    "type": "array"
+                  },
+                  "error": {
+                    "description": "Mensagem de erro quando a verificação falhar.",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "O ID da verificação do monitor.",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "description": "`true` quando a verificação for concluída sem erros na página; caso contrário, `false`.",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "monitor.check.completed",
+                    "description": "O tipo do evento.",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "Identificador único desta entrega de webhook.",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Retorne qualquer código de status `2xx` para confirmar o recebimento."
+          }
+        },
+        "summary": "Verificação do monitor concluída",
+        "tags": [
+          "Monitor"
+        ]
+      }
+    },
+    "monitorPage": {
+      "post": {
+        "operationId": "monitorPage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "checkId": "019df960-5f2a-75fb-a98b-bd2d32ca67d4",
+                    "currentScrapeId": "019df960-73ee-7ac2-97a9-fb0e442c21f1",
+                    "diff": {
+                      "text": "--- previous\n+++ current\n@@ -1,3 +1,3 @@\n # Latest posts\n-Welcome to our weekly update.\n+Welcome to our weekly update — now with daily releases!\n"
+                    },
+                    "error": null,
+                    "isMeaningful": true,
+                    "judgment": {
+                      "confidence": "high",
+                      "meaningful": true,
+                      "meaningfulChanges": [
+                        {
+                          "after": "Welcome to our weekly update — now with daily releases!",
+                          "before": "Welcome to our weekly update.",
+                          "reason": "The headline changed in a way that matches the monitor goal.",
+                          "type": "changed"
+                        }
+                      ],
+                      "reason": "The page headline changed to announce a new release cadence."
+                    },
+                    "monitorId": "019df960-06e7-7383-9d89-82c0113dc31a",
+                    "previousScrapeId": "019df94f-82c3-7e41-81f0-00c72b2d9c52",
+                    "status": "changed",
+                    "url": "https://example.com/blog"
+                  }
+                ],
+                "id": "019df960-5f2a-75fb-a98b-bd2d32ca67d4",
+                "metadata": {},
+                "success": true,
+                "type": "monitor.page",
+                "webhookId": "f1e2d3c4-0000-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "items": {
+                      "$ref": "#/components/schemas/MonitorPageData"
+                    },
+                    "type": "array"
+                  },
+                  "error": {
+                    "description": "Mensagem de erro quando a página monitorada falhar.",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "O ID da verificação do monitor.",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "description": "`true` quando o scraping da página for concluído sem erros.",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "monitor.page",
+                    "description": "O tipo do evento.",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "Identificador único desta entrega de webhook.",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Retorne qualquer código de status `2xx` para confirmar o recebimento."
+          }
+        },
+        "summary": "Monitoramento de página",
+        "tags": [
+          "Monitor"
+        ]
+      }
+    }
+  }
+}

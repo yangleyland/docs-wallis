@@ -1,0 +1,720 @@
+---
+title: "高度なスクレイピングガイド"
+description: "Firecrawl の API 全体で、スクレイピングオプション、ブラウザ アクション、クロール、マップ、エージェントエンドポイントを構成します。"
+og:title: "高度なスクレイピングガイド | Firecrawl"
+og:description: "Firecrawl の API 全体で、スクレイピングオプション、ブラウザ アクション、クロール、マップ、エージェントエンドポイントを構成します。"
+---
+
+Firecrawl の scrape、crawl、map、agent 各エンドポイントで利用できるすべてのオプションのリファレンスです。
+
+<div id="basic-scraping">
+  ## 基本的なスクレイピング
+</div>
+
+単一のページをスクレイピングしてクリーンなMarkdownコンテンツを取得するには、`/scrape` エンドポイントを使用します。
+
+<CodeGroup>
+  ```python Python
+  # pip install firecrawl-py
+
+  from firecrawl import Firecrawl
+
+  firecrawl = Firecrawl(api_key="fc-YOUR-API-KEY")
+
+  doc = firecrawl.scrape("https://firecrawl.dev")
+
+  print(doc.markdown)
+  ```
+
+  ```js Node
+  // npm install firecrawl
+
+  import { Firecrawl } from 'firecrawl-js';
+
+  const firecrawl = new Firecrawl({ apiKey: 'fc-YOUR-API-KEY' });
+
+  const doc = await firecrawl.scrape('https://firecrawl.dev');
+
+  console.log(doc.markdown);
+  ```
+
+  ```bash cURL
+  curl -X POST https://api.firecrawl.dev/v2/scrape \
+      -H 'Content-Type: application/json' \
+      -H 'Authorization: Bearer fc-YOUR-API-KEY' \
+      -d '{
+        "url": "https://docs.firecrawl.dev"
+      }'
+  ```
+</CodeGroup>
+
+<div id="scraping-pdfs">
+  ## PDFのスクレイピング
+</div>
+
+FirecrawlはPDFに対応しています。PDFを確実に解析したい場合は、`parsers` オプション（例: `parsers: ["pdf"]`）を使用してください。`mode` オプションで解析戦略を制御できます。
+
+* **`auto`** (デフォルト) — まず高速なテキストベース抽出を試み、必要に応じてOCRにフォールバックします。
+* **`fast`** — テキストベースの解析のみ（埋め込みテキスト）。最も高速ですが、スキャンされたページや画像の多いページはスキップされます。
+* **`ocr`** — すべてのページで強制的にOCR解析を行います。スキャンされたドキュメントや、`auto` がページを誤判定する場合に使用してください。
+
+`{ type: "pdf" }` と `"pdf"` は、どちらもデフォルトで `mode: "auto"` になります。
+
+```json
+"parsers": [{ "type": "pdf", "mode": "fast", "maxPages": 50 }]
+```
+
+<div id="scrape-options">
+  ## スクレイピングのオプション
+</div>
+
+`/scrape` エンドポイントを使用する場合、以下のオプションでリクエストをカスタマイズできます。
+
+<div id="formats-formats">
+  ### フォーマット (`formats`)
+</div>
+
+`formats` 配列は、スクレイパーが返す出力フォーマットを制御します。デフォルト: `["markdown"]`。
+
+**文字列フォーマット**: 名前をそのまま渡します (例: `"markdown"`)。
+
+| Format     | Description                                                     |
+| ---------- | --------------------------------------------------------------- |
+| `markdown` | ページコンテンツをクリーンな Markdown に変換したもの。                                |
+| `html`     | 不要な要素を削除して処理した HTML。                                            |
+| `rawHtml`  | サーバーから返されたオリジナルの HTML をそのまま返すもの。                                |
+| `links`    | ページ上で見つかったすべてのリンク。                                              |
+| `images`   | ページ上で見つかったすべての画像。                                               |
+| `summary`  | ページコンテンツの LLM 生成サマリー。                                           |
+| `branding` | ブランドアイデンティティ (色、フォント、タイポグラフィ、余白、UI コンポーネント) を抽出。                |
+| `product`  | 複数ソースの構造化データを使って、商品ページから構造化された商品情報 (タイトル、価格、在庫状況、画像、バリアント) を抽出。 |
+
+**オブジェクトフォーマット**: `type` と追加オプションを含むオブジェクトを渡します。
+
+| Format           | Options                                                                                  | Description                                                                              |
+| ---------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `json`           | `prompt?: string`, `schema?: object`                                                     | LLM を使って構造化データを抽出します。JSON スキーマおよび/または自然言語のプロンプトを指定します (最大 10,000 文字)。                    |
+| `screenshot`     | `fullPage?: boolean`, `quality?: number`, `viewport?: { width, height }`                 | スクリーンショットを取得します。リクエストごとに最大 1 枚。ビューポートの最大解像度は 7680×4320。スクリーンショット URL は 24 時間後に期限切れになります。 |
+| `changeTracking` | `modes?: ("json" \| "git-diff")[]`, `tag?: string`, `schema?: object`, `prompt?: string` | スクレイプ結果間の変更を追跡します。`formats` 配列に `"markdown"` も含まれている必要があります。                             |
+| `attributes`     | `selectors: [{ selector: string, attribute: string }]`                                   | CSS セレクタにマッチする要素から特定の HTML 属性を抽出します。                                                     |
+
+<div id="mobile-scraping">
+  ### モバイルスクレイピング
+</div>
+
+モバイル端末をエミュレートするには、`mobile: true` を設定します。これは、レスポンシブサイトでデスクトップではコンテンツが非表示になる場合や、モバイルブラウザ向けに異なるレイアウトが返される場合に有効です。
+
+地域別のサイトでは、`location` とモバイルのスクリーンショットを組み合わせることで、実際にレンダリングされたレイアウトを確認できます。
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+
+  firecrawl = Firecrawl(api_key="fc-YOUR-API-KEY")
+
+  doc = firecrawl.scrape(
+      "https://example.com",
+      mobile=True,
+      location={"country": "GB", "languages": ["en-GB"]},
+      formats=[
+          "markdown",
+          {"type": "screenshot", "fullPage": True, "viewport": {"width": 390, "height": 844}},
+      ],
+      only_main_content=False,
+      wait_for=2000,
+  )
+
+  print(doc.markdown)
+  ```
+
+  ```js Node
+  import { Firecrawl } from 'firecrawl-js';
+
+  const firecrawl = new Firecrawl({ apiKey: 'fc-YOUR-API-KEY' });
+
+  const doc = await firecrawl.scrape('https://example.com', {
+    mobile: true,
+    location: { country: 'GB', languages: ['en-GB'] },
+    formats: [
+      'markdown',
+      { type: 'screenshot', fullPage: true, viewport: { width: 390, height: 844 } },
+    ],
+    onlyMainContent: false,
+    waitFor: 2000,
+  });
+
+  console.log(doc.markdown);
+  ```
+
+  ```bash cURL
+  curl -X POST https://api.firecrawl.dev/v2/scrape \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: Bearer fc-YOUR-API-KEY' \
+    -d '{
+      "url": "https://example.com",
+      "mobile": true,
+      "location": {
+        "country": "GB",
+        "languages": ["en-GB"]
+      },
+      "formats": [
+        "markdown",
+        { "type": "screenshot", "fullPage": true, "viewport": { "width": 390, "height": 844 } }
+      ],
+      "onlyMainContent": false,
+      "waitFor": 2000
+    }'
+  ```
+</CodeGroup>
+
+`mobile: true` を指定してもサイトがデスクトップ向けレイアウトを返す場合は、`headers` でモバイル用の User-Agent を追加してください。
+
+```json
+{
+  "headers": {
+    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+  }
+}
+```
+
+<div id="content-filtering">
+  ### コンテンツフィルタリング
+</div>
+
+これらのパラメータは、ページのどの部分を出力に含めるかを制御します。`onlyMainContent` が `true` (デフォルト) の場合、ナビゲーションやフッターなどの共通レイアウト部分は除去されます。`includeTags` と `excludeTags` はフィルタリング後の結果ではなく元のページ DOM に対して適用されるため、セレクタはソース HTML 内での要素を対象にする必要があります。タグフィルタリングの起点としてページ全体を使用するには、`onlyMainContent: false` を設定します。
+
+| Parameter         | Type      | Default | Description                                                                                       |
+| ----------------- | --------- | ------- | ------------------------------------------------------------------------------------------------- |
+| `onlyMainContent` | `boolean` | `true`  | メインコンテンツのみを返します。ページ全体を対象にするには `false` を設定します。                                                     |
+| `includeTags`     | `array`   | —       | 含める CSS セレクタ — タグ、クラス、ID、または属性セレクタ (例: `["h1", "p", ".main-content", "[data-testid=\"main\"]"]`)。 |
+| `excludeTags`     | `array`   | —       | 除外する CSS セレクタ — タグ、クラス、ID、または属性セレクタ (例: `["#ad", "#footer", "[role=\"banner\"]"]`)。               |
+
+<div id="timing-and-cache">
+  ### タイミングとキャッシュ
+</div>
+
+| Parameter | Type           | Default     | Description                                                  |
+| --------- | -------------- | ----------- | ------------------------------------------------------------ |
+| `waitFor` | `integer` (ms) | `0`         | スマート待機に加えて、スクレイピング前に追加で待機する時間。必要な場合にのみ使用してください。              |
+| `maxAge`  | `integer` (ms) | `172800000` | この値より新しい場合はキャッシュされたバージョンを返す (デフォルトは2日) 。常に最新を取得するには `0` を指定。 |
+| `timeout` | `integer` (ms) | `60000`     | リクエストを中断するまでの最大時間 (デフォルトは60秒) 。最小値は1000 (1秒) 。               |
+
+<div id="pdf-parsing">
+  ### PDF 解析
+</div>
+
+| Parameter | Type    | Default   | Description                                           |
+| --------- | ------- | --------- | ----------------------------------------------------- |
+| `parsers` | `array` | `["pdf"]` | PDF の処理方法を制御します。`[]` で解析をスキップしてbase64 を返す（1 クレジット固定）。 |
+
+```json
+{ "type": "pdf", "mode": "fast" | "auto" | "ocr", "maxPages": 10 }
+```
+
+| Property   | Type                        | Default      | Description                                                                              |
+| ---------- | --------------------------- | ------------ | ---------------------------------------------------------------------------------------- |
+| `type`     | `"pdf"`                     | *(required)* | パーサーの種類。                                                                                 |
+| `mode`     | `"fast" \| "auto" \| "ocr"` | `"auto"`     | `fast`: テキストベースの抽出のみを実行。`auto`: fast で処理し、必要に応じて OCR をフォールバックとして使用。`ocr`: OCR のみを強制的に使用。 |
+| `maxPages` | `integer`                   | —            | 解析するページ数の上限を設定。                                                                          |
+
+<div id="actions">
+  ### アクション
+</div>
+
+スクレイピングの前にブラウザアクションを実行します。これは、動的コンテンツ、ページ遷移、またはユーザー操作が必要なページで役立ちます。1リクエストにつき最大50個のアクションを含めることができ、すべての `wait` アクションと `waitFor` を合わせた待機時間の合計は60秒を超えてはいけません。
+
+| アクション               | パラメータ                                                                    | 説明                                                                                                     |
+| ------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `wait`              | `milliseconds?: number`, `selector?: string`                             | 一定時間待機する**または**要素が表示されるまで待機します (指定できるのはどちらか一方のみです) 。`selector` を使用する場合は、30秒でタイムアウトします。                 |
+| `click`             | `selector: string`, `all?: boolean`                                      | CSSセレクタに一致する要素をクリックします。`all: true` を設定すると、一致したすべての要素をクリックします。                                          |
+| `write`             | `text: string`                                                           | 現在フォーカスされているフィールドにテキストを入力します。先に `click` アクションで要素にフォーカスする必要があります。                                       |
+| `press`             | `key: string`                                                            | キーボードのキーを押します (例: `"Enter"`、`"Tab"`、`"Escape"`) 。                                                      |
+| `scroll`            | `direction?: "up" \| "down"`, `selector?: string`                        | ページ全体または特定の要素をスクロールします。方向のデフォルトは `"down"` です。                                                          |
+| `screenshot`        | `fullPage?: boolean`, `quality?: number`, `viewport?: { width, height }` | スクリーンショットを取得します。viewport の最大解像度は 7680×4320 です。                                                         |
+| `scrape`            | *(none)*                                                                 | アクションシーケンスのこの時点で、現在のページの HTML を取得します。                                                                  |
+| `executeJavascript` | `script: string`                                                         | ページ内で JavaScript コードを実行します。戻り値はレスポンスの `actions.javascriptReturns` 配列で利用できます。                           |
+| `pdf`               | `format?: string`, `landscape?: boolean`, `scale?: number`               | PDFを生成します。対応フォーマット: `"A0"` から `"A6"`、`"Letter"`、`"Legal"`、`"Tabloid"`、`"Ledger"`。デフォルトは `"Letter"` です。 |
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+
+  firecrawl = Firecrawl(api_key='fc-YOUR-API-KEY')
+
+  doc = firecrawl.scrape('https://example.com', {
+    'actions': [
+      { 'type': 'wait', 'milliseconds': 1000 },
+      { 'type': 'click', 'selector': '#accept' },
+      { 'type': 'scroll', 'direction': 'down' },
+      { 'type': 'click', 'selector': '#q' },
+      { 'type': 'write', 'text': 'firecrawl' },
+      { 'type': 'press', 'key': 'Enter' },
+      { 'type': 'wait', 'milliseconds': 2000 }
+    ],
+    'formats': ['markdown']
+  })
+
+  print(doc.markdown)
+  ```
+
+  ```js Node
+  import { Firecrawl } from 'firecrawl-js';
+
+  const firecrawl = new Firecrawl({ apiKey: 'fc-YOUR-API-KEY' });
+
+  const doc = await firecrawl.scrape('https://example.com', {
+    actions: [
+      { type: 'wait', milliseconds: 1000 },
+      { type: 'click', selector: '#accept' },
+      { type: 'scroll', direction: 'down' },
+      { type: 'click', selector: '#q' },
+      { type: 'write', text: 'firecrawl' },
+      { type: 'press', key: 'Enter' },
+      { type: 'wait', milliseconds: 2000 }
+    ],
+    formats: ['markdown']
+  });
+
+  console.log(doc.markdown);
+  ```
+
+  ```bash cURL
+  curl -X POST https://api.firecrawl.dev/v2/scrape \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: Bearer fc-YOUR-API-KEY' \
+    -d '{
+      "url": "https://example.com",
+      "actions": [
+        { "type": "wait", "milliseconds": 1000 },
+        { "type": "click", "selector": "#accept" },
+        { "type": "scroll", "direction": "down" },
+        { "type": "click", "selector": "#q" },
+        { "type": "write", "text": "firecrawl" },
+        { "type": "press", "key": "Enter" },
+        { "type": "wait", "milliseconds": 2000 }
+      ],
+      "formats": ["markdown"]
+    }'
+  ```
+</CodeGroup>
+
+<div id="action-execution-notes">
+  #### アクション実行時の注意点
+</div>
+
+- **Write** を使う前に、対象要素へフォーカスするための `click` が必要です。
+- **Scroll** は、ページ全体ではなく特定の要素をスクロールするために、任意の `selector` を指定できます。
+- **Wait** は、`milliseconds`（固定の待機時間）または `selector`（指定要素が表示されるまで待機）のいずれかを受け取ります。
+- アクションは **逐次的に** 実行されます。各ステップは、次のステップが開始する前に完了します。
+- アクションは **PDF では利用できません**。URL が PDF に解決される場合、そのリクエストは失敗します。
+
+<div id="advanced-action-examples">
+  #### 高度なアクション例
+</div>
+
+**スクリーンショットを撮影する:**
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/scrape \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer fc-YOUR-API-KEY' \
+  -d '{
+    "url": "https://example.com",
+    "actions": [
+      { "type": "click", "selector": "#load-more" },
+      { "type": "wait", "milliseconds": 1000 },
+      { "type": "screenshot", "fullPage": true, "quality": 80 }
+    ]
+  }'
+```
+
+**複数の要素をクリックする:**
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/scrape \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer fc-YOUR-API-KEY' \
+  -d '{
+    "url": "https://example.com",
+    "actions": [
+      { "type": "click", "selector": ".expand-button", "all": true },
+      { "type": "wait", "milliseconds": 500 }
+    ],
+    "formats": ["markdown"]
+  }'
+```
+
+**PDF を生成する:**
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/scrape \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer fc-YOUR-API-KEY' \
+  -d '{
+    "url": "https://example.com",
+    "actions": [
+      { "type": "pdf", "format": "A4", "landscape": false }
+    ]
+  }'
+```
+
+**JavaScript を実行する (例: ページに埋め込まれたデータを抽出する) :**
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/scrape \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer fc-YOUR-API-KEY' \
+  -d '{
+    "url": "https://example.com",
+    "actions": [
+      { "type": "executeJavascript", "script": "document.querySelector(\"#__NEXT_DATA__\").textContent" }
+    ],
+    "formats": ["markdown"]
+  }'
+```
+
+各 `executeJavascript` アクションの戻り値は、レスポンス内の `actions.javascriptReturns` 配列に格納されます。
+
+<div id="full-scrape-example">
+  ### フルスクレイプの例
+</div>
+
+次のリクエストでは、複数のスクレイプオプションを組み合わせています。
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/scrape \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: Bearer fc-YOUR-API-KEY' \
+    -d '{
+      "url": "https://docs.firecrawl.dev",
+      "formats": [
+        "markdown",
+        "links",
+        "html",
+        "rawHtml",
+        { "type": "screenshot", "fullPage": true, "quality": 80 }
+      ],
+      "includeTags": ["h1", "p", "a", ".main-content"],
+      "excludeTags": ["#ad", "#footer"],
+      "onlyMainContent": false,
+      "waitFor": 1000,
+      "timeout": 15000,
+      "parsers": ["pdf"]
+    }'
+```
+
+このリクエストは、Markdown、HTML、raw HTML、リンク、およびページ全体のスクリーンショットを返します。コンテンツの対象を `<h1>`、`<p>`、`<a>`、`.main-content` に絞り、`#ad` と `#footer` を除外し、スクレイピング前に1秒待機し、タイムアウトを15秒に設定し、PDF解析を有効にします。
+
+詳細は [Scrape API reference](https://docs.firecrawl.dev/api-reference/endpoint/scrape) を参照してください。
+
+<div id="json-extraction-via-formats">
+  ## `formats` を使った JSON 抽出
+</div>
+
+`formats` の JSON フォーマットオブジェクトを使うと、1 回の処理で構造化データを抽出できます。
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+
+  firecrawl = Firecrawl(api_key='fc-YOUR-API-KEY')
+
+  doc = firecrawl.scrape('https://firecrawl.dev', {
+    'formats': [{
+      'type': 'json',
+      'prompt': 'Extract the features of the product',
+      'schema': {
+        'type': 'object',
+        'properties': { 'features': { 'type': 'object' } },
+        'required': ['features']
+      }
+    }]
+  })
+
+  print(doc.json)
+  ```
+
+  ```js Node
+  import { Firecrawl } from 'firecrawl-js';
+
+  const firecrawl = new Firecrawl({ apiKey: 'fc-YOUR-API-KEY' });
+
+  const doc = await firecrawl.scrape('https://firecrawl.dev', {
+    formats: [{
+      type: 'json',
+      prompt: 'Extract the features of the product',
+      schema: {
+        type: 'object',
+        properties: { features: { type: 'object' } },
+        required: ['features']
+      }
+    }]
+  });
+
+  console.log(doc.json);
+  ```
+
+  ```bash cURL
+  curl -X POST https://api.firecrawl.dev/v2/scrape \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: Bearer fc-YOUR-API-KEY' \
+    -d '{
+      "url": "https://firecrawl.dev",
+      "formats": [{
+        "type": "json",
+        "prompt": "Extract the features of the product",
+        "schema": {"type": "object", "properties": {"features": {"type": "object"}}, "required": ["features"]}
+      }]
+    }'
+  ```
+</CodeGroup>
+
+<div id="agent-endpoint">
+  ## Agent endpoint
+</div>
+
+自律的に複数ページにまたがるデータを抽出するには、`/v2/agent` エンドポイントを使用します。エージェントは非同期で動作します。まずジョブを開始し、その後、結果が返ってくるまでポーリングします。
+
+<div id="agent-options">
+  ### エージェントオプション
+</div>
+
+| Parameter               | Type      | Default          | Description                                                                                                        |
+| ----------------------- | --------- | ---------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `prompt`                | `string`  | *(required)*     | 抽出するデータを自然言語で記述した指示 (最大 10,000 文字) 。                                                                               |
+| `urls`                  | `array`   | —                | エージェントの処理対象を限定する URL。                                                                                              |
+| `schema`                | `object`  | —                | 抽出データの構造を定義する JSON スキーマ。                                                                                           |
+| `maxCredits`            | `number`  | `2500`           | エージェントが消費できる最大クレジット数。ダッシュボードでは最大 2,500 まで対応しています。より高い上限を設定する場合は、API 経由で設定してください (2,500 を超える値は常に有料リクエストとして課金されます) 。 |
+| `strictConstrainToURLs` | `boolean` | `false`          | `true` の場合、エージェントは指定された URL のみを巡回します。                                                                              |
+| `model`                 | `string`  | `"spark-1-mini"` | 使用する AI モデル。`"spark-1-mini"` (デフォルト、60% 低コスト) または `"spark-1-pro"` (高精度) 。                                          |
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+
+  firecrawl = Firecrawl(api_key='fc-YOUR-API-KEY')
+
+  # エージェントジョブを開始
+  started = firecrawl.start_agent(
+      prompt="Extract the title and description",
+      urls=["https://docs.firecrawl.dev"],
+      schema={"type": "object", "properties": {"title": {"type": "string"}, "description": {"type": "string"}}, "required": ["title"]}
+  )
+
+  # ステータスをポーリング
+  status = firecrawl.get_agent_status(started["id"])
+  print(status.get("status"), status.get("data"))
+  ```
+
+  ```js Node
+  import { Firecrawl } from 'firecrawl';
+
+  const firecrawl = new Firecrawl({ apiKey: 'fc-YOUR-API-KEY' });
+
+  // エージェントジョブを開始
+  const started = await firecrawl.startAgent({
+    prompt: 'Extract the title and description',
+    urls: ['https://docs.firecrawl.dev'],
+    schema: { type: 'object', properties: { title: { type: 'string' }, description: { type: 'string' } }, required: ['title'] }
+  });
+
+  // ステータスをポーリング
+  const status = await firecrawl.getAgentStatus(started.id);
+  console.log(status.status, status.data);
+  ```
+
+  ```bash cURL
+  curl -X POST https://api.firecrawl.dev/v2/agent \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: Bearer fc-YOUR-API-KEY' \
+    -d '{
+      "prompt": "Extract the title and description",
+      "urls": ["https://docs.firecrawl.dev"],
+      "schema": {"type": "object", "properties": {"title": {"type": "string"}, "description": {"type": "string"}}, "required": ["title"]}
+    }'
+  ```
+</CodeGroup>
+
+<div id="check-agent-status">
+  ### エージェントのステータスを確認する
+</div>
+
+進捗状況を確認するには、`GET /v2/agent/{jobId}` をポーリングします。レスポンスの `status` フィールドは `"processing"`、`"completed"`、または `"failed"` のいずれかになります。
+
+```bash cURL
+curl -X GET https://api.firecrawl.dev/v2/agent/YOUR-JOB-ID \
+  -H 'Authorization: Bearer fc-YOUR-API-KEY'
+```
+
+Python および Node 用の SDK には、ジョブを開始し、完了するまで自動的にポーリングするための便利なメソッド `firecrawl.agent()` も用意されています。
+
+<div id="crawling-multiple-pages">
+  ## 複数ページのクロール
+</div>
+
+複数のページをクロールするには、`/v2/crawl` エンドポイントを使用します。クロールは非同期で実行され、ジョブ ID が返されます。クロールするページ数を制御するには、`limit` パラメータを使用します。省略した場合、クロールは最大10,000ページまで処理します。
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/crawl \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: Bearer fc-YOUR-API-KEY' \
+    -d '{
+      "url": "https://docs.firecrawl.dev",
+      "limit": 10
+    }'
+```
+
+<div id="response">
+  ### レスポンス
+</div>
+
+```json
+{ "id": "1234-5678-9101" }
+```
+
+<div id="check-crawl-job">
+  ### クロールジョブを確認する
+</div>
+
+ジョブ ID を使用してクロールのステータスを確認し、結果を取得します。
+
+```bash cURL
+curl -X GET https://api.firecrawl.dev/v2/crawl/1234-5678-9101 \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer fc-YOUR-API-KEY'
+```
+
+コンテンツが 10MB を超える場合、またはクロールジョブがまだ実行中の場合、レスポンスには `next` パラメータが含まれることがあります。これは、結果の次のページを指す URL です。
+
+<div id="crawl-prompt-and-params-preview">
+  ### クロール用`prompt`とパラメータのプレビュー
+</div>
+
+自然言語の`prompt`を指定すると、Firecrawl がクロール設定を導き出します。まずはその内容をプレビューしてください。
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/crawl/params-preview \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer fc-YOUR-API-KEY' \
+  -d '{
+    "url": "https://docs.firecrawl.dev",
+    "prompt": "Extract docs and blog"
+  }'
+```
+
+<div id="crawler-options">
+  ### クローラーオプション
+</div>
+
+`/v2/crawl` エンドポイントでは、次のオプションでクロールの挙動をカスタマイズできます。
+
+<div id="path-filtering">
+  #### パスフィルタリング
+</div>
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `includePaths` | `array` | — | デフォルトでは URL のパス名のみに適用される、インクルード対象とする URL の正規表現パターン。 |
+| `excludePaths` | `array` | — | デフォルトでは URL のパス名のみに適用される、除外対象とする URL の正規表現パターン。 |
+| `regexOnFullURL` | `boolean` | `false` | パス名ではなく、完全な URL に対してパターンをマッチさせます。 |
+
+<Warning>
+開始 URL も `includePaths` に対してチェックされます。いずれのパターンにもマッチしない場合、クロールの結果が 0 ページになる可能性があります。
+</Warning>
+
+<div id="crawl-scope">
+  #### クロール範囲
+</div>
+
+| Parameter            | Type         | Default | Description                           |
+| -------------------- | ------------ | ------- | ------------------------------------- |
+| `maxDiscoveryDepth`  | `integer`    | —       | 新しいURLを発見する際の最大リンク深度。                 |
+| `limit`              | `integer`    | `10000` | クロールするページ数の上限。                        |
+| `crawlEntireDomain`  | `boolean`    | `false` | 同一階層や上位階層のページも探索してドメイン全体をカバーする。       |
+| `allowExternalLinks` | `boolean`    | `false` | 外部ドメインへのリンクもたどる。                      |
+| `allowSubdomains`    | `boolean`    | `false` | メインドメインのサブドメインもたどる。                   |
+| `delay`              | `number` (s) | —       | スクレイピング間のディレイ。これを設定すると、同時実行数は1に固定される。 |
+
+<div id="sitemap-and-deduplication">
+  #### サイトマップと重複排除
+</div>
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `sitemap` | `string` | `"include"` | `"include"`: サイトマップ + リンク発見を使用します。`"skip"`: サイトマップを無視します。`"only"`: サイトマップ上の URL のみをクロールします。 |
+| `deduplicateSimilarURLs` | `boolean` | `true` | URL のバリエーション（`www.`, `https`, 末尾のスラッシュ, `index.html`）を正規化し、同一の URL として扱います。 |
+| `ignoreQueryParameters` | `boolean` | `false` | 重複排除の前にクエリ文字列を除去します（例: `/page?a=1` と `/page?a=2` は 1 つの URL と見なされます）。 |
+
+<div id="scrape-options-for-crawl">
+  #### クローリング時のスクレイプオプション
+</div>
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `scrapeOptions` | `object` | `{ formats: ["markdown"] }` | ページ単位のスクレイプ設定。上記のすべての [scrape options](#scrape-options) が利用可能です。 |
+
+<div id="crawl-example">
+  ### クロールの例
+</div>
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/crawl \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: Bearer fc-YOUR-API-KEY' \
+    -d '{
+      "url": "https://docs.firecrawl.dev",
+      "includePaths": ["^/blog/.*$", "^/docs/.*$"],
+      "excludePaths": ["^/admin/.*$", "^/private/.*$"],
+      "maxDiscoveryDepth": 2,
+      "limit": 1000
+    }'
+```
+
+<div id="mapping-website-links">
+  ## Web サイトリンクのマッピング
+</div>
+
+`/v2/map` エンドポイントは、指定したWeb サイトに関連するURLを特定します。
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/map \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: Bearer fc-YOUR-API-KEY' \
+    -d '{
+      "url": "https://docs.firecrawl.dev"
+    }'
+```
+
+<div id="map-options">
+  ### Map オプション
+</div>
+
+| Parameter           | Type      | Default     | Description                        |
+| ------------------- | --------- | ----------- | ---------------------------------- |
+| `search`            | `string`  | —           | テキストに一致するリンクに絞り込みます。               |
+| `limit`             | `integer` | `100`       | 返されるリンクの最大数。                       |
+| `sitemap`           | `string`  | `"include"` | `"include"`、`"skip"`、または `"only"`。 |
+| `includeSubdomains` | `boolean` | `true`      | サブドメインを含みます。                       |
+
+API リファレンス: [Map Endpoint Documentation](https://docs.firecrawl.dev/api-reference/endpoint/map)
+
+<div id="whitelisting-firecrawl">
+  ## Firecrawl をホワイトリストに追加する
+</div>
+
+<div id="allowing-firecrawl-to-scrape-your-website">
+  ### 自分のウェブサイトのスクレイピングを Firecrawl に許可する
+</div>
+
+- **User Agent**: ファイアウォールやセキュリティルールで `FirecrawlAgent` を許可してください。
+- **IP addresses**: Firecrawl は、外向き通信に固定の送信元 IP アドレスを使用していません。
+
+<div id="allowing-your-application-to-call-the-firecrawl-api">
+  ### アプリケーションから Firecrawl API への呼び出しを許可する
+</div>
+
+ファイアウォールがアプリケーションから外部サービスへのアウトバウンドリクエストをブロックしている場合は、アプリケーションが Firecrawl API（`api.firecrawl.dev`）に到達できるよう、Firecrawl の API サーバーの IP アドレスをホワイトリストに追加する必要があります。
+
+- **IP Address**: `35.245.250.27`
+
+この IP をファイアウォールのアウトバウンド許可リストに追加し、バックエンドから Firecrawl へ scrape、crawl、map、および agent リクエストを送信できるようにしてください。

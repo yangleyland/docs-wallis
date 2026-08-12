@@ -1,0 +1,29 @@
+```js Node
+import { Firecrawl } from "firecrawl";
+
+const app = new Firecrawl({
+  apiKey: "fc-YOUR_API_KEY"
+});
+
+// 先启动一个提取任务
+const extractJob = await app.asyncExtract([
+  'https://docs.firecrawl.dev/*', 
+  'https://firecrawl.dev/'
+], {
+  prompt: "Extract the company mission and features from these pages."
+});
+
+// 获取提取任务的状态
+const jobStatus = await app.getExtractStatus(extractJob.jobId);
+
+console.log(jobStatus);
+// 示例输出：
+// {
+//   status: "completed",
+//   progress: 100,
+//   results: [{
+//     url: "https://docs.firecrawl.dev",
+//     data: { ... }
+//   }]
+// }
+```

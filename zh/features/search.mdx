@@ -1,0 +1,675 @@
+---
+title: "搜索"
+description: "搜索网络并获取结果的完整内容"
+og:title: "搜索 | Firecrawl"
+og:description: "搜索网络并获取结果的完整页面内容"
+icon: "magnifying-glass"
+---
+
+import InstallationPython from "/snippets/zh/v2/installation/python.mdx";
+import InstallationNode from "/snippets/zh/v2/installation/js.mdx";
+import InstallationCLI from "/snippets/zh/v2/installation/cli.mdx";
+import SearchPython from "/snippets/zh/v2/search/base/python.mdx";
+import SearchNode from "/snippets/zh/v2/search/base/js.mdx";
+import SearchCURL from "/snippets/zh/v2/search/base/curl.mdx";
+import SearchCLI from "/snippets/zh/v2/search/base/cli.mdx";
+import SearchContentPython from "/snippets/zh/v2/search/content/python.mdx";
+import SearchContentNode from "/snippets/zh/v2/search/content/js.mdx";
+import SearchContentCURL from "/snippets/zh/v2/search/content/curl.mdx";
+import SearchContentCLI from "/snippets/zh/v2/search/content/cli.mdx";
+import SearchLocationPython from "/snippets/zh/v2/search/location/python.mdx";
+import SearchLocationNode from "/snippets/zh/v2/search/location/js.mdx";
+import SearchLocationCURL from "/snippets/zh/v2/search/location/curl.mdx";
+import SearchLocationCLI from "/snippets/zh/v2/search/location/cli.mdx";
+import SearchTimePython from "/snippets/zh/v2/search/time/python.mdx";
+import SearchTimeNode from "/snippets/zh/v2/search/time/js.mdx";
+import SearchTimeCURL from "/snippets/zh/v2/search/time/curl.mdx";
+import SearchTimeCLI from "/snippets/zh/v2/search/time/cli.mdx";
+import SearchResponse from "/snippets/zh/v2/search/base/output.mdx";
+import PlaygroundCTA from "/snippets/zh/shared/playground-cta-search.mdx";
+import GovLegalFeedbackCTA from "/snippets/zh/gov-legal-feedback-cta.mdx";
+
+进行网页搜索，并通过一次 API 调用从每个结果中获取干净、结构化的内容。将查询传递给 `/search`，Firecrawl 会返回标题、描述和 URL。添加 `scrapeOptions` 后，还可为每个结果获取完整页面的 markdown、HTML、links 或 screenshots。
+
+搜索结果默认包含与查询相关的 [Highlights](/zh/features/search-highlights)。如果你希望改为显示每个网站的普通描述或摘要片段，请将 `highlights` 设置为 `false`。
+
+完整参数列表请参阅 [Search Endpoint API Reference](https://docs.firecrawl.dev/api-reference/endpoint/search)。
+
+<PlaygroundCTA />
+
+<div id="performing-a-search-with-firecrawl">
+  ## 使用 Firecrawl 进行搜索
+</div>
+
+<div id="search-endpoint">
+  ### /search 端点
+</div>
+
+用于执行网页搜索，并可选择从结果中获取内容。
+
+<div id="installation">
+  ### 安装
+</div>
+
+<CodeGroup>
+  <InstallationPython />
+
+  <InstallationNode />
+
+  <InstallationCLI />
+</CodeGroup>
+
+<GovLegalFeedbackCTA src="docs-search" />
+
+<div id="basic-usage">
+  ### 基本用法
+</div>
+
+<CodeGroup>
+  <SearchPython />
+
+  <SearchNode />
+
+  <SearchCURL />
+
+  <SearchCLI />
+</CodeGroup>
+
+<div id="response">
+  ### 响应
+</div>
+
+SDKs 会直接返回数据对象。cURL 会返回完整的负载。
+
+<SearchResponse />
+
+<Note>
+  **SDK 用户：**搜索结果会按来源类型分组，而不是统一放在 `.data` 数组下。可通过 `result.web` 访问网页结果，通过 `result.news` 访问新闻结果，通过 `result.images` 访问图片结果。
+
+  ```python Python
+  result = firecrawl.search("query")
+  for item in result.web or []:
+      print(item.url, item.title)
+  ```
+
+  ```js JavaScript
+  const result = await firecrawl.search("query");
+  for (const item of result.web ?? []) {
+    console.log(item.url, item.title);
+  }
+  ```
+</Note>
+
+<div id="search-result-types">
+  ## 搜索结果类型
+</div>
+
+除了常规网页结果外，Search 还可通过 `sources` 参数支持以下专用结果类型：
+
+* `web`：标准网页结果 (默认)
+* `news`：新闻结果
+* `images`：图片搜索结果
+
+你可以在一次调用中请求多个 source (例如 `sources: ["web", "news"]`) 。此时，`limit` 参数会**按每种 source 类型分别生效**——因此，当 `limit: 5` 且 `sources: ["web", "news"]` 时，会分别返回最多 5 条 web 结果和最多 5 条 news 结果 (合计最多 10 条) 。如果你需要为不同的 source 设置不同的参数 (例如不同的 `limit` 值或不同的 `scrapeOptions`) ，请分别发起独立的调用。
+
+<div id="search-categories">
+  ## 搜索类别
+</div>
+
+使用 `categories` 参数按特定类别过滤搜索结果：
+
+* `github`：在 GitHub 的仓库、代码、Issue 和文档中搜索
+* `research`：搜索学术与科研类网站 (arXiv、Nature、IEEE、PubMed 等)
+* `pdf`：搜索 PDF 文档
+* `developer`：搜索 [开发者索引](/zh/features/developer) — 来自公共代码仓库的 issue、已合并的 pull request 和 README，以及精选文档网站
+
+<div id="github-category-search">
+  ### GitHub 分类搜索
+</div>
+
+在 GitHub 仓库中进行定向搜索：
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "Python 网页抓取",
+    "categories": ["github"],
+    "limit": 10
+  }'
+```
+
+<div id="research-category-search">
+  ### 研究类别搜索
+</div>
+
+搜索学术与科研类网站：
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "机器学习 transformer",
+    "categories": ["研究"],
+    "limit": 10
+  }'
+```
+
+<div id="developer-category-search">
+  ### 开发者类别搜索
+</div>
+
+在[开发者索引](/zh/features/developer)中搜索与编程问题相关的一手资料：
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "how do I configure retries",
+    "categories": ["developer"],
+    "limit": 10
+  }'
+```
+
+开发者结果会在独立的`developer`组中与`web`一同返回，每项均带有`category: "developer"`。如需获取包含匹配段落的排序结果，或使用仓库和文档来源筛选条件，请使用[开发者搜索端点](/zh/features/developer#search-the-developer-index)。
+
+<div id="mixed-category-search">
+  ### 混合类别搜索
+</div>
+
+在一次搜索中合并多个类别：
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "神经网络",
+    "categories": ["github", "research"],
+    "limit": 15
+  }'
+```
+
+<div id="domain-filters">
+  ## 域名过滤器
+</div>
+
+使用 `includeDomains` 可将搜索结果限制在特定域名内，或使用 `excludeDomains` 将特定域名从搜索中排除。这些字段会在内部为查询添加 `site:` 和 `-site:` 操作符，因此只需传入域名，不要包含协议或路径。
+
+<Note>
+  `includeDomains` 和 `excludeDomains` 互斥。单个请求中只能使用其中之一。
+</Note>
+
+<div id="include-domains">
+  ### 包含域名
+</div>
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "web scraping",
+    "includeDomains": ["firecrawl.dev", "docs.firecrawl.dev"],
+    "limit": 10
+  }'
+```
+
+<div id="exclude-domains">
+  ### 排除域名
+</div>
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "web scraping tools",
+    "excludeDomains": ["example.com"],
+    "limit": 10
+  }'
+```
+
+<div id="category-response-format">
+  ### 分类响应格式
+</div>
+
+每条搜索结果都包含一个 `category` 字段，用于标示其来源：
+
+```json
+{
+  "success": true,
+  "data": {
+    "web": [
+      {
+        "url": "https://github.com/example/neural-network",
+        "title": "神经网络实现",
+        "description": "基于 PyTorch 的神经网络实现",
+        "category": "github"
+      },
+      {
+        "url": "https://arxiv.org/abs/2024.12345",
+        "title": "神经网络架构的最新进展",
+        "description": "探讨神经网络改进的研究论文"
+        "category": "research"
+      }
+    ]
+  }
+}
+```
+
+示例：
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "openai",
+    "sources": ["news"],
+    "limit": 5
+  }'
+```
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "jupiter",
+    "sources": ["images"],
+    "limit": 8
+  }'
+```
+
+<div id="hd-image-search-with-size-filtering">
+  ### 按尺寸筛选的高清图片搜索
+</div>
+
+使用 images 源的搜索运算符查找高分辨率图片：
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "sunset imagesize:1920x1080",
+    "sources": ["images"],
+    "limit": 5
+  }'
+```
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "mountain wallpaper larger:2560x1440",
+    "sources": ["images"],
+    "limit": 8
+  }'
+```
+
+**常见高清分辨率：**
+
+* `imagesize:1920x1080` - 全高清 (1080p)
+* `imagesize:2560x1440` - QHD (1440p)
+* `imagesize:3840x2160` - 4K UHD
+* `larger:1920x1080` - 高清及以上
+* `larger:2560x1440` - QHD 及以上
+
+<div id="search-with-content-scraping">
+  ## 搜索并抓取内容
+</div>
+
+在一次操作中完成搜索并从结果中提取内容。
+
+<CodeGroup>
+  <SearchContentPython />
+
+  <SearchContentNode />
+
+  <SearchContentCURL />
+
+  <SearchContentCLI />
+</CodeGroup>
+
+通过 `scrapeOptions` 参数，该搜索端点支持 /scrape 端点中的所有选项。
+
+<div id="response-with-scraped-content">
+  ### 包含爬取内容的响应
+</div>
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "title": "Firecrawl - 终极网页抓取 API",
+      "description": "Firecrawl 是强大的网页抓取 API，可将任意网站转化为干净且结构化的数据，供 AI 与分析使用。",
+      "url": "https://firecrawl.dev/",
+      "markdown": "# Firecrawl\n\n终极网页抓取 API\n\n## 将任意网站转化为干净且结构化的数据\n\nFirecrawl 让从网站提取数据变得简单高效，适用于 AI 应用、市场研究、内容聚合等场景……",
+      "links": [
+        "https://firecrawl.dev/pricing",
+        "https://firecrawl.dev/docs",
+        "https://firecrawl.dev/guides"
+      ],
+      "metadata": {
+        "title": "Firecrawl - 终极网页抓取 API",
+        "description": "Firecrawl 是强大的网页抓取 API，可将任意网站转化为干净且结构化的数据，供 AI 与分析使用。"
+        "sourceURL": "https://firecrawl.dev/",
+        "statusCode": 200
+      }
+    }
+  ]
+}
+```
+
+<div id="search-then-scrape-two-step-pattern">
+  ## 先搜索，再抓取 (两步模式)
+</div>
+
+如果你需要在抓取前先对搜索结果进行筛选或处理，可采用两步方式：先搜索，再抓取所需的 URL。
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+
+  firecrawl = Firecrawl(api_key="fc-YOUR_API_KEY")
+
+  # 第 1 步：搜索
+  results = firecrawl.search("firecrawl web scraping", limit=5)
+
+  # 第 2 步：抓取每个结果 URL 的完整内容
+  for item in results.web or []:
+      page = firecrawl.scrape(item.url, formats=["markdown"])
+      print(page.markdown[:200])
+  ```
+
+  ```js JavaScript
+  import Firecrawl from '@mendable/firecrawl-js';
+
+  const firecrawl = new Firecrawl({ apiKey: "fc-YOUR_API_KEY" });
+
+  // 第 1 步：搜索
+  const results = await firecrawl.search("firecrawl web scraping", { limit: 5 });
+
+  // 第 2 步：抓取每个结果 URL 的完整内容
+  for (const item of results.web ?? []) {
+    const page = await firecrawl.scrape(item.url, { formats: ["markdown"] });
+    console.log(page.markdown?.substring(0, 200));
+  }
+  ```
+</CodeGroup>
+
+<Tip>
+  **何时使用哪种方式：**
+
+  * **单步** (在 search 中使用 `scrapeOptions`) ：适合需要获取所有结果内容的场景。更简单，也更快。
+  * **两步** (先搜索再抓取) ：适合需要对结果进行筛选、排序或选择性抓取的场景。更灵活。
+
+  这两种方式在抓取步骤中都使用 Firecrawl。不要使用通用的 HTTP 抓取方式，也不要仅根据搜索结果摘要进行总结——Firecrawl scrape 提供的完整页面内容，才是让结果有据可依且完整的关键。
+</Tip>
+
+<div id="advanced-search-options">
+  ## 高级搜索选项
+</div>
+
+Firecrawl 的搜索 API 支持通过多种参数自定义搜索：
+
+<div id="location-customization">
+  ### 位置定制
+</div>
+
+<CodeGroup>
+  <SearchLocationPython />
+
+  <SearchLocationNode />
+
+  <SearchLocationCURL />
+
+  <SearchLocationCLI />
+</CodeGroup>
+
+<div id="time-based-search">
+  ### 基于时间的搜索
+</div>
+
+使用 `tbs` 参数按时间过滤结果。注意，`tbs` 仅适用于 `web` 来源的结果——不会过滤 `news` 或 `images` 结果。如果你需要按时间过滤的新闻结果，建议使用 `web` 来源，并结合 `site:` 运算符将范围限定到特定新闻域名。
+
+<CodeGroup>
+  <SearchTimePython />
+
+  <SearchTimeNode />
+
+  <SearchTimeCURL />
+
+  <SearchTimeCLI />
+</CodeGroup>
+
+常用 `tbs` 值：
+
+* `qdr:h` - 过去 1 小时
+* `qdr:d` - 过去 24 小时
+* `qdr:w` - 过去 1 周
+* `qdr:m` - 过去 1 个月
+* `qdr:y` - 过去 1 年
+* `sbd:1` - 按日期排序 (最新优先)
+
+若需更精确的时间过滤，可使用自定义日期范围格式指定确切的日期区间：
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+
+  # 使用你的 API 密钥初始化客户端
+  firecrawl = Firecrawl(api_key="fc-YOUR_API_KEY")
+
+  # 搜索 2024 年 12 月的结果
+  search_result = firecrawl.search(
+      "firecrawl updates",
+      limit=10,
+      tbs="cdr:1,cd_min:12/1/2024,cd_max:12/31/2024"
+  )
+  ```
+
+  ```js JavaScript
+  import { Firecrawl } from 'firecrawl';
+
+  // 使用你的 API 密钥初始化客户端
+  const firecrawl = new Firecrawl({apiKey: "fc-YOUR_API_KEY"});
+
+  // 搜索 2024 年 12 月的结果
+  firecrawl.search("firecrawl updates", {
+    limit: 10,
+    tbs: "cdr:1,cd_min:12/1/2024,cd_max:12/31/2024"
+  })
+  .then(searchResult => {
+    console.log(searchResult.data);
+  });
+  ```
+
+  ```bash cURL
+  curl -X POST https://api.firecrawl.dev/v2/search \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer fc-YOUR_API_KEY" \
+    -d '{
+      "query": "firecrawl updates",
+      "limit": 10,
+      "tbs": "cdr:1,cd_min:12/1/2024,cd_max:12/31/2024"
+    }'
+  ```
+</CodeGroup>
+
+你可以将 `sbd:1` 与时间过滤条件组合使用，在指定时间范围内按日期排序返回结果。例如，`sbd:1,qdr:w` 会返回过去一周内的结果，并按最新优先排序；`sbd:1,cdr:1,cd_min:12/1/2024,cd_max:12/31/2024` 会返回 2024 年 12 月的结果，并按日期排序。
+
+<div id="custom-timeout">
+  ### 自定义超时
+</div>
+
+为搜索操作设置自定义超时时间：
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+
+  # 使用你的 API 密钥初始化客户端
+  firecrawl = Firecrawl(api_key="fc-YOUR_API_KEY")
+
+  # 设置 30 秒超时
+  search_result = firecrawl.search(
+      "complex search query",
+      limit=10,
+      timeout=30000  # 30 秒（以毫秒为单位）
+  )
+  ```
+
+  ```js JavaScript
+  import { Firecrawl } from 'firecrawl';
+
+  // 使用你的 API 密钥初始化客户端
+  const firecrawl = new Firecrawl({apiKey: "fc-YOUR_API_KEY"});
+
+  // 设置 30 秒超时
+  firecrawl.search("complex search query", {
+    limit: 10,
+    timeout: 30000  // 30 秒（以毫秒为单位）
+  })
+  .then(searchResult => {
+    // 处理结果
+    console.log(searchResult.data);
+  });
+  ```
+
+  ```bash cURL
+  curl -X POST https://api.firecrawl.dev/v2/search \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer fc-YOUR_API_KEY" \
+    -d '{
+      "query": "complex search query",
+      "limit": 10,
+      "timeout": 30000
+    }'
+  ```
+</CodeGroup>
+
+<div id="safe-search">
+  ### 安全搜索
+</div>
+
+将 `safe` 设为 `true`，即可过滤搜索结果中的露骨内容 (SafeSearch) 。省略此参数时，返回的结果不会经过筛选，与之前完全一致。
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "firecrawl",
+    "safe": true
+  }'
+```
+
+<div id="zero-data-retention-zdr">
+  ## 零数据保留 (ZDR)
+</div>
+
+对于有严格数据处理要求的团队，Firecrawl 可通过 `enterprise` 参数为 `/search` 端点提供零数据保留 (ZDR) 选项。ZDR 搜索功能适用于 Enterprise 计划——访问 [firecrawl.dev/enterprise](https://www.firecrawl.dev/enterprise) 即可开始使用。
+
+<Note>
+  这与 `zeroDataRetention` 抓取选项不同，后者用于控制抓取操作的 ZDR。详见 [Scrape ZDR](/zh/features/scrape#zero-data-retention-zdr)。`enterprise` 参数仅适用于请求中的搜索部分。
+</Note>
+
+<div id="end-to-end-zdr">
+  ### 端到端 ZDR
+</div>
+
+使用端到端 ZDR 时，Firecrawl 及我们的上游搜索服务提供商均实行零数据保留。整个流程中的任何环节都不会存储查询或结果数据。
+
+* **成本：** 每 10 个结果 10 额度
+* **参数：** `enterprise: ["zdr"]`
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "sensitive topic",
+    "limit": 10,
+    "enterprise": ["zdr"]
+  }'
+```
+
+<div id="anonymized-zdr">
+  ### 匿名化 ZDR
+</div>
+
+使用匿名化 ZDR 时，Firecrawl 会在我们这一侧实施完全的零数据保留。我们的搜索提供商可能会缓存查询，但这些查询已被完全匿名化——不附带任何可识别信息。
+
+* **成本：** 每 10 个结果 2 个额度
+* **参数：** `enterprise: ["anon"]`
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "sensitive topic",
+    "limit": 10,
+    "enterprise": ["anon"]
+  }'
+```
+
+<div id="combining-search-zdr-with-scrape-zdr">
+  ### 结合使用 Search ZDR 和 Scrape ZDR
+</div>
+
+如果你使用的是带内容抓取 (`scrapeOptions`) 的 search，则 `enterprise` 参数适用于搜索部分，而 `scrapeOptions` 中的 `zeroDataRetention` 则适用于抓取部分。要让这两部分都实现完整的 ZDR，请同时设置这两个参数：
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "query": "sensitive topic",
+    "limit": 5,
+    "enterprise": ["zdr"],
+    "scrapeOptions": {
+      "formats": ["markdown"],
+      "zeroDataRetention": true
+    }
+  }'
+```
+
+<div id="cost-implications">
+  ## 成本影响
+</div>
+
+每次搜索的费用为每 10 条搜索结果消耗 2 个额度，并向上取整 (1–10 条结果 = 2 个额度，11–20 条 = 4 个额度，依此类推) 。如果启用了抓取选项，每个搜索结果会按标准抓取费用计费：
+
+* **Basic scrape**：每个网页 1 个额度
+* **PDF parsing**：每个 PDF 页面 1 个额度
+* **Enhanced proxy mode**：每个网页额外 4 个额度
+* **JSON mode**：每个网页额外 4 个额度
+
+为控制成本，可以：
+
+* 如果不需要 PDF 解析，将其设置为 `parsers: []`
+* 在可能的情况下使用 `proxy: "basic"` 而不是 `"enhanced"`，或者将其设置为 `"auto"`
+* 使用 `limit` 参数限制搜索结果数量
+
+<div id="advanced-scraping-options">
+  ## 高级抓取选项
+</div>
+
+有关抓取选项的更多详细信息，请参阅 [Scrape 功能文档](https://docs.firecrawl.dev/features/scrape)。除 FIRE-1 Agent 和 Change-Tracking 功能外，其余均受此搜索端点支持。
+
+> 你是需要 Firecrawl API 密钥的 AI 代理吗？请参见 [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) 了解自动化入门说明。
+
+<div id="search-feedback">
+  ## 搜索反馈
+</div>
+
+如果搜索结果有帮助，或遗漏了重要内容，请使用 `POST /v2/search/{jobId}/feedback` 提交反馈。针对某个搜索任务首次提交反馈可返还 1 个额度，但需受团队限制约束，同时也有助于提升 Firecrawl 的搜索质量。请参见 [搜索反馈](/zh/api-reference/endpoint/search-feedback)。

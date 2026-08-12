@@ -1,0 +1,594 @@
+---
+title: "fonte oficial em Python"
+description: "Fonte oficial do Firecrawl em Python para agentes que usam endpoints principais como busca, scraping e interagir."
+---
+
+Fonte oficial do Firecrawl em Python para agentes. Gerada a partir do código-fonte do SDK (`firecrawl-py` / `firecrawl` **4.22.1**) e da especificação OpenAPI v2. Nomes de métodos, parâmetros e tipos de retorno correspondem ao cliente v2 em `firecrawl/v2/client.py`, salvo indicação em contrário."
+
+<div id="install">
+  ## Instalação
+</div>
+
+```bash
+pip install firecrawl-py
+```
+
+<div id="authenticate">
+  ## Autenticação
+</div>
+
+```py
+import os
+from firecrawl import Firecrawl
+
+client = Firecrawl(api_key=os.environ.get("FIRECRAWL_API_KEY"))
+# client = Firecrawl(api_key="fc-...", api_url="https://api.firecrawl.dev")
+```
+
+<div id="when-to-use-what">
+  ## Quando usar cada opção
+</div>
+
+* `search`: use quando você começa com uma consulta e precisa descobrir resultados.
+* `scrape`: use quando você já tem uma URL e quer o conteúdo da página.
+* `interact`: use quando a página exige cliques, formulários ou ações no navegador após o scraping.
+* `support/ask`: use quando uma chamada da API do Firecrawl falha ou retorna resultados inesperados e você precisa de um diagnóstico.
+* `support/docs-search`: use quando você precisa consultar a documentação do Firecrawl.
+
+<div id="search">
+  ## Search
+</div>
+
+<div id="why-use-it">
+  ### Por que usar
+</div>
+
+Use a busca para descobrir páginas relevantes a partir de uma consulta e, em seguida, escolha URLs para fazer scraping ou interagir. Você pode restringir os resultados a um site com `site:`, por exemplo `site:docs.firecrawl.dev crawl webhooks`.
+
+<div id="preferred-sdk-method">
+  ### Método recomendado do SDK
+</div>
+
+`client.search(query, **options)` → `SearchData` (`firecrawl.v2.types`)
+
+<div id="return-value">
+  ### Valor de retorno
+</div>
+
+Retorna um modelo `SearchData` com listas opcionais:
+
+* `web` — resultados da web (`SearchResultWeb` ou `Document` completo quando `scrape_options` preenche o conteúdo)
+* `news` — resultados de notícias (`SearchResultNews` ou `Document`)
+* `images` — resultados de imagens (`SearchResultImages` ou `Document`)
+
+Os grupos omitidos são `None` quando a API não retorna essa chave.
+
+**Erro a evitar:** `search()` não retorna `{ data: [...] }`. Não acesse `result.data`. Os resultados da web estão em `result.web`, as notícias em `result.news` e as imagens em `result.images`.
+
+<div id="simple-example">
+  ### Exemplo simples
+</div>
+
+```py
+results = client.search("site:docs.firecrawl.dev webhook retries")
+for item in results.web or []:
+    print(getattr(item, "url", None), getattr(item, "title", None))
+```
+
+<div id="complex-example">
+  ### Exemplo complexo
+</div>
+
+```py
+from firecrawl.v2.types import ScrapeOptions
+
+results = client.search(
+    "site:docs.firecrawl.dev crawl webhooks",
+    sources=["web", "news"],
+    categories=["research"],
+    limit=10,
+    tbs="qdr:m",
+    location="San Francisco,California,United States",
+    ignore_invalid_urls=True,
+    timeout=300000,
+    scrape_options=ScrapeOptions(
+        formats=[
+            "markdown",
+            "links",
+            {"type": "json", "prompt": "Extract title and key endpoints."},
+        ],
+        only_main_content=True,
+        include_tags=["main", "article"],
+        exclude_tags=["nav", "footer"],
+        wait_for=1000,
+        actions=[
+            {"type": "click", "selector": "button#accept"},
+            {"type": "wait", "milliseconds": 750},
+            {"type": "scrape"},
+        ],
+    ),
+)
+```
+
+<div id="parameters">
+  ### Parâmetros
+</div>
+
+* `query`
+  * Tipo: str
+  * Use quando: você precisar de uma consulta de busca.
+  * Observações: use `site:example.com` para limitar os resultados a um domínio.
+
+* `sources`
+  * Tipo: lista de nomes de fontes ou objetos `Source`
+  * Use quando: você quiser controlar em quais fontes a busca será feita.
+  * Valores confirmados:
+    * `"web"`: resultados do índice da web
+    * `"news"`: resultados de notícias
+    * `"images"`: resultados de imagens
+    * `Source(type="web" | "news" | "images")`: formato de objeto de fonte tipado
+
+* `categories`
+  * Tipo: lista de nomes de categorias ou objetos `Category`
+  * Use quando: você quiser filtrar os resultados por categoria.
+  * Valores confirmados:
+    * `"github"`: resultados focados no GitHub
+    * `"research"`: resultados de pesquisa e acadêmicos
+    * `"pdf"`: resultados focados em PDF
+    * `Category(type="github" | "research" | "pdf")`: formato de objeto de categoria tipado
+
+* `limit`
+  * Tipo: int
+  * Use quando: você quiser limitar a quantidade de resultados.
+  * Observações: o padrão é `5` no modelo do SDK.
+
+* `tbs`
+  * Tipo: str
+  * Use quando: você precisar de um filtro baseado em tempo (por exemplo, `qdr:d`, `qdr:w`, `sbd:1,qdr:m`).
+
+* `location`
+  * Tipo: str
+  * Use quando: você quiser resultados localizados.
+
+* `ignore_invalid_urls`
+  * Tipo: bool
+  * Use quando: você quiser descartar URLs que não podem passar por scraping em outros endpoints.
+
+* `timeout`
+  * Tipo: int
+  * Use quando: você precisar de um tempo limite de request em milissegundos.
+  * Observações: o padrão é `300000` no modelo do SDK.
+
+* `scrape_options`
+  * Tipo: `ScrapeOptions`
+  * Use quando: você quiser fazer scraping de cada resultado de busca (consulte os parâmetros de Scrape para ver os campos).
+
+<div id="scrape">
+  ## Scrape
+</div>
+
+<div id="why-use-it">
+  ### Por que usar
+</div>
+
+Use o `scraping` quando você já tiver uma URL e quiser conteúdo estruturado em um ou mais formatos.
+
+<div id="preferred-sdk-method">
+  ### Método recomendado do SDK
+</div>
+
+`client.scrape(url, **options)` → `Document` (`firecrawl.v2.types`)
+
+<div id="simple-example">
+  ### Exemplo simples
+</div>
+
+```py
+doc = client.scrape("https://docs.firecrawl.dev", formats=["markdown"])
+```
+
+<div id="complex-example">
+  ### Exemplo complexo
+</div>
+
+```py
+doc = client.scrape(
+    "https://example.com/pricing",
+    formats=[
+        "markdown",
+        "links",
+        {"type": "json", "prompt": "Extract plan names and prices."},
+        {"type": "screenshot", "full_page": True, "quality": 80, "viewport": {"width": 1280, "height": 720}},
+        {"type": "changeTracking", "modes": ["git-diff"], "tag": "pricing"},
+        {"type": "attributes", "selectors": [{"selector": "a", "attribute": "href"}]},
+    ],
+    headers={"User-Agent": "FirecrawlDocsBot/1.0"},
+    only_main_content=True,
+    wait_for=1000,
+    parsers=[{"type": "pdf", "mode": "auto", "max_pages": 5}],
+    actions=[
+        {"type": "click", "selector": "#accept"},
+        {"type": "wait", "milliseconds": 750},
+        {"type": "scrape"},
+    ],
+    location={"country": "US", "languages": ["en-US"]},
+    remove_base64_images=True,
+    fast_mode=True,
+    block_ads=True,
+    proxy="auto",
+    max_age=86400000,
+    store_in_cache=True,
+    profile={"name": "docs-session", "save_changes": True},
+)
+```
+
+<div id="parameters">
+  ### Parâmetros
+</div>
+
+* `url`
+  * Tipo: str
+  * Use quando: quiser fazer scraping de uma página específica.
+
+* `formatos`
+  * Tipo: lista de strings ou objetos de formato
+  * Use quando: você quiser vários formatos de resultado.
+  * Strings de formato aceitas:
+    * `"markdown"`: conteúdo em markdown
+    * `"html"`: HTML limpo
+    * `"rawHtml"` ou `"raw_html"`: HTML bruto
+    * `"links"`: links da página
+    * `"images"`: URLs de imagens
+    * `"screenshot"`: resultado de captura de tela
+    * `"summary"`: resultado com resumo
+    * `"changeTracking"` ou `"change_tracking"`: resultado de rastreamento de mudanças
+    * `"attributes"`: extração de atributos
+    * `"branding"`: resultado do perfil de branding
+    * `"audio"`: extração de áudio
+    * `"video"`: extração de vídeo
+  * Tipos de formato somente por objeto:
+    * `{"type": "json", ...}`: extração JSON. Use um objeto, não a string simples `"json"`.
+    * `{"type": "question", "question": "..."}`: resultado de perguntas e respostas.
+    * `{"type": "highlights", "query": "..."}`: resultado de trechos relevantes do texto-fonte.
+  * Campos do objeto de formato:
+    * `type`: uma das strings de formato acima, ou `"json"`, `"question"` ou `"highlights"` para formatos somente por objeto
+    * `question`: para `type: "question"`
+    * `query`: para `type: "highlights"`
+    * `prompt`: opcional para `type: "json"`
+    * `schema`: schema JSON para `type: "json"` ou para o modo JSON de rastreamento de mudanças
+    * `modes`: array de `"git-diff"` ou `"json"` para `type: "changeTracking"`
+    * `tag`: tag de rastreamento de mudanças para `type: "changeTracking"`
+    * `full_page`, `quality`, `viewport`: opções de captura de tela para `type: "screenshot"`
+    * `selectors`: array de `{selector, attribute}` para `type: "attributes"`
+
+* `headers`
+  * Tipo: dict de str para str
+  * Use quando: você precisar de cabeçalhos de requisição personalizados.
+
+* `include_tags`
+  * Tipo: lista de str
+  * Use nos casos em que: você quiser incluir apenas tags HTML específicas.
+
+* `exclude_tags`
+  * Tipo: lista de str
+  * Use quando: quiser excluir tags HTML específicas.
+
+* `only_main_content`
+  * Tipo: bool
+  * Use nos casos em que: você quiser remover a navegação, o rodapé e outros elementos boilerplate.
+
+* `tempo limite`
+  * Tipo: int
+  * Use quando: precisar de um tempo limite em milissegundos.
+
+* `wait_for`
+  * Tipo: int
+  * Use quando: for necessário aguardar a renderização da página (milissegundos).
+
+* `mobile`
+  * Tipo: bool
+  * Use quando: você quiser uma viewport para dispositivos móveis.
+
+* `parsers`
+  * Tipo: lista de nomes de parser ou objetos de parser
+  * Use quando: precisar de controles de análise de arquivos (por exemplo, análise de PDF).
+  * Valores confirmados:
+    * `"pdf"`: ativa a análise de PDF
+    * `{ "type": "pdf", "mode": "fast" | "auto" | "ocr", "max_pages": int }`: opções do parser de PDF
+
+* `ações`
+  * Tipo: lista de objetos de ação
+  * Use quando: precisar de ações leves antes do scraping.
+  * Tipos de ação confirmados:
+    * `wait`: `milliseconds` ou `selector` obrigatório
+    * `screenshot`: `full_page`, `quality`, `viewport` opcionais
+    * `click`: `selector` obrigatório
+    * `write`: `text` obrigatório (clique primeiro para focar o campo de entrada)
+    * `press`: `key` obrigatório
+    * `scroll`: `direction` (`up` ou `down`) obrigatório, `selector` opcional
+    * `scrape`: nenhum campo adicional
+    * `executeJavascript`: `script` obrigatório
+    * `pdf`: `format` (A0, A1, A2, A3, A4, A5, A6, Letter, Legal, Tabloid, Ledger), `landscape`, `scale` opcionais
+
+* `location`
+  * Tipo: dict com `country` e `languages`
+  * Use quando: você precisar de scraping com reconhecimento de localização geográfica ou de idioma.
+
+* `skip_tls_verification`
+  * Tipo: bool
+  * Use este parâmetro quando: você precisar ignorar a verificação de TLS.
+
+* `remove_base64_images`
+  * Tipo: bool
+  * Use quando: você quiser excluir imagens em base64 da saída em markdown.
+
+* `fast_mode`
+  * Tipo: bool
+  * Use quando: você quiser scraping mais rápido com fidelidade reduzida.
+
+* `block_ads`
+  * Tipo: bool
+  * Use quando: você quiser bloquear anúncios e pop-ups de cookies.
+
+* `proxy`
+  * Tipo: str
+  * Use quando: você precisar de controle de proxy.
+  * Valores aceitos: `"basic"`, `"stealth"`, `"enhanced"`, `"auto"`
+
+* `max_age`
+  * Tipo: int
+  * Use quando: você quiser dados em cache com no máximo esta idade (em milissegundos).
+
+* `min_age`
+  * Tipo: int
+  * Use quando: você quiser dados em cache apenas se eles tiverem pelo menos esta idade (em milissegundos).
+  * Observações: disponível apenas em `ScrapeOptions` passado como `scrape_options` para `client.search`. O método `client.scrape` não aceita `min_age`.
+
+* `store_in_cache`
+  * Tipo: bool
+  * Use quando: quiser que o Firecrawl armazene o resultado em cache.
+
+* `profile`
+  * Tipo: dict com `name` e `save_changes` ou `saveChanges` opcionais
+  * Use quando: você quiser um perfil persistente do navegador compartilhado entre operações de scraping e interações.
+
+<div id="interact">
+  ## Interagir
+</div>
+
+<div id="why-use-it">
+  ### Por que usar
+</div>
+
+Use interagir quando uma página exigir ações no navegador ou execução de código depois que o scraping começar.
+
+<div id="preferred-sdk-method">
+  ### Método recomendado do SDK
+</div>
+
+`client.interact(job_id, code=None, *, prompt=None, language="node", timeout=None)`
+
+`prompt` é um argumento somente por nome: chame `client.interact(job_id, prompt="...")` ou `client.interact(job_id, code="...")`. Pelo menos um de `code` ou `prompt` deve estar preenchido (validado em `firecrawl/v2/methods/scrape.py`).
+
+<div id="simple-example">
+  ### Exemplo simples
+</div>
+
+```py
+doc = client.scrape("https://example.com", formats=["markdown"])
+job_id = doc.metadata.scrape_id if doc.metadata else None
+if not job_id:
+    raise RuntimeError("Missing scrape_id from scrape response")
+
+result = client.interact(job_id, prompt="Click the pricing tab and summarize the plans.")
+```
+
+<div id="complex-example">
+  ### Exemplo complexo
+</div>
+
+```py
+result = client.interact(
+    "<scrapeJobId>",
+    code="print(await page.title())",
+    language="python",
+    timeout=60,
+)
+```
+
+<div id="stop-session">
+  ### Encerrar sessão
+</div>
+
+`client.stop_interaction(job_id)` encerra a sessão do navegador vinculada ao scraping. Retorna `BrowserDeleteResponse` (`success`, `session_duration_ms` opcional, `credits_billed`, `error`).
+
+<div id="parameters">
+  ### Parâmetros
+</div>
+
+* `job_id`
+  * Tipo: str
+  * Use quando: você tiver um ID de job de scraping de `document.metadata.scrape_id`.
+
+* `code`
+  * Tipo: str
+  * Use quando: você quiser executar código na sessão do navegador (opcional se `prompt` estiver definido).
+
+* `prompt`
+  * Tipo: str
+  * Use quando: você quiser que o agente do navegador siga uma instrução em linguagem natural (opcional se `code` estiver definido).
+
+* `language`
+  * Tipo: str
+  * Use quando: você precisar de um runtime específico.
+  * Valores confirmados: `"python"`, `"node"`, `"bash"`
+  * Observações: o valor padrão no SDK é `"node"`.
+
+* `timeout`
+  * Tipo: int
+  * Use quando: você precisar de um tempo limite de execução em segundos.
+
+<div id="return-value">
+  ### Valor de retorno
+</div>
+
+Retorna `BrowserExecuteResponse`: `success`, `live_view_url` (opcional), `interactive_live_view_url`, `output`, `stdout`, `result`, `stderr`, `exit_code`, `killed`, `error` (o camelCase da API é normalizado para snake&#95;case no modelo).
+
+<div id="ask-agentic-debugging">
+  ## Ask (Depuração com agentes)
+</div>
+
+<div id="why-use-it">
+  ### Por que usar
+</div>
+
+Use o ask quando uma chamada da API do Firecrawl falhar ou retornar resultados inesperados. O agente de suporte com IA diagnostica o problema, sugere parâmetros de correção e, opcionalmente, valida a correção na API em produção. Latência típica: 15 a 30 segundos.
+
+<div id="preferred-sdk-method">
+  ### Método recomendado do SDK
+</div>
+
+Ainda não está disponível no SDK Python. Use `requests` ou `httpx` diretamente.
+
+### Exemplo básico
+
+```py
+import requests
+
+response = requests.post(
+    "https://api.firecrawl.dev/v2/support/ask",
+    headers={
+        "Authorization": f"Bearer {os.environ['FIRECRAWL_API_KEY']}",
+        "Content-Type": "application/json",
+    },
+    json={"question": "my scrape returned empty markdown for https://example.com"},
+)
+result = response.json()
+print(result["answer"])
+print(result["fixParameters"])
+```
+
+<div id="complex-example">
+  ### Exemplo complexo
+</div>
+
+```py
+import requests
+
+response = requests.post(
+    "https://api.firecrawl.dev/v2/support/ask",
+    headers={
+        "Authorization": f"Bearer {os.environ['FIRECRAWL_API_KEY']}",
+        "Content-Type": "application/json",
+    },
+    json={
+        "question": "crawl returned 3 pages but I expected 50",
+        "rationale": "user is on their third failed crawl attempt today",
+        "context": {"userPlan": "standard", "retryCount": 3},
+    },
+)
+result = response.json()
+```
+
+<div id="agent-retry-pattern">
+  ### Padrão de retentativa do agente
+</div>
+
+```py
+from firecrawl import Firecrawl
+import requests, os
+
+client = Firecrawl(api_key=os.environ["FIRECRAWL_API_KEY"])
+
+doc = client.scrape("https://example.com/pricing", formats=["markdown"])
+
+if not doc.markdown or len(doc.markdown) < 100:
+    diagnosis = requests.post(
+        "https://api.firecrawl.dev/v2/support/ask",
+        headers={
+            "Authorization": f"Bearer {os.environ['FIRECRAWL_API_KEY']}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "question": f"scrape returned only {len(doc.markdown or '')} chars for https://example.com/pricing",
+        },
+    ).json()
+
+    if diagnosis.get("fixParameters"):
+        doc = client.scrape(
+            "https://example.com/pricing",
+            formats=["markdown"],
+            **diagnosis["fixParameters"],
+        )
+```
+
+<div id="parameters">
+  ### Parâmetros
+</div>
+
+* `question`
+  * Tipo: str (obrigatório, 1-8000 caracteres)
+  * Use quando: você precisar descrever o problema.
+
+* `rationale`
+  * Tipo: str (1-2000 caracteres)
+  * Use quando: você for um agente de IA fazendo uma chamada em nome de um usuário.
+
+* `context`
+  * Tipo: dict (formato livre)
+  * Use quando: você quiser passar metadados para o prompt de depuração.
+
+<div id="docs-search">
+  ## Busca na documentação
+</div>
+
+<div id="why-use-it">
+  ### Por que usar
+</div>
+
+Use `docs-search` para consultar a documentação do Firecrawl.
+
+### Exemplo básico
+
+```py
+import requests
+
+FIRECRAWL_API_KEY = "fc-YOUR_API_KEY"
+
+response = requests.post(
+    "https://api.firecrawl.dev/v2/support/docs-search",
+    headers={"Authorization": f"Bearer {FIRECRAWL_API_KEY}"},
+    json={"question": "how do I verify webhook signatures?"},
+)
+print(response.json()["answer"])
+```
+
+<div id="parameters">
+  ### Parâmetros
+</div>
+
+* `question`
+  * Tipo: str (obrigatório, 1-8000 caracteres)
+  * Use quando: precisar de uma resposta baseada na documentação.
+
+<div id="notes">
+  ## Notas
+</div>
+
+* Aliases descontinuados: `scrape_execute` → `interact`; `stop_interactive_browser` e `delete_scrape_browser` → `stop_interaction`.
+* O cliente principal `Firecrawl` expõe os métodos v2 diretamente; a v1 permanece em `client.v1`.
+* O snippet de OpenAPI v2 incluído para `POST /v2/scrape/{jobId}/interact` pode documentar apenas `code`; o SDK Python e o servidor aceitam `code` ou `prompt` para esse endpoint.
+
+<div id="source-of-truth">
+  ## fonte oficial
+</div>
+
+* `firecrawl/apps/python-sdk/pyproject.toml`
+* `firecrawl/apps/python-sdk/firecrawl/__init__.py`
+* `firecrawl/apps/python-sdk/firecrawl/client.py`
+* `firecrawl/apps/python-sdk/firecrawl/v2/client.py`
+* `firecrawl/apps/python-sdk/firecrawl/v2/types.py`
+* `firecrawl/apps/python-sdk/firecrawl/v2/methods/search.py`
+* `firecrawl/apps/python-sdk/firecrawl/v2/methods/scrape.py`
+* `firecrawl/apps/python-sdk/firecrawl/v2/utils/validation.py`
+* `firecrawl-docs/api-reference/v2-openapi.json`

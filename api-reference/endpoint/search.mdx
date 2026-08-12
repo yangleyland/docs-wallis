@@ -1,0 +1,121 @@
+---
+title: 'Search'
+openapi: '/api-reference/v2-openapi.json POST /search'
+---
+
+The search endpoint combines web search with Firecrawl's scraping capabilities to return full page content for any query.
+
+Include `scrapeOptions` with `formats: [{"type": "markdown"}]` to get complete markdown content for each search result otherwise you will default to getting the results (url, title, description). You can also use other formats like `{"type": "summary"}` for condensed content.
+
+## Supported query operators
+We support a variety of query operators that allow you to filter your searches better.
+
+| Operator | Functionality | Examples |
+---|-|-|
+| `""` | Non-fuzzy matches a string of text | `"Firecrawl"`
+| `-` | Excludes certain keywords or negates other operators | `-bad`, `-site:firecrawl.dev`
+| `site:` | Only returns results from a specified website | `site:firecrawl.dev`
+| `filetype:` | Only returns results with a specific file extension | `filetype:pdf`, `-filetype:pdf`
+| `inurl:` | Only returns results that include a word in the URL | `inurl:firecrawl`
+| `allinurl:` | Only returns results that include multiple words in the URL | `allinurl:git firecrawl`
+| `intitle:` | Only returns results that include a word in the title of the page | `intitle:Firecrawl`
+| `allintitle:` | Only returns results that include multiple words in the title of the page | `allintitle:firecrawl playground`
+| `related:` | Only returns results that are related to a specific domain | `related:firecrawl.dev`
+| `imagesize:` | Only returns images with exact dimensions | `imagesize:1920x1080`
+| `larger:` | Only returns images larger than specified dimensions | `larger:1920x1080`
+
+## Location Parameter
+
+Use the `location` parameter to get geo-targeted search results. Format: `"string"`. Examples: `"Germany"`, `"San Francisco,California,United States"`.
+
+See the [complete list of supported locations](https://firecrawl.dev/search_locations.json) for all available countries and languages.
+
+## Country Parameter
+
+Use the `country` parameter to specify the country for search results using ISO country codes. Default: `"US"`.
+
+Examples: `"US"`, `"DE"`, `"FR"`, `"JP"`, `"UK"`, `"CA"`.
+
+```json
+{
+  "query": "restaurants",
+  "country": "DE"
+}
+```
+
+## Categories Parameter
+
+Filter search results by specific categories using the `categories` parameter:
+
+- **`github`**: Search within GitHub repositories, code, issues, and documentation
+- **`research`**: Search academic and research websites (arXiv, Nature, IEEE, PubMed, etc.)
+- **`pdf`**: Search for PDFs
+
+
+### Example Usage
+
+```json
+{
+  "query": "machine learning",
+  "categories": ["github", "research"],
+  "limit": 10
+}
+```
+
+## Domain Filters
+
+Use `includeDomains` to restrict results to specific domains, or `excludeDomains` to remove specific domains from the search. Domains should be hostnames only, without protocol or path.
+
+`includeDomains` and `excludeDomains` are mutually exclusive.
+
+### Include Domains Example
+
+```json
+{
+  "query": "web scraping",
+  "includeDomains": ["firecrawl.dev", "docs.firecrawl.dev"],
+  "limit": 10
+}
+```
+
+### Exclude Domains Example
+
+```json
+{
+  "query": "web scraping tools",
+  "excludeDomains": ["example.com"],
+  "limit": 10
+}
+```
+
+### Category Response
+
+Each result includes a `category` field indicating its source:
+
+```json
+{
+  "success": true,
+  "data": {
+    "web": [
+      {
+        "url": "https://github.com/example/ml-project",
+        "title": "Machine Learning Project",
+        "description": "Implementation of ML algorithms",
+        "category": "github"
+      },
+      {
+        "url": "https://arxiv.org/abs/2024.12345",
+        "title": "ML Research Paper",
+        "description": "Latest advances in machine learning",
+        "category": "research"
+      }
+    ]
+  }
+}
+```
+
+## Time-Based Search
+
+Use the `tbs` parameter to filter results by time periods, including custom date ranges. See the [Search Feature documentation](https://docs.firecrawl.dev/features/search#time-based-search) for detailed examples and supported formats.
+
+> Are you an AI agent that needs a Firecrawl API key? See [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) for automated onboarding instructions.

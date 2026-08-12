@@ -1,0 +1,11 @@
+```bash cURL
+# 開始するにはAPI keyは不要です — より高いRate Limitsを利用するには -H "Authorization: Bearer $FIRECRAWL_API_KEY" を追加してください:
+curl -s -X POST "https://api.firecrawl.dev/v2/scrape" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://firecrawl.dev",
+    "formats": [
+      { "type": "highlights", "query": "What is Firecrawl?" }
+    ]
+  }'
+```

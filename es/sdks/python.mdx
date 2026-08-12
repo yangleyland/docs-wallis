@@ -1,0 +1,413 @@
+---
+title: "Python"
+description: "El SDK de Python de Firecrawl es un envoltorio de la API de Firecrawl que te ayuda a convertir sitios web en Markdown fácilmente."
+icon: "python"
+og:title: "SDK de Python | Firecrawl"
+og:description: "El SDK de Python de Firecrawl es un envoltorio de la API de Firecrawl que te ayuda a convertir sitios web en Markdown fácilmente."
+---
+
+import InstallationPython from '/snippets/es/v2/installation/python.mdx'
+import ScrapePythonShort from '/snippets/es/v2/scrape/short/python.mdx'
+import CrawlPythonShort from '/snippets/es/v2/crawl/short/python.mdx'
+import CrawlSitemapOnlyPython from '/snippets/es/v2/crawl/sitemap-only/python.mdx'
+import CheckCrawlStatusPythonShort from '/snippets/es/v2/crawl-status/short/python.mdx'
+import StartCrawlPythonShort from '/snippets/es/v2/start-crawl/short/python.mdx'
+import CancelCrawlPythonShort from '/snippets/es/v2/crawl-delete/short/python.mdx'
+import MapPythonShort from '/snippets/es/v2/map/short/python.mdx'
+import ExtractPythonShort from '/snippets/v2/extract/short/python.mdx'
+import ScrapeAndCrawlExamplePython from '/snippets/es/v2/scrape-and-crawl/python.mdx'
+import CrawlWebSocketPythonBase from '/snippets/es/v2/crawl-websocket/base/python.mdx'
+import PersistentPython from '/snippets/es/v2/browser/persistent/python.mdx'
+import AIOPython from '/snippets/es/v2/async/base/python.mdx'
+
+<div id="installation">
+  ## Instalación
+</div>
+
+Para instalar el SDK de Python de Firecrawl, puedes usar pip:
+
+<InstallationPython />
+
+<div id="usage">
+  ## Uso
+</div>
+
+Obtén una clave de API en [firecrawl.dev](https://firecrawl.dev) y luego defínela como una variable de entorno llamada `FIRECRAWL_API_KEY` o pásala directamente a la clase `Firecrawl`.
+
+<Note>
+  **¿No tienes una clave de API?** Puedes instanciar `Firecrawl` sin una clave y usar `scrape`, `search` e `interact` en el plan Free sin clave (con límite de tasa por IP — consulta [Rate Limits](/es/rate-limits#keyless-no-api-key)). Todos los demás métodos requieren una clave.
+</Note>
+
+<ScrapeAndCrawlExamplePython />
+
+<div id="scraping-a-url">
+  ### Extracción de una URL
+</div>
+
+Para extraer una sola URL, usa el método `scrape`. Devuelve el contenido de la página como datos estructurados, incluidos markdown, metadatos y cualquier otro formato que solicites.
+
+<ScrapePythonShort />
+
+<Note>
+  El SDK de Python convierte todos los nombres de los campos de la respuesta de `camelCase` a `snake_case`. Por ejemplo, los campos de metadatos como `ogImage`, `ogTitle` y `sourceURL` de la API se convierten en `og_image`, `og_title` y `source_url` en la respuesta del SDK.
+</Note>
+
+<div id="parsing-uploaded-files">
+  ### Análisis de archivos cargados
+</div>
+
+Usa `parse` para cargar archivos locales (`html`, `pdf`, `docx`, `xlsx`, etc.) directamente en `/v2/parse`.
+`parse` no admite `changeTracking` ni opciones exclusivas del navegador, como acciones, wait&#95;for, location, mobile, screenshot y branding.
+
+```python Python
+from firecrawl.v2.types import ParseOptions
+
+parsed = firecrawl.parse(
+    b"<!DOCTYPE html><html><body><h1>Python Parse</h1></body></html>",
+    filename="upload.html",
+    content_type="text/html",
+    options=ParseOptions(formats=["markdown"]),
+)
+
+print(parsed.markdown)
+```
+
+<div id="crawl-a-website">
+  ### Rastrear un sitio web
+</div>
+
+Para rastrear un sitio web, usa el método `crawl`. Recibe la URL inicial y opciones opcionales como argumentos. Estas opciones te permiten definir ajustes adicionales para el trabajo de rastreo, como el número máximo de páginas a rastrear, los dominios permitidos y el formato de salida. Consulta [Paginación](#pagination) para la paginación automática/manual y los límites.
+
+<CrawlPythonShort />
+
+<div id="sitemap-only-crawl">
+  ### Rastreo solo del sitemap
+</div>
+
+Usa `sitemap="only"` para rastrear únicamente las URLs del sitemap (la URL inicial siempre se incluye y se omite la detección de enlaces HTML).
+
+<CrawlSitemapOnlyPython />
+
+<div id="start-a-crawl">
+  ### Iniciar un rastreo
+</div>
+
+<Tip>¿Prefieres no bloquear? Consulta la sección [Clase asíncrona](#async-class) a continuación.</Tip>
+
+Inicia un trabajo sin esperar con `start_crawl`. Devuelve un `ID` de trabajo que puedes usar para consultar el estado. Usa `crawl` cuando quieras un “waiter” que bloquee hasta completarse. Consulta [Paginación](#pagination) para el comportamiento y los límites de paginado.
+
+<StartCrawlPythonShort />
+
+<div id="checking-crawl-status">
+  ### Consultar el estado del rastreo
+</div>
+
+Consulta el estado de un trabajo de rastreo con `get_crawl_status`. Pasa el ID de trabajo y obtén el estado actual junto con los resultados recopilados hasta el momento.
+
+<CheckCrawlStatusPythonShort />
+
+<div id="cancelling-a-crawl">
+  ### Cancelar un rastreo
+</div>
+
+Cancela un trabajo de rastreo con el método `cancel_crawl`. Pasa el ID de trabajo devuelto por `start_crawl` para obtener el estado de la cancelación.
+
+<CancelCrawlPythonShort />
+
+<div id="map-a-website">
+  ### Mapear un sitio web
+</div>
+
+Usa `map` para generar una lista de URL de un sitio web. Las opciones te permiten personalizar el proceso de mapeo, como excluir subdominios o aprovechar el sitemap.
+
+<MapPythonShort />
+
+{/* ### Extracción de datos estructurados de sitios web
+
+  Para extraer datos estructurados de sitios web, usa el método `extract`. Recibe las URL de las que extraer datos, un prompt y un esquema como argumentos. El esquema es un modelo de Pydantic que define la estructura de los datos extraídos.
+
+  <ExtractPythonShort /> */}
+
+<div id="crawling-a-website-with-websockets">
+  ### Rastreo de un sitio web con WebSockets
+</div>
+
+Para rastrear un sitio web con WebSockets, inicia el trabajo con `start_crawl` y suscríbete usando el helper `watcher`. Crea un watcher con el ID del trabajo y adjunta handlers (p. ej., para page, completed, failed) antes de llamar a `start()`.
+
+<CrawlWebSocketPythonBase />
+
+<div id="pagination">
+  ### Paginación
+</div>
+
+Los puntos de conexión de Firecrawl para crawl y batch scrape devuelven una URL `next` cuando hay más datos disponibles. El SDK de Python paginá automáticamente por defecto y agrega todos los documentos; en ese caso `next` será `None`. Puedes desactivar la paginación automática o establecer límites para controlar el comportamiento de la paginación.
+
+<div id="paginationconfig">
+  #### PaginationConfig
+</div>
+
+Utiliza `PaginationConfig` para controlar el comportamiento de la paginación al llamar a `get_crawl_status` o `get_batch_scrape_status`:
+
+```python Python
+from firecrawl.v2.types import PaginationConfig
+```
+
+| Opción          | Tipo   | Valor predeterminado | Descripción                                                                                                                                   |
+| --------------- | ------ | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auto_paginate` | `bool` | `True`               | Cuando es `True`, obtiene automáticamente todas las páginas y agrupa los resultados. Establécelo en `False` para obtener una página a la vez. |
+| `max_pages`     | `int`  | `None`               | Se detiene después de obtener esta cantidad de páginas (solo se aplica cuando `auto_paginate=True`).                                          |
+| `max_results`   | `int`  | `None`               | Se detiene después de recopilar esta cantidad de documentos (solo se aplica cuando `auto_paginate=True`).                                     |
+| `max_wait_time` | `int`  | `None`               | Se detiene después de esta cantidad de segundos (solo se aplica cuando `auto_paginate=True`).                                                 |
+
+<div id="manual-pagination-helpers">
+  #### Utilidades para paginación manual
+</div>
+
+Cuando `auto_paginate=False`, la respuesta incluye una URL `next` si hay más datos disponibles. Utiliza estos métodos auxiliares para obtener las páginas siguientes:
+
+* **`get_crawl_status_page(next_url)`** - Obtiene la siguiente página de resultados de `crawl` usando la URL opaca `next` de una respuesta anterior.
+* **`get_batch_scrape_status_page(next_url)`** - Obtiene la siguiente página de resultados de `batch scrape` usando la URL opaca `next` de una respuesta anterior.
+
+Estos métodos devuelven el mismo tipo de respuesta que la llamada de estado original, incluida una nueva URL `next` si quedan más páginas.
+
+<div id="crawl">
+  #### Rastreo
+</div>
+
+Usa el método auxiliar `crawl` para la forma más sencilla, o inicia un job y pagina manualmente.
+
+<div id="simple-crawl-auto-pagination-default">
+  ##### Rastreo simple (paginación automática, por defecto)
+</div>
+
+* Consulta el flujo por defecto en [Rastrear un sitio web](#crawl-a-website).
+
+<div id="manual-crawl-with-pagination-control">
+  ##### Rastreo manual con control de paginación
+</div>
+
+Inicia un job y luego recupera una página a la vez con `auto_paginate=False`. Usa `get_crawl_status_page` para recuperar las páginas posteriores:
+
+```python Python
+crawl_job = client.start_crawl("https://example.com", limit=100)
+
+# Fetch first page
+status = client.get_crawl_status(
+    crawl_job.id,
+    pagination_config=PaginationConfig(auto_paginate=False)
+)
+print("First page:", len(status.data), "docs")
+
+# Obtener páginas siguientes usando get_crawl_status_page
+while status.next:
+    status = client.get_crawl_status_page(status.next)
+    print("Next page:", len(status.data), "docs")
+```
+
+<div id="manual-crawl-with-limits-auto-pagination-early-stop">
+  ##### Rastreo manual con límites (paginación automática + detención anticipada)
+</div>
+
+Mantén la paginación automática activada, pero deténla antes con `max_pages`, `max_results` o `max_wait_time`:
+
+```python Python
+status = client.get_crawl_status(
+    crawl_job.id,
+    pagination_config=PaginationConfig(max_pages=2, max_results=50, max_wait_time=15),
+)
+print("rastreo limitado:", status.status, "docs:", len(status.data), "siguiente:", status.next)
+```
+
+<div id="batch-scrape">
+  #### Extracción por lotes
+</div>
+
+Usa el método de espera `batch_scrape` o inicia un job y pagina manualmente.
+
+<div id="simple-batch-scrape-auto-pagination-default">
+  ##### Raspado por lotes simple (paginación automática, por defecto)
+</div>
+
+* Consulta el flujo por defecto en [Batch Scrape](/es/features/batch-scrape).
+
+<div id="manual-batch-scrape-with-pagination-control">
+  ##### Extracción por lotes manual con control de paginación
+</div>
+
+Inicia un trabajo y luego obtén una página a la vez con `auto_paginate=False`. Usa `get_batch_scrape_status_page` para obtener las páginas siguientes:
+
+```python Python
+batch_job = client.start_batch_scrape(urls)
+
+# Obtener la primera página
+status = client.get_batch_scrape_status(
+    batch_job.id,
+    pagination_config=PaginationConfig(auto_paginate=False)
+)
+print("Primera página:", len(status.data), "docs")
+
+# Obtener las páginas siguientes usando get_batch_scrape_status_page
+while status.next:
+    status = client.get_batch_scrape_status_page(status.next)
+    print("Siguiente página:", len(status.data), "docs")
+```
+
+<div id="manual-batch-scrape-with-limits-auto-pagination-early-stop">
+  ##### Raspado manual por lotes con límites (paginación automática + detención anticipada)
+</div>
+
+Mantén la paginación automática activada, pero detén antes con `max_pages`, `max_results` o `max_wait_time`:
+
+```python Python
+status = client.get_batch_scrape_status(
+    batch_job.id,
+    pagination_config=PaginationConfig(max_pages=2, max_results=100, max_wait_time=20),
+)
+print("lote limitado:", status.status, "docs:", len(status.data), "siguiente:", status.next)
+```
+
+<div id="error-handling">
+  ## Manejo de errores
+</div>
+
+Cuando una petición falla, el SDK genera una excepción con un mensaje descriptivo que explica qué salió mal. Encapsula las llamadas en `try`/`except` para capturar estas excepciones y manejar los errores en tu aplicación.
+
+<div id="async-class">
+  ## Clase asíncrona
+</div>
+
+Para operaciones asíncronas, utiliza la clase `AsyncFirecrawl`. Sus métodos son equivalentes a los de `Firecrawl`, pero no bloquean el hilo principal.
+
+<AIOPython />
+
+```python Python
+from firecrawl import AsyncFirecrawl
+
+async_firecrawl = AsyncFirecrawl(api_key="fc-YOUR-API-KEY")
+
+parsed = await async_firecrawl.parse(
+    b"<!DOCTYPE html><html><body><h1>Async Parse</h1></body></html>",
+    filename="upload.html",
+    content_type="text/html",
+)
+```
+
+<div id="browser">
+  ## Navegador
+</div>
+
+Inicia sesiones de navegador en la nube y ejecuta código de forma remota.
+
+<div id="create-a-session">
+  ### Crear una sesión
+</div>
+
+```python Python
+from firecrawl import Firecrawl
+
+app = Firecrawl(api_key="fc-YOUR-API-KEY")
+
+session = app.browser()
+print(session.id)             # ID de sesión
+print(session.cdp_url)        # wss://cdp-proxy.firecrawl.dev/cdp/...
+print(session.live_view_url)  # https://liveview.firecrawl.dev/...
+```
+
+<div id="execute-code">
+  ### Ejecutar código
+</div>
+
+```python Python
+result = app.browser_execute(
+    session.id,
+    code='await page.goto("https://news.ycombinator.com")\ntitle = await page.title()\nprint(title)',
+    language="python",
+)
+print(result.result)  # "Hacker News"
+```
+
+Ejecutar JavaScript en lugar de Python:
+
+```python Python
+result = app.browser_execute(
+    session.id,
+    code='await page.goto("https://example.com"); const t = await page.title(); console.log(t);',
+    language="node",
+)
+```
+
+<div id="profiles">
+  ### Perfiles
+</div>
+
+Guarda y reutiliza el estado del navegador (cookies, localStorage, etc.) entre sesiones:
+
+<PersistentPython />
+
+<div id="connect-via-cdp">
+  ### Conectar vía CDP
+</div>
+
+Para tener control total de Playwright, conéctate directamente mediante la URL de CDP:
+
+```python Python
+from playwright.sync_api import sync_playwright
+
+with sync_playwright() as p:
+    browser = p.chromium.connect_over_cdp(session.cdp_url)
+    context = browser.contexts[0]
+    page = context.pages[0] if context.pages else context.new_page()
+
+    page.goto("https://example.com")
+    print(page.title())
+
+    browser.close()
+```
+
+<div id="list-close-sessions">
+  ### Listar y cerrar sesiones
+</div>
+
+```python Python
+# List active sessions
+sessions = app.list_browsers(status="active")
+for s in sessions.sessions:
+    print(s.id, s.status, s.created_at)
+
+# Close a session
+app.delete_browser(session.id)
+```
+
+<div id="scrape-bound-interactive-session">
+  ### Sesión interactiva vinculada al scrape
+</div>
+
+Usa un ID de trabajo de scrape para seguir interactuando con el contexto de la página reproducida de ese scrape:
+
+* `interact(job_id, ...)` ejecuta código en la sesión de browser vinculada al scrape.
+* La primera llamada a `interact` inicializa automáticamente la sesión a partir del contexto del scrape.
+* Las llamadas adicionales a `interact` con el mismo ID de trabajo reutilizan ese estado activo del browser.
+* `stop_interaction(job_id)` detiene la sesión interactiva cuando hayas terminado.
+
+```python Python
+doc = app.scrape(
+    "https://example.com",
+    actions=[{"type": "click", "selector": "a[href='/pricing']"}],
+)
+
+scrape_job_id = doc.metadata_typed.scrape_id
+if not scrape_job_id:
+    raise RuntimeError("Missing scrape job id")
+
+run = app.interact(
+    scrape_job_id,
+    code="print(await page.url())",
+    language="python",
+    timeout=60,
+)
+print(run.stdout)
+
+app.stop_interaction(scrape_job_id)
+```
+
+> ¿Eres un agente de IA que necesita una clave de API de Firecrawl? Consulta [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) para obtener instrucciones de configuración inicial automatizada.

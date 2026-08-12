@@ -1,0 +1,20 @@
+```js Node
+import { Firecrawl } from "firecrawl";
+
+const app = new Firecrawl({
+apiKey: "fc-YOUR_API_KEY"
+});
+
+const scrapeResult = await app.extract([
+'https://docs.firecrawl.dev/',
+'https://firecrawl.dev/'
+], {
+prompt: "Extract Firecrawl's mission from the page."
+});
+
+if (!scrapeResult.success) {
+throw new Error(`抓取失败：${scrapeResult.error}`)
+}
+
+console.log(scrapeResult.data);
+```

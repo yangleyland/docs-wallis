@@ -1,0 +1,26 @@
+```js Node
+import { Firecrawl } from "firecrawl";
+
+// Inicializar el cliente
+const firecrawl = new Firecrawl({ apiKey: "your_api_key" });
+
+// Crear una tarea asíncrona
+const job = await firecrawl.asyncGenerateLLMsText("https://example.com", {
+  maxUrls: 50,
+  showFullText: true
+});
+
+// Comprobar el estado de la generación de LLMs.txt
+const status = await firecrawl.checkGenerateLLMsTextStatus(job.jobId);
+
+// Imprimir el estado actual
+console.log(`Status: ${status.status}`);
+
+if (status.status === "completed") {
+  console.log("LLMs.txt Content:", status.data.llmstxt);
+  if (status.data.llmsfulltxt) {
+    console.log("Full Text Content:", status.data.llmsfulltxt);
+  }
+  console.log(`Processed URLs: ${status.data.processedUrls.length}`);
+}
+```

@@ -1,0 +1,70 @@
+---
+title: 'Testes'
+description: 'Testar e depurar webhooks'
+og:title: 'Testes de webhooks | Firecrawl'
+og:description: 'Testar e depurar webhooks'
+icon: 'bug'
+---
+
+Verifique se a integração do seu webhook funciona antes de implantá-la em produção. Esta página mostra como receber webhooks na sua máquina local e como diagnosticar falhas comuns de entrega e verificação.
+
+<div id="local-development">
+  ## Desenvolvimento local
+</div>
+
+Os webhooks exigem uma URL acessível publicamente, então você precisará expor seu servidor local à internet durante o desenvolvimento.
+
+<div id="using-cloudflare-tunnels">
+  ### Usando o Cloudflare Tunnels
+</div>
+
+O [Cloudflare Tunnels](https://github.com/cloudflare/cloudflared/releases) oferece uma forma gratuita de expor seu servidor local sem abrir portas no firewall:
+
+```bash
+cloudflared tunnel --url localhost:3000
+```
+
+Você receberá uma URL pública como `https://abc123.trycloudflare.com`. Use essa URL na configuração do seu webhook:
+
+```json
+{
+  "url": "https://abc123.trycloudflare.com/webhook"
+}
+```
+
+
+<div id="troubleshooting">
+  ## Solução de problemas
+</div>
+
+<div id="webhooks-not-arriving">
+  ### Webhooks Não Estão Chegando
+</div>
+
+* **Endpoint inacessível** - Verifique se seu servidor é acessível publicamente e se os firewalls permitem conexões de entrada
+* **Usando HTTP** - URLs de webhook devem usar HTTPS
+* **Eventos incorretos** - Verifique o filtro de `events` na configuração do seu webhook
+* **Erros de tempo limite** - Garanta que seu endpoint responda em até 10 segundos
+
+<div id="signature-verification-failing">
+  ### Falha na verificação de assinatura
+</div>
+
+A causa mais comum é usar o corpo JSON já parseado em vez do corpo bruto da requisição. Outra causa é usar o segredo errado, então confirme se o seu corresponde ao valor nas [configurações da conta](https://www.firecrawl.dev/app/settings?tab=advanced).
+
+```javascript
+// ❌ Incorreto – usando o corpo já parseado
+const signature = crypto
+  .createHmac('sha256', secret)
+  .update(JSON.stringify(req.body))
+  .digest('hex');
+
+// ✅ Correto – usando o corpo bruto (raw)
+app.use('/webhook', express.raw({ type: 'application/json' }));
+app.post('/webhook', (req, res) => {
+  const signature = crypto
+    .createHmac('sha256', secret)
+    .update(req.body) // Buffer bruto (raw)
+    .digest('hex');
+});
+```

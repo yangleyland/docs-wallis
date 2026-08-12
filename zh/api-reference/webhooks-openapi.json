@@ -1,0 +1,1369 @@
+{
+  "components": {
+    "parameters": {
+      "FirecrawlSignature": {
+        "description": "原始请求体的 HMAC-SHA256 签名，格式为 `sha256=<hex>`。当你在[账户设置](https://www.firecrawl.dev/app/settings?tab=advanced)中配置了 HMAC 密钥时，该字段会出现。有关验证详情，请参阅 [Webhook 安全](/webhooks/security)。",
+        "in": "header",
+        "name": "X-Firecrawl-Signature",
+        "required": false,
+        "schema": {
+          "example": "sha256=abc123def456789...",
+          "type": "string"
+        }
+      }
+    },
+    "schemas": {
+      "MonitorCheckCompletedData": {
+        "properties": {
+          "checkId": {
+            "description": "监控检查 ID。",
+            "format": "uuid",
+            "type": "string"
+          },
+          "monitorId": {
+            "description": "监控 ID。",
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "description": "监控检查的最终状态。",
+            "enum": [
+              "completed",
+              "partial",
+              "failed",
+              "skipped_overlap"
+            ],
+            "type": "string"
+          },
+          "summary": {
+            "properties": {
+              "changed": {
+                "type": "integer"
+              },
+              "error": {
+                "type": "integer"
+              },
+              "new": {
+                "type": "integer"
+              },
+              "removed": {
+                "type": "integer"
+              },
+              "same": {
+                "type": "integer"
+              },
+              "totalPages": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "totalPages",
+              "same",
+              "changed",
+              "new",
+              "removed",
+              "error"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "monitorId",
+          "checkId",
+          "status",
+          "summary"
+        ],
+        "type": "object"
+      },
+      "MonitorPageData": {
+        "properties": {
+          "checkId": {
+            "description": "监控检查 ID。",
+            "format": "uuid",
+            "type": "string"
+          },
+          "currentScrapeId": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "diff": {
+            "description": "已变更页面的内联差异。根据监控变更跟踪模式，可能包含 `text`、`json` 或两者。",
+            "nullable": true,
+            "properties": {
+              "json": {
+                "type": "object"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "error": {
+            "nullable": true,
+            "type": "string"
+          },
+          "isMeaningful": {
+            "description": "当已变更页面运行了有意义变更判断时，为 `true` 或 `false`；否则为 `null`。",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "judgment": {
+            "$ref": "#/components/schemas/MonitorPageJudgment"
+          },
+          "monitorId": {
+            "description": "监控 ID。",
+            "format": "uuid",
+            "type": "string"
+          },
+          "previousScrapeId": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "description": "此次抓取完成对应的页面级状态。",
+            "enum": [
+              "same",
+              "new",
+              "changed",
+              "error"
+            ],
+            "type": "string"
+          },
+          "url": {
+            "description": "页面 URL。",
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "monitorId",
+          "checkId",
+          "url",
+          "status"
+        ],
+        "type": "object"
+      },
+      "MonitorPageJudgment": {
+        "nullable": true,
+        "properties": {
+          "confidence": {
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "type": "string"
+          },
+          "meaningful": {
+            "type": "boolean"
+          },
+          "meaningfulChanges": {
+            "description": "由评判器从页面 diff 中选出的与目标相关的变更。",
+            "items": {
+              "properties": {
+                "after": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "before": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "type": {
+                  "enum": [
+                    "added",
+                    "removed",
+                    "changed"
+                  ],
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ScrapeDocument": {
+        "description": "抓取到的页面文档。其结构与抓取响应中的 `data` 对象一致。",
+        "properties": {
+          "html": {
+            "description": "页面清理后的 HTML 内容。",
+            "type": "string"
+          },
+          "links": {
+            "description": "在页面中发现的出站链接。",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "markdown": {
+            "description": "转换为 Markdown 的页面内容。",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "页面元数据。",
+            "properties": {
+              "description": {
+                "description": "meta 描述。",
+                "type": "string"
+              },
+              "sourceURL": {
+                "description": "抓取的 URL。",
+                "type": "string"
+              },
+              "statusCode": {
+                "description": "响应的 HTTP 状态码。",
+                "type": "integer"
+              },
+              "title": {
+                "description": "页面的 `<title>`。",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "rawHtml": {
+            "description": "未经任何处理的原始 HTML。",
+            "type": "string"
+          },
+          "screenshot": {
+            "description": "如果请求了 `screenshot` 格式，则返回 Base64 编码的截图。",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WebhookMetadata": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "你在 webhook 配置中提供的自定义元数据对象。每次投递时都会原样返回。",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Firecrawl Webhooks",
+    "version": "v2"
+  },
+  "openapi": "3.1.0",
+  "webhooks": {
+    "agentAction": {
+      "post": {
+        "operationId": "agentAction",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "action": "scrape",
+                    "creditsUsed": 5,
+                    "input": {
+                      "url": "https://example.com"
+                    }
+                  }
+                ],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "agent.action",
+                "webhookId": "d4e5f6a7-0002-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "description": "仅包含一个对象的数组，用于描述所执行的操作。",
+                    "items": {
+                      "properties": {
+                        "action": {
+                          "description": "已执行的工具，例如 `scrape`、`search`、`extract`。",
+                          "type": "string"
+                        },
+                        "creditsUsed": {
+                          "description": "截至目前预估已消耗的额度。最终计数仅会在终态事件（`completed`、`failed` 或 `cancelled`）中提供。",
+                          "type": "number"
+                        },
+                        "input": {
+                          "additionalProperties": true,
+                          "description": "传递给该工具的输入参数。",
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "代理任务 ID。",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "agent.action",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "此次 webhook 投递的唯一标识符。",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回任意 `2xx` 状态码以确认已接收。"
+          }
+        },
+        "summary": "代理操作",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "agentCancelled": {
+      "post": {
+        "operationId": "agentCancelled",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "creditsUsed": 3
+                  }
+                ],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": false,
+                "type": "agent.cancelled",
+                "webhookId": "d4e5f6a7-0005-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "items": {
+                      "properties": {
+                        "creditsUsed": {
+                          "description": "取消前消耗的总额度。",
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "代理任务 ID。",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": false,
+                    "description": "对于此事件，该值始终为 `false`。",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "agent.cancelled",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "此次 webhook 投递的唯一标识符。",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回任意 `2xx` 状态码以确认已接收。"
+          }
+        },
+        "summary": "代理已取消",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "agentCompleted": {
+      "post": {
+        "operationId": "agentCompleted",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "creditsUsed": 15,
+                    "data": {
+                      "company": "Example Corp",
+                      "founded": 2020,
+                      "industry": "Technology"
+                    }
+                  }
+                ],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "agent.completed",
+                "webhookId": "d4e5f6a7-0003-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "items": {
+                      "properties": {
+                        "creditsUsed": {
+                          "description": "代理运行消耗的总额度。",
+                          "type": "number"
+                        },
+                        "data": {
+                          "additionalProperties": true,
+                          "description": "代理提取的结构化数据；如果提供了 schema，则会与其匹配。",
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "代理任务 ID。",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "agent.completed",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "此次 webhook 投递的唯一标识符。",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回任意 `2xx` 状态码以确认已接收。"
+          }
+        },
+        "summary": "代理完成",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "agentFailed": {
+      "post": {
+        "operationId": "agentFailed",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "creditsUsed": 8
+                  }
+                ],
+                "error": "Max credits exceeded",
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": false,
+                "type": "agent.failed",
+                "webhookId": "d4e5f6a7-0004-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "items": {
+                      "properties": {
+                        "creditsUsed": {
+                          "description": "失败前消耗的总额度。",
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "error": {
+                    "description": "描述故障原因的、便于人工阅读的错误消息。",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "代理任务 ID。",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": false,
+                    "description": "对于此事件，该值始终为 `false`。",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "agent.failed",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "此次 webhook 投递的唯一标识符。",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data",
+                  "error"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回任意 `2xx` 状态码以确认已接收。"
+          }
+        },
+        "summary": "代理失败",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "agentStarted": {
+      "post": {
+        "operationId": "agentStarted",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "agent.started",
+                "webhookId": "d4e5f6a7-0001-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "default": [],
+                    "items": {},
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "代理任务 ID，与 `POST /agent` 返回的 `id` 一致。",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "agent.started",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "此次 webhook 投递的唯一标识符。",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回任意 `2xx` 状态码以确认已接收。"
+          }
+        },
+        "summary": "代理启动",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "batchScrapeCompleted": {
+      "post": {
+        "operationId": "batchScrapeCompleted",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "batch_scrape.completed",
+                "webhookId": "b2c3d4e5-0003-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "default": [],
+                    "description": "空数组。请通过 `GET /batch/scrape/{id}` 获取结果。",
+                    "items": {},
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "批量抓取任务 ID。",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "batch_scrape.completed",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "此次 webhook 投递的唯一标识符。",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回任意 `2xx` 状态码以确认已接收。"
+          }
+        },
+        "summary": "批量抓取完成",
+        "tags": [
+          "Batch Scrape"
+        ]
+      }
+    },
+    "batchScrapePage": {
+      "post": {
+        "operationId": "batchScrapePage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "markdown": "# Example Page\n\nThis is the page content.",
+                    "metadata": {
+                      "description": "页面示例。",
+                      "sourceURL": "https://example.com",
+                      "statusCode": 200,
+                      "title": "Example Page"
+                    }
+                  }
+                ],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "batch_scrape.page",
+                "webhookId": "b2c3d4e5-0002-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "description": "包含抓取到的页面文档的数组。",
+                    "items": {
+                      "$ref": "#/components/schemas/ScrapeDocument"
+                    },
+                    "type": "array"
+                  },
+                  "error": {
+                    "description": "页面抓取失败时的错误信息。",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "批量抓取任务 ID。",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "description": "页面抓取成功时为 `true`，否则为 `false`。",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "batch_scrape.page",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "此次 webhook 投递的唯一标识符。",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回任意 `2xx` 状态码以确认已接收。"
+          }
+        },
+        "summary": "批量抓取页面",
+        "tags": [
+          "Batch Scrape"
+        ]
+      }
+    },
+    "batchScrapeStarted": {
+      "post": {
+        "operationId": "batchScrapeStarted",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "batch_scrape.started",
+                "webhookId": "b2c3d4e5-0001-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "default": [],
+                    "items": {},
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "批量抓取任务 ID，与 `POST /batch/scrape` 返回的 `id` 一致。",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "batch_scrape.started",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "此次 webhook 投递的唯一标识符。",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回任意 `2xx` 状态码以确认已接收。"
+          }
+        },
+        "summary": "批量抓取开始",
+        "tags": [
+          "Batch Scrape"
+        ]
+      }
+    },
+    "crawlCompleted": {
+      "post": {
+        "operationId": "crawlCompleted",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "crawl.completed",
+                "webhookId": "a1b2c3d4-0003-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "default": [],
+                    "description": "空数组。请通过 `GET /crawl/{id}` 获取结果。",
+                    "items": {},
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "爬取任务 ID。",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": true,
+                    "description": "对于此事件，该值始终为 `true`。",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "crawl.completed",
+                    "description": "事件类型。",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "此次 webhook 投递的唯一标识符。",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回任意 `2xx` 状态码以确认已接收。"
+          }
+        },
+        "summary": "爬取完成",
+        "tags": [
+          "Crawl"
+        ]
+      }
+    },
+    "crawlPage": {
+      "post": {
+        "operationId": "crawlPage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "markdown": "# Example Page\n\nThis is the page content.",
+                    "metadata": {
+                      "description": "页面示例。",
+                      "sourceURL": "https://example.com/page",
+                      "statusCode": 200,
+                      "title": "Example Page"
+                    }
+                  }
+                ],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "crawl.page",
+                "webhookId": "a1b2c3d4-0002-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "description": "包含抓取到的页面文档的数组。其结构与 `GET /scrape` 响应中的 `data` 字段相同。",
+                    "items": {
+                      "$ref": "#/components/schemas/ScrapeDocument"
+                    },
+                    "type": "array"
+                  },
+                  "error": {
+                    "description": "页面抓取失败时的错误信息。",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "爬取任务 ID。",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "description": "页面抓取成功时为 `true`，否则为 `false`。",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "crawl.page",
+                    "description": "事件类型。",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "此次 webhook 投递的唯一标识符。",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回任意 `2xx` 状态码以确认已接收。"
+          }
+        },
+        "summary": "爬取页面",
+        "tags": [
+          "Crawl"
+        ]
+      }
+    },
+    "crawlStarted": {
+      "post": {
+        "operationId": "crawlStarted",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [],
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "metadata": {},
+                "success": true,
+                "type": "crawl.started",
+                "webhookId": "a1b2c3d4-0001-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "default": [],
+                    "description": "此事件中为空数组。",
+                    "items": {},
+                    "type": "array"
+                  },
+                  "id": {
+                    "description": "爬取任务 ID，与 `POST /crawl` 返回的 `id` 一致。",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "const": true,
+                    "description": "对于此事件，该值始终为 `true`。",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "crawl.started",
+                    "description": "事件类型。",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "此次 Webhook 投递的唯一标识符。可用于去重——重试时会发送相同的值。",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回任意 `2xx` 状态码即可确认已接收。"
+          }
+        },
+        "summary": "爬取开始",
+        "tags": [
+          "Crawl"
+        ]
+      }
+    },
+    "monitorCheckCompleted": {
+      "post": {
+        "operationId": "monitorCheckCompleted",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "checkId": "019df960-5f2a-75fb-a98b-bd2d32ca67d4",
+                    "monitorId": "019df960-06e7-7383-9d89-82c0113dc31a",
+                    "status": "completed",
+                    "summary": {
+                      "changed": 1,
+                      "error": 0,
+                      "new": 0,
+                      "removed": 0,
+                      "same": 1,
+                      "totalPages": 2
+                    }
+                  }
+                ],
+                "id": "019df960-5f2a-75fb-a98b-bd2d32ca67d4",
+                "metadata": {},
+                "success": true,
+                "type": "monitor.check.completed",
+                "webhookId": "f1e2d3c4-0001-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "items": {
+                      "$ref": "#/components/schemas/MonitorCheckCompletedData"
+                    },
+                    "type": "array"
+                  },
+                  "error": {
+                    "description": "检查失败时的错误消息。",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "监控检查 ID。",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "description": "当检查完成且页面无错误时为 `true`，否则为 `false`。",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "monitor.check.completed",
+                    "description": "事件类型。",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "此次 webhook 投递的唯一标识符。",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回任意 `2xx` 状态码以确认已接收。"
+          }
+        },
+        "summary": "监控检查已完成",
+        "tags": [
+          "Monitor"
+        ]
+      }
+    },
+    "monitorPage": {
+      "post": {
+        "operationId": "monitorPage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FirecrawlSignature"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "data": [
+                  {
+                    "checkId": "019df960-5f2a-75fb-a98b-bd2d32ca67d4",
+                    "currentScrapeId": "019df960-73ee-7ac2-97a9-fb0e442c21f1",
+                    "diff": {
+                      "text": "--- previous\n+++ current\n@@ -1,3 +1,3 @@\n # Latest posts\n-Welcome to our weekly update.\n+Welcome to our weekly update — now with daily releases!\n"
+                    },
+                    "error": null,
+                    "isMeaningful": true,
+                    "judgment": {
+                      "confidence": "high",
+                      "meaningful": true,
+                      "meaningfulChanges": [
+                        {
+                          "after": "Welcome to our weekly update — now with daily releases!",
+                          "before": "Welcome to our weekly update.",
+                          "reason": "The headline changed in a way that matches the monitor goal.",
+                          "type": "changed"
+                        }
+                      ],
+                      "reason": "The page headline changed to announce a new release cadence."
+                    },
+                    "monitorId": "019df960-06e7-7383-9d89-82c0113dc31a",
+                    "previousScrapeId": "019df94f-82c3-7e41-81f0-00c72b2d9c52",
+                    "status": "changed",
+                    "url": "https://example.com/blog"
+                  }
+                ],
+                "id": "019df960-5f2a-75fb-a98b-bd2d32ca67d4",
+                "metadata": {},
+                "success": true,
+                "type": "monitor.page",
+                "webhookId": "f1e2d3c4-0000-0000-0000-000000000000"
+              },
+              "schema": {
+                "properties": {
+                  "data": {
+                    "items": {
+                      "$ref": "#/components/schemas/MonitorPageData"
+                    },
+                    "type": "array"
+                  },
+                  "error": {
+                    "description": "监控页面失败时的错误消息。",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "监控检查 ID。",
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "$ref": "#/components/schemas/WebhookMetadata"
+                  },
+                  "success": {
+                    "description": "当页面抓取成功完成且未发生错误时，为 `true`。",
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "const": "monitor.page",
+                    "description": "事件类型。",
+                    "type": "string"
+                  },
+                  "webhookId": {
+                    "description": "此次 webhook 投递的唯一标识符。",
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "success",
+                  "type",
+                  "id",
+                  "webhookId",
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回任意 `2xx` 状态码以确认已接收。"
+          }
+        },
+        "summary": "页面监控",
+        "tags": [
+          "Monitor"
+        ]
+      }
+    }
+  }
+}

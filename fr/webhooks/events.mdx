@@ -1,0 +1,431 @@
+---
+title: "Types d’événements"
+description: "Référence des événements webhook"
+og:title: "Types d’événements webhook | Firecrawl"
+og:description: "Référence des événements webhook"
+icon: "bolt"
+---
+
+import MonitorPagePayload from "/snippets/fr/v2/monitor/notification/page-payload.mdx";
+import MonitorCheckCompletedPayload from "/snippets/fr/v2/monitor/notification/check-completed-payload.mdx";
+
+Firecrawl envoie des événements webhook à chaque étape du cycle de vie d’une tâche, afin que vous puissiez suivre la progression, récupérer les résultats et gérer les échecs en temps réel sans avoir à interroger l’API en continu.
+
+<div id="quick-reference">
+  ## Référence rapide
+</div>
+
+| Événement                 | Déclencheur                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------- |
+| `crawl.started`           | La tâche de crawl commence son traitement                                                         |
+| `crawl.page`              | Une page est extraite pendant un crawl                                                            |
+| `crawl.completed`         | La tâche de crawl se termine et toutes les pages ont été traitées                                 |
+| `batch_scrape.started`    | La tâche d’extraction par lot commence son traitement                                             |
+| `batch_scrape.page`       | Une URL est extraite pendant une extraction par lot                                               |
+| `batch_scrape.completed`  | Toutes les URL du lot ont été traitées                                                            |
+| `extract.started`         | La tâche d’extraction commence son traitement                                                     |
+| `extract.completed`       | L’extraction se termine avec succès                                                               |
+| `extract.failed`          | L’extraction échoue                                                                               |
+| `agent.started`           | La tâche de l’agent commence son traitement                                                       |
+| `agent.action`            | L’agent exécute un outil (scrape, search, etc.)                                                   |
+| `agent.completed`         | L’agent se termine avec succès                                                                    |
+| `agent.failed`            | L’agent rencontre une erreur                                                                      |
+| `agent.cancelled`         | La tâche de l’agent est annulée par l’utilisateur                                                 |
+| `monitor.page`            | L’extraction d’une page surveillée se termine                                                     |
+| `monitor.check.completed` | La vérification du monitor se termine et les modifications au niveau de la page sont disponibles |
+
+<div id="payload-structure">
+  ## Structure du payload
+</div>
+
+Tous les événements webhook ont la même structure :
+
+```json
+{
+  "success": true,
+  "type": "crawl.page",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [...],
+  "metadata": {}
+}
+```
+
+| Champ      | Type            | Description                                                      |
+| ---------- | --------------- | ---------------------------------------------------------------- |
+| `success`  | boolean         | Indique si l’opération a réussi                                  |
+| `type`     | string          | Type d’événement (par exemple `crawl.page`)                      |
+| `id`       | string          | ID de la tâche                                                   |
+| `data`     | array ou object | Données spécifiques à l’événement (voir les exemples ci-dessous) |
+| `metadata` | object          | Métadonnées personnalisées de la configuration de votre webhook  |
+| `error`    | string          | Message d’erreur (lorsque `success` est `false`)                 |
+
+<div id="crawl-events">
+  ## Événements de crawl
+</div>
+
+<div id="crawlstarted">
+  ### `crawl.started`
+</div>
+
+Envoyé lorsque la tâche de crawl commence son traitement.
+
+```json
+{
+  "success": true,
+  "type": "crawl.started",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [],
+  "metadata": {}
+}
+```
+
+
+<div id="crawlpage">
+  ### `crawl.page`
+</div>
+
+Envoyé pour chaque page extraite. Le tableau `data` contient le contenu de la page et ses métadonnées.
+
+```json
+{
+  "success": true,
+  "type": "crawl.page",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    {
+      "markdown": "# Page content...",
+      "metadata": {
+        "title": "Page Title",
+        "description": "Description de la page",
+        "url": "https://example.com/page",
+        "statusCode": 200,
+        "contentType": "text/html",
+        "scrapeId": "550e8400-e29b-41d4-a716-446655440001",
+        "sourceURL": "https://example.com/page",
+        "proxyUsed": "basic",
+        "cacheState": "hit",
+        "cachedAt": "2025-09-03T21:11:25.636Z",
+        "creditsUsed": 1
+      }
+    }
+  ],
+  "metadata": {}
+}
+```
+
+
+<div id="crawlcompleted">
+  ### `crawl.completed`
+</div>
+
+Envoyé lorsque la tâche de crawl est terminée et que toutes les pages ont été traitées.
+
+```json
+{
+  "success": true,
+  "type": "crawl.completed",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [],
+  "metadata": {}
+}
+```
+
+
+<div id="batch-scrape-events">
+  ## Événements de scraping par lot
+</div>
+
+<div id="batch_scrapestarted">
+  ### `batch_scrape.started`
+</div>
+
+Envoyé lorsque la tâche d’extraction par lots commence son traitement.
+
+```json
+{
+  "success": true,
+  "type": "batch_scrape.started",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [],
+  "metadata": {}
+}
+```
+
+
+<div id="batch_scrapepage">
+  ### `batch_scrape.page`
+</div>
+
+Envoyé pour chaque URL individuelle extraite. Le tableau `data` contient le contenu de la page et ses métadonnées.
+
+```json
+{
+  "success": true,
+  "type": "batch_scrape.page",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    {
+      "markdown": "# Page content...",
+      "metadata": {
+        "title": "Page Title",
+        "description": "Page description",
+        "url": "https://example.com",
+        "statusCode": 200,
+        "contentType": "text/html",
+        "scrapeId": "550e8400-e29b-41d4-a716-446655440001",
+        "sourceURL": "https://example.com",
+        "proxyUsed": "basic",
+        "cacheState": "miss",
+        "cachedAt": "2025-09-03T23:30:53.434Z",
+        "creditsUsed": 1
+      }
+    }
+  ],
+  "metadata": {}
+}
+```
+
+
+<div id="batch_scrapecompleted">
+  ### `batch_scrape.completed`
+</div>
+
+Envoyé lorsque toutes les URL du lot ont été traitées.
+
+```json
+{
+  "success": true,
+  "type": "batch_scrape.completed",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [],
+  "metadata": {}
+}
+```
+
+
+<div id="monitor-events">
+  ## Événements de Monitor
+</div>
+
+<div id="monitorpage">
+  ### `monitor.page`
+</div>
+
+Envoyé lorsque le scrape de chaque page surveillée est terminé. Cet événement est émis par le worker de scrape ; il arrive donc avant que la vérification complète du monitor ne soit consolidée.
+
+<MonitorPagePayload />
+
+<div id="monitorcheckcompleted">
+  ### `monitor.check.completed`
+</div>
+
+Envoyé lorsqu’une vérification de monitor se termine. L’objet `data` contient l’état de la vérification ainsi que des totaux récapitulatifs. Les résultats par page sont uniquement envoyés via les événements `monitor.page` ou renvoyés par l’API de vérification du monitor.
+
+<MonitorCheckCompletedPayload />
+
+`success` vaut `true` lorsque la vérification s’est terminée sans erreur de page. Pour les vérifications partielles ou en échec, `success` vaut `false` et `error` peut contenir un message.
+
+<div id="extract-events">
+  ## Événements d’extraction
+</div>
+
+<div id="extractstarted">
+  ### `extract.started`
+</div>
+
+Envoyé lorsque la tâche d’extraction commence à être traitée.
+
+```json
+{
+  "success": true,
+  "type": "extract.started",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [],
+  "metadata": {}
+}
+```
+
+
+<div id="extractcompleted">
+  ### `extract.completed`
+</div>
+
+Envoyé lorsqu’une opération d’extraction s’achève avec succès. Le tableau `data` contient les données extraites et les informations d’utilisation.
+
+```json
+{
+  "success": true,
+  "type": "extract.completed",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    {
+      "success": true,
+      "data": { "siteName": "Site exemple", "category": "Technologie" },
+      "extractId": "550e8400-e29b-41d4-a716-446655440000",
+      "llmUsage": 0.0020118,
+      "totalUrlsScraped": 1,
+      "sources": {
+        "siteName": ["https://example.com"],
+        "category": ["https://example.com"]
+      }
+    }
+  ],
+  "metadata": {}
+}
+```
+
+
+<div id="extractfailed">
+  ### `extract.failed`
+</div>
+
+Envoyé lorsqu’une extraction échoue. Le champ `error` contient la raison de l’échec.
+
+```json
+{
+  "success": false,
+  "type": "extract.failed",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [],
+  "error": "Échec de l'extraction des données : délai d'attente dépassé",
+  "metadata": {}
+}
+```
+
+
+<div id="agent-events">
+  ## Événements de l’agent
+</div>
+
+<div id="agentstarted">
+  ### `agent.started`
+</div>
+
+Envoyé lorsque la tâche de l’agent commence à être traitée.
+
+```json
+{
+  "success": true,
+  "type": "agent.started",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [],
+  "metadata": {}
+}
+```
+
+
+<div id="agentaction">
+  ### `agent.action`
+</div>
+
+Envoyé après chaque exécution d’un outil (scrape, search, etc.).
+
+```json
+{
+  "success": true,
+  "type": "agent.action",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    {
+      "creditsUsed": 5,
+      "action": "mcp__tools__scrape",
+      "input": {
+        "url": "https://example.com"
+      }
+    }
+  ],
+  "metadata": {}
+}
+```
+
+<Note>
+  La valeur `creditsUsed` dans les événements `action` est une **estimation** du total
+  de crédits utilisés jusqu&#39;à présent. Le décompte
+  final et exact des crédits n&#39;est disponible que dans les événements `completed`, `failed`
+  ou `cancelled`.
+</Note>
+
+
+<div id="agentcompleted">
+  ### `agent.completed`
+</div>
+
+Envoyé lorsque l&#39;agent a terminé avec succès. Le tableau `data` contient les données extraites et le total des crédits consommés.
+
+```json
+{
+  "success": true,
+  "type": "agent.completed",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    {
+      "creditsUsed": 15,
+      "data": {
+        "company": "Example Corp",
+        "industry": "Technology",
+        "founded": 2020
+      }
+    }
+  ],
+  "metadata": {}
+}
+```
+
+
+<div id="agentfailed">
+  ### `agent.failed`
+</div>
+
+Envoyé lorsque l’agent rencontre une erreur. Le champ `error` contient le motif de l’échec.
+
+```json
+{
+  "success": false,
+  "type": "agent.failed",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    {
+      "creditsUsed": 8
+    }
+  ],
+  "error": "Crédits maximum dépassés",
+  "metadata": {}
+}
+```
+
+
+<div id="agentcancelled">
+  ### `agent.cancelled`
+</div>
+
+Envoyé lorsque la tâche de l’agent est annulée par l’utilisateur.
+
+```json
+{
+  "success": false,
+  "type": "agent.cancelled",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    {
+      "creditsUsed": 3
+    }
+  ],
+  "metadata": {}
+}
+```
+
+
+<div id="event-filtering">
+  ## Filtrage des événements
+</div>
+
+Par défaut, vous recevez tous les événements. Pour vous abonner uniquement à certains événements, indiquez un tableau `events` dans la configuration de votre webhook :
+
+```json
+{
+  "url": "https://your-app.com/webhook",
+  "events": ["completed", "failed"]
+}
+```
+
+C&#39;est utile si vous vous intéressez uniquement à l&#39;achèvement de la tâche et n&#39;avez pas besoin de mises à jour pour chaque page.

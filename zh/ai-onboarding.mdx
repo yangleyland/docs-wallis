@@ -1,0 +1,578 @@
+---
+title: 使用 AI 构建
+description: "让你的 AI 代理接入 Firecrawl 所需的一切。"
+og:title: "使用 AI 构建 | Firecrawl"
+og:description: "让你的 AI 代理接入 Firecrawl 所需的一切。技能、CLI、工作流、MCP、llms.txt 等。"
+sidebarTitle: "使用 AI 构建"
+---
+
+如果你在使用 AI 开发，Firecrawl 提供了多种资源来提升你的开发体验。Firecrawl 内置了 **技能**——自包含的知识包，AI 编码代理会自动发现并使用它们。只需一条安装命令，代理即可获得三个完整的技能模块：用于实时网页操作的 CLI 技能、将 Firecrawl 集成到应用代码中的构建技能，以及用于产出可重复交付成果的工作流技能。Firecrawl 用户可以通过两种方式获取 API 密钥。请参见下方的[获取凭据](#get-credentials)。
+
+* [获取凭据](#get-credentials)
+* [CLI 和代理技能](#cli)
+* [将 Firecrawl 作为工具使用](#using-firecrawl-as-a-tool)
+* [代理式调试](#agentic-debugging)
+* [Firecrawl MCP 服务器](#firecrawl-mcp-server)
+* [面向代理的 Firecrawl 文档](#firecrawl-docs-for-agents)
+* [快速开始指南](#quick-start-guides)
+* [代理接入](#agent-harnesses)
+* [SDKs](#sdks)
+
+<div id="get-credentials">
+  ## 获取凭据
+</div>
+
+Firecrawl 用户可以通过两种方式获取 API 密钥。大多数用户应通过 Dashboard 或 CLI 登录。如果你的代理平台支持 WorkOS ID-JAG，则可以直接向 Firecrawl 注册。
+
+**我该用哪一种？** 除非你确定自己的平台支持 WorkOS ID-JAG，否则请使用 Dashboard 或 CLI。
+
+**你可能通过以下方式来到这里：**
+
+* **文档：**你已进入此页面。请选择下方与你登录方式相对应的选项。
+* **API `401`：**支持 ID-JAG 的代理可按照 [`auth.md`](https://www.firecrawl.dev/auth.md) 中第 1 步的 Discovery 流程操作。其他用户应使用 Dashboard 或 CLI。
+* **直接 URL：**按照 [`SKILL.md`](https://www.firecrawl.dev/agent-onboarding/SKILL.md) 进行浏览器登录和设置，或按照 [`auth.md`](https://www.firecrawl.dev/auth.md) 完成 WorkOS ID-JAG 注册。
+
+<CardGroup cols={2}>
+  <Card title="使用 Dashboard 或 CLI" icon="user" href="https://www.firecrawl.dev/agent-onboarding/SKILL.md">
+    **大多数用户的默认选择。** 在浏览器中登录，运行 CLI `--browser`，安装技能和 MCP，或在 Dashboard 中创建 API 密钥。
+  </Card>
+
+  <Card title="通过 WorkOS ID-JAG 注册" icon="robot" href="/zh/ai-onboarding/agent-auth">
+    **适用于受支持的代理平台。** 如果你的平台可以为 Firecrawl 签发 WorkOS ID-JAG，请使用此方式。先查看 [Agent Auth](/zh/ai-onboarding/agent-auth)，然后按照 [`auth.md`](https://www.firecrawl.dev/auth.md) 操作。
+  </Card>
+</CardGroup>
+
+**无法登录或获取密钥？** CLI、SDKs 和 REST API 支持免密钥搜索、抓取、交互和解析。托管 MCP 提供功能范围更有限的免密钥 Search、Scrape 和 Parse；其中交互需要账户连接或 API 密钥。免密钥访问会受到限流，仅作为后备方案，因此一旦可以使用免费账户或 API 密钥，请尽快切换。详情请参见 [Keyless (无 API 密钥)](/zh/rate-limits#keyless-no-api-key)。
+
+获得 API 密钥后，继续阅读下方的 [CLI 和代理技能](#cli)。
+
+<span id="cli" />
+
+<div id="cli-and-agent-skills">
+  ## CLI 和代理技能
+</div>
+
+[Firecrawl CLI](/zh/sdks/cli) 让你的代理能够通过终端搜索、抓取、交互、爬取、映射、提取，并运行代理任务。它专为人类用户、AI 代理和 CI/CD 流水线打造。
+
+Firecrawl **技能**是一组自包含的知识包，Claude Code、Antigravity 和 OpenCode 等 AI 编码代理会自动发现并使用它们。只需一条安装命令即可完成全部设置——既包括用于实时网页操作的 CLI 工具，也包括用于将 Firecrawl 集成到应用代码中的构建技能，以及用于产出可重复交付成果的工作流技能：
+
+```bash
+npx -y firecrawl-cli@latest init --all --browser
+```
+
+* `--all` 会将每个 Firecrawl 技能模块 (CLI、构建、工作流) 安装到此设备上检测到的每个 AI 编程代理
+* `--browser` 会自动打开浏览器进行 Firecrawl 身份验证
+
+安装后，请确认一切运行正常：
+
+```bash
+firecrawl --status
+firecrawl scrape "https://firecrawl.dev"
+```
+
+如需稍后重新安装，或指定特定代理：
+
+```bash
+firecrawl setup skills      # CLI + 构建技能
+firecrawl setup workflows   # 工作流技能
+```
+
+<div id="what-the-install-gives-you">
+  ### 安装后会提供什么
+</div>
+
+安装会配置三类技能，覆盖代理使用 Firecrawl 的全部方式。每个部分都位于各自独立的 repo 中，因此可以独立演进：
+
+* [`firecrawl/cli`](https://github.com/firecrawl/cli) — 用于实时网页操作的 CLI 技能
+* [`firecrawl/skills`](https://github.com/firecrawl/skills) — 用于应用集成的构建技能
+* [`firecrawl/firecrawl-workflows`](https://github.com/firecrawl/firecrawl-workflows) — 用于产出可复用交付成果的工作流技能
+
+**CLI 技能** — 用于代理会话期间进行实时网页操作：
+
+| 技能                   | Purpose               |
+| -------------------- | --------------------- |
+| `firecrawl/cli`      | 整体 CLI 命令工作流          |
+| `firecrawl-search`   | 进行网页搜索并发现页面           |
+| `firecrawl-scrape`   | 从已知 URL 提取干净内容        |
+| `firecrawl-interact` | 使用 prompt 或代码与已抓取页面交互 |
+| `firecrawl-crawl`    | 从整个网站批量提取内容           |
+| `firecrawl-map`      | 发现域名下的所有 URL          |
+| `firecrawl-agent`    | 通过任务运行自主网页数据采集        |
+
+**构建技能** — 用于将 Firecrawl 集成到应用代码中：
+
+| 技能                           | Purpose                 |
+| ---------------------------- | ----------------------- |
+| `firecrawl-build`            | 为你的产品选择合适的 Firecrawl 端点 |
+| `firecrawl-build-onboarding` | 身份验证和项目设置               |
+| `firecrawl-build-scrape`     | 在应用代码中实现抓取              |
+| `firecrawl-build-search`     | 在应用代码中实现搜索              |
+| `firecrawl-build-interact`   | 在应用代码中实现页面交互            |
+| `firecrawl-build-crawl`      | 在应用代码中实现爬取              |
+| `firecrawl-build-map`        | 在应用代码中实现 URL 发现         |
+| `firecrawl-build-parse`      | 在应用代码中实现文档解析            |
+
+**工作流技能** — 以结果为导向的技能，可基于 Firecrawl 网页数据产出具体交付物：
+
+| 技能                               | 产出                            |
+| -------------------------------- | ----------------------------- |
+| `firecrawl-workflows`            | 用于选择合适工作流的总括技能                |
+| `firecrawl-deep-research`        | 多来源研究报告                       |
+| `firecrawl-seo-audit`            | 网站地图、页面 SEO 检查、SERP 对比和优先修复项  |
+| `firecrawl-lead-research`        | 会前公司和个人情报简报                   |
+| `firecrawl-lead-gen`             | 基于数据库和名录生成潜在客户列表              |
+| `firecrawl-qa`                   | 包含问题和复现步骤的线上站点 QA 报告          |
+| `firecrawl-competitive-intel`    | 持续进行价格、功能和更新日志监控              |
+| `firecrawl-market-research`      | 市场、财务、财报和行业研究                 |
+| `firecrawl-research-papers`      | 基于论文、PDF 和白皮书的文献综述            |
+| `firecrawl-company-directories`  | 将名录提取为结构化公司列表                 |
+| `firecrawl-dashboard-reporting`  | 从 Dashboard 和内部网页工具中提取指标      |
+| `firecrawl-knowledge-base`       | 面向 LLM 的参考文档、RAG 切片、训练数据或文档镜像 |
+| `firecrawl-knowledge-ingest`     | 摄取受身份验证保护或高度依赖 JS 的文档门户       |
+| `firecrawl-demo-walkthrough`     | 产品流程演练和 UX 拆解报告               |
+| `firecrawl-shop`                 | 产品研究和购物推荐                     |
+| `firecrawl-website-design-clone` | 将网站的设计系统提取为代理可用的 `DESIGN.md`  |
+
+<div id="choose-your-path">
+  ### 选择你的路径
+</div>
+
+三类技能的安装方式相同。区别在于后续的使用场景：
+
+<Steps>
+  <Step title="实时网页工具（CLI 技能）">
+    当你需要在当前会话中使用网页数据时，请选择这个——例如进行网页搜索、抓取已知 URL、与已抓取页面交互、爬取文档、映射整个站点，或运行代理任务。
+
+    默认流程：
+
+    1. 需要先发现内容时，从 **search** 开始
+    2. 已有 URL 时，切换到 **scrape**
+    3. 当已抓取页面需要后续 actions 时，使用 **interact**
+    4. 当你需要大量 URL 或页面时，使用 **map** 或 **crawl**
+    5. 当任务是开放式且需要自主发现时，使用 **agent**
+
+    ```bash
+    # 进行网页搜索
+    firecrawl search "best open-source web crawlers"
+
+    # 将网页抓取为干净的 markdown
+    firecrawl scrape https://docs.firecrawl.dev
+
+    # 爬取整个站点
+    firecrawl crawl https://docs.firecrawl.dev
+    ```
+  </Step>
+
+  <Step title="应用集成（构建技能）">
+    当你在构建应用、代理或工作流，并需要通过代码调用 Firecrawl API 时，请选择这个。构建技能可帮助你选择合适的端点、接入 SDK，并运行一次冒烟测试。
+
+    代理会回答一个关键问题——*Firecrawl 应该在产品中执行什么任务？*——然后构建技能会据此路由到 `/search`、`/scrape`、`/interact`、`/parse`、`/crawl`、`/map` 或 `/agent`。
+  </Step>
+
+  <Step title="可重复交付成果（工作流技能）">
+    当目标是产出一个完整成果时，请选择这个——例如研究报告、SEO 审计、QA 报告、潜在客户列表、知识库、竞争情报摘要，或克隆的设计系统——而不是原始网页数据或产品代码。
+
+    工作流技能会先根据上下文进行判断，只有当某个输入会阻碍工作推进时，才会提出简短的澄清问题。它们还会标出可独立并行处理的单元，以便子代理在竞争对手、页面或信息来源之间并行展开。
+
+    直接选择一个工作流，或者让统括性的 `firecrawl-workflows` 技能为请求路由：
+
+    ```bash
+    # 针对某个主题的多来源研究简报
+    "Use firecrawl-deep-research to write a brief on AI agent frameworks"
+
+    # 销售通话前的情报准备
+    "Use firecrawl-lead-research to brief me on stripe.com before my 3pm call"
+
+    # 带修复优先级的页面 SEO 审计
+    "Use firecrawl-seo-audit on https://example.com"
+
+    # 将某个站点的设计系统克隆到 DESIGN.md
+    "Use firecrawl-website-design-clone on https://linear.app"
+    ```
+  </Step>
+
+  <Step title="REST API（无需安装）">
+    如果你不想安装任何内容，代理也可以直接调用 Firecrawl REST API。设置 API 密钥后，直接调用这些端点：
+
+    * `POST https://api.firecrawl.dev/v2/search` — 按查询发现页面
+    * `POST https://api.firecrawl.dev/v2/scrape` — 从 URL 提取干净的 markdown
+    * `POST https://api.firecrawl.dev/v2/scrape/{scrapeId}/interact` — 与已抓取页面交互
+    * `POST https://api.firecrawl.dev/v2/crawl` — 批量提取整个站点
+    * `POST https://api.firecrawl.dev/v2/map` — 发现域名下的 URL
+    * `POST https://api.firecrawl.dev/v2/agent` — 运行自主网页数据收集
+
+    认证请求头：`Authorization: Bearer fc-YOUR_API_KEY`
+  </Step>
+</Steps>
+
+完整的 onboarding 说明见：
+
+* 浏览器登录、CLI 设置、技能、MCP 和 Dashboard 密钥：[`firecrawl.dev/agent-onboarding/SKILL.md`](https://www.firecrawl.dev/agent-onboarding/SKILL.md)
+* 使用 WorkOS ID-JAG 进行代理注册：[`firecrawl.dev/auth.md`](https://www.firecrawl.dev/auth.md)
+
+代理可以直接获取任一文档：如需人工参与的 CLI/浏览器 onboarding，请使用 [`agent-onboarding/SKILL.md`](https://www.firecrawl.dev/agent-onboarding/SKILL.md)；如需 WorkOS ID-JAG 注册，请使用 [`auth.md`](https://www.firecrawl.dev/auth.md)。
+
+<CardGroup cols={3}>
+  <Card title="CLI 技能" icon="terminal" href="https://github.com/firecrawl/cli">
+    在代理会话期间执行实时网页操作——可在终端中运行 search、scrape、interact、map、crawl 和代理任务。
+  </Card>
+
+  <Card title="构建技能" icon="code" href="https://github.com/firecrawl/skills">
+    将 Firecrawl 集成到应用代码中——选择合适的端点、接入 SDK，并交付经过验证的集成。
+  </Card>
+
+  <Card title="工作流技能" icon="diagram-project" href="https://github.com/firecrawl/firecrawl-workflows">
+    产出可重复交付的成果——研究简报、SEO 审计、QA 报告、潜在客户列表、知识库和设计克隆。
+  </Card>
+</CardGroup>
+
+<div id="using-firecrawl-as-a-tool">
+  ## 将 Firecrawl 作为工具使用
+</div>
+
+Firecrawl 为代理提供了 5 个处理网页的核心工具。每个工具都对应一个 API 端点和一条 CLI 命令。代理会根据需求选择合适的工具：
+
+<AccordionGroup>
+  <Accordion title="搜索 — 通过查询发现页面" icon="magnifying-glass">
+    如果你还没有 URL，就从这里开始。搜索会根据自然语言查询返回相关网页，并可选择在结果中附带完整页面内容。
+
+    ```bash
+    # CLI
+    firecrawl search "latest OpenAI API pricing"
+    ```
+
+    ```bash
+    # REST API
+    curl -X POST https://api.firecrawl.dev/v2/search \
+      -H "Authorization: Bearer fc-YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"query": "latest OpenAI API pricing"}'
+    ```
+
+    **适用场景：** 研究任务、查找文档、竞品分析、回答需要最新网页信息的问题。
+  </Accordion>
+
+  <Accordion title="抓取 — 从 URL 提取内容" icon="file-lines">
+    如果你已经有 URL，并且需要干净、适合 LLM 使用的内容，就用这个工具。抓取 可以将任意网页转换为 markdown、HTML 或结构化数据，并自动处理 JavaScript 渲染、反爬措施以及杂乱的 HTML。
+
+    ```bash
+    # CLI
+    firecrawl scrape https://docs.stripe.com/api/charges
+    ```
+
+    ```bash
+    # REST API
+    curl -X POST https://api.firecrawl.dev/v2/scrape \
+      -H "Authorization: Bearer fc-YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"url": "https://docs.stripe.com/api/charges"}'
+    ```
+
+    **适用场景：** 阅读文档、提取文章内容、从已知页面抓取数据、将网页转换为供 LLM 使用的上下文。
+  </Accordion>
+
+  <Accordion title="爬取 — 批量提取整个站点" icon="spider">
+    爬取 会从起始 URL 递归跟踪链接，并抓取发现的每一个页面。当你需要整个站点或整套文档的内容，而不只是单个页面时，就用它。
+
+    ```bash
+    # CLI
+    firecrawl crawl https://docs.firecrawl.dev --limit 50
+    ```
+
+    ```bash
+    # REST API
+    curl -X POST https://api.firecrawl.dev/v2/crawl \
+      -H "Authorization: Bearer fc-YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"url": "https://docs.firecrawl.dev", "limit": 50}'
+    ```
+
+    **适用场景：** 导入完整文档站点、构建知识库、迁移内容、收集训练数据。
+  </Accordion>
+
+  <Accordion title="Map — 发现域名下的所有 URL" icon="sitemap">
+    Map 可以在不抓取内容的情况下，快速找出某个域名下所有已索引的 URL。如果你需要先了解站点结构，或在抓取前定位特定页面，就用它。
+
+    ```bash
+    # CLI
+    firecrawl map https://docs.firecrawl.dev
+    ```
+
+    ```bash
+    # REST API
+    curl -X POST https://api.firecrawl.dev/v2/map \
+      -H "Authorization: Bearer fc-YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"url": "https://docs.firecrawl.dev"}'
+    ```
+
+    **适用场景：** 站点审计、在大型站点中查找特定页面、在定向爬取前了解站点结构。
+  </Accordion>
+
+  <Accordion title="交互 — 处理已抓取的页面" icon="hand-pointer">
+    交互 让代理能够基于抓取结果，通过 prompt 或代码继续操作。当已抓取的页面需要点击、填写表单、导航或后续提取时，就用它。
+
+    ```bash
+    # CLI
+    firecrawl scrape https://example.com
+    firecrawl interact "Click the pricing tab and extract the plan names"
+    ```
+
+    ```bash
+    # REST API
+    # scrapeId 来自抓取响应（data.metadata.scrapeId）
+    curl -X POST https://api.firecrawl.dev/v2/scrape/SCRAPE_ID/interact \
+      -H "Authorization: Bearer fc-YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"prompt": "Click the pricing tab and extract the plan names"}'
+    ```
+
+    **适用场景：** 基于抓取结果继续操作、浏览动态页面、填写表单，以及在页面操作后提取数据。
+  </Accordion>
+</AccordionGroup>
+
+<div id="how-agents-chain-tools-together">
+  ### 代理如何串联使用工具
+</div>
+
+大多数代理工作流都会结合使用多个工具。典型模式如下：
+
+1. **搜索** 以查找相关页面 → 获取 URL 列表
+2. **抓取** 最相关的 URL → 获取清洗后的内容
+3. 当已抓取的页面需要后续操作时，进行 **交互**
+4. 当任务需要自主发现或结构化的多页面**提取**时，使用 **代理**
+
+对于批量任务，代理通常会先使用 **Map** 发现 URL，然后再对所需页面执行 **爬取** 或有选择地 **抓取**。
+
+<div id="agentic-debugging">
+  ## 代理式调试
+</div>
+
+当 Firecrawl 调用失败或返回异常结果时，你的代理无需升级给人工处理。[`/support/ask`](/zh/api-reference/endpoint/ask) 端点是一个专为**代理间**通信构建的 AI 支持代理——它会诊断你的任务、账户和 API 使用方式中的问题，然后返回经过验证的答案，以及代理可直接应用的机器可读修复参数。
+
+将它接入代理的错误处理流程中，这样它就能在抓取失败、爬取问题和配置问题出现时自行恢复——通常只需 15–30 秒，无需人工介入。
+
+<div id="how-it-works">
+  ### 工作方式
+</div>
+
+1. **你的代理描述问题** —— 用自然语言说明遇到的问题。
+2. **支持代理展开调查** —— 它会检查任务日志、账户状态、文档和源代码。
+3. **支持代理验证修复方案** —— 在可能的情况下，它会针对线上 Firecrawl API 测试修复效果 (例如，使用调整后的参数重新抓取) 。
+4. **你的代理获得经过验证的答案** —— 包括文字形式的 `answer`、可直接应用的机器可读 `fixParameters`，以及用于说明该修复是否已测试的 `validation` 结果。
+
+<div id="example">
+  ### 示例
+</div>
+
+发送一个问题，并可附带一个可选的 `rationale`，为支持人员提供有关最终用户想要实现什么目标的上下文信息：
+
+```bash
+curl -X POST https://api.firecrawl.dev/v2/support/ask \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "my crawl returned 3 pages but I expected 50",
+    "rationale": "user is on their third failed crawl attempt today"
+  }'
+```
+
+响应中包含 `answer`、`confidence` 评分、可选的 `fixParameters` (例如 `{"waitFor": 5000}`，你的代理可在下一次调用中传入) ，以及用于说明该修复是否已在实时 API 上测试过的 `validation`。
+
+<Card title="提问端点参考" icon="life-ring" href="/zh/api-reference/endpoint/ask">
+  `/support/ask` 的完整请求和响应 schema，包括状态码，以及当代理卡住时返回的反馈封装。
+</Card>
+
+<div id="firecrawl-mcp-server">
+  ## Firecrawl MCP 服务器
+</div>
+
+MCP 是一项开放协议，可让兼容的应用程序为模型提供工具访问权限。开源的 [Firecrawl MCP 服务器](https://github.com/firecrawl/firecrawl-mcp-server) 支持搜索、抓取、浏览、爬取、映射、通过 Scrape JSON 进行结构化提取，以及自主代理任务。
+
+<Card title="选择 MCP 连接方式" icon="plug" href="/zh/mcp-server">
+  可尝试免密钥访问、通过交互式客户端登录，或为代理、CI 和后端服务配置 API 密钥。
+</Card>
+
+<div id="firecrawl-docs-for-agents">
+  ## 面向代理的 Firecrawl 文档
+</div>
+
+你可以用结合上下文的方式，向你的代理提供最新的 Firecrawl 文档。代理可以直接拉取这些资源，自行完成接入——无需人工手动配置。
+
+<Steps>
+  <Step title="获取凭据">
+    从 [获取凭据](/zh/ai-onboarding#get-credentials) 开始，选择 Dashboard/CLI 设置或 WorkOS ID-JAG 注册。关于 ID-JAG 注册，请遵循 [`auth.md`](https://www.firecrawl.dev/auth.md)。
+  </Step>
+
+  <Step title="Markdown 文档">
+    每个页面都有对应的 markdown 版本。只需在任意文档 URL 后追加 `.md`，或使用页面操作菜单将页面复制为 markdown。
+
+    ```
+    Docs for this page: https://docs.firecrawl.dev/ai-onboarding.md
+    ```
+  </Step>
+
+  <Step title="完整 llms.txt">
+    将我们的全部文档以单个文件的形式提供给你的代理。
+
+    ```
+    Here are the Firecrawl docs: https://docs.firecrawl.dev/llms-full.txt
+    ```
+
+    也可使用更短的索引：`https://docs.firecrawl.dev/llms.txt`。
+  </Step>
+
+  <Step title="MCP 文档服务器">
+    如需通过 MCP 工具以结构化方式接入，请在 Codex、Cursor、Claude Code、Claude Desktop 或其他兼容客户端中连接 Firecrawl MCP 服务器。请从 [MCP 设置选择器](/zh/mcp-server) 开始。Windsurf 用户应遵循 [Windsurf 快速入门](/zh/quickstarts/windsurf)。
+  </Step>
+
+  <Step title="复制到 ChatGPT / Claude">
+    每个页面都包含一个与上下文相关的操作菜单 (复制、以 markdown 查看、在 ChatGPT 中打开、在 Claude 中打开) ，让代理和用户都能一键在不同工具之间传递页面。
+  </Step>
+</Steps>
+
+<div id="quick-start-guides">
+  ## 快速开始指南
+</div>
+
+为代理最常使用的技术栈提供可直接上手的快速开始指南。让代理使用其中任意一个，即可端到端快速搭建可运行的 Firecrawl 集成。
+
+更想交给 Cursor 处理？一键安装 Firecrawl MCP 服务器，然后在 Cursor 中开始编写 prompt：
+
+<a href="cursor://anysphere.cursor-deeplink/mcp/install?name=firecrawl&config=eyJ1cmwiOiJodHRwczovL21jcC5maXJlY3Jhd2wuZGV2L3YyL21jcCJ9">
+  <img src="https://cursor.com/deeplink/mcp-install-dark.png" alt="在 Cursor 中打开——添加 Firecrawl MCP 服务器" style={{ maxHeight: 32 }} />
+</a>
+
+<CardGroup cols={3}>
+  <Card title="Node.js" icon="node-js" href="/zh/quickstarts/nodejs">
+    借助 Firecrawl Node SDK 进行服务端 JavaScript 和 TypeScript 开发。
+  </Card>
+
+  <Card title="Next.js" icon="react" href="/zh/quickstarts/nextjs">
+    在 Next.js 路由处理程序和 Server Actions 中进行抓取、搜索和爬取。
+  </Card>
+
+  <Card title="Python" icon="python" href="/zh/quickstarts/python">
+    在脚本、Notebook 和后端服务中使用 Firecrawl。
+  </Card>
+
+  <Card title="FastAPI" icon="bolt" href="/zh/quickstarts/fastapi">
+    构建可进行搜索、抓取和提取的异步 Python API。
+  </Card>
+
+  <Card title="Cloudflare Workers" icon="cloudflare" href="/zh/quickstarts/cloudflare-workers">
+    通过 Workers 在边缘运行 Firecrawl。
+  </Card>
+
+  <Card title="Vercel Functions" icon="triangle" href="/zh/quickstarts/vercel-functions">
+    从 Vercel 无服务器函数中调用 Firecrawl。
+  </Card>
+
+  <Card title="AWS Lambda" icon="aws" href="/zh/quickstarts/aws-lambda">
+    从 Lambda 处理程序中调用 Firecrawl。
+  </Card>
+
+  <Card title="Supabase Edge Functions" icon="database" href="/zh/quickstarts/supabase-edge-functions">
+    在 Supabase Deno 运行时中使用 Firecrawl。
+  </Card>
+
+  <Card title="Go" icon="golang" href="/zh/quickstarts/go">
+    用于搜索、抓取和爬取的惯用 Go SDK。
+  </Card>
+
+  <Card title="Rust" icon="rust" href="/zh/quickstarts/rust">
+    适用于 Firecrawl 的强类型 Rust SDK。
+  </Card>
+
+  <Card title="Laravel" icon="laravel" href="/zh/quickstarts/laravel">
+    通过 PHP SDK 将 Firecrawl 集成到 Laravel 应用中。
+  </Card>
+
+  <Card title="Rails" icon="gem" href="/zh/quickstarts/rails">
+    轻松将 Firecrawl 接入 Ruby on Rails。
+  </Card>
+</CardGroup>
+
+请参见左侧边栏中的完整快速开始列表 (Express、NestJS、Fastify、Hono、Bun、Remix、Nuxt、SvelteKit、Astro、Mastra、Django、Flask、Elixir、Java、Spring Boot、.NET、ASP.NET Core 等) 。
+
+<div id="agent-harnesses">
+  ## 代理接入
+</div>
+
+Firecrawl 可与代理实际所处的运行时和框架配合使用——包括代码代理、代理 SDK 以及模型聚合器。大多数代码代理集成都可以通过 `npx -y firecrawl-cli@latest init --all --browser` 自动发现 Firecrawl 技能；其余则通过 MCP 或 REST API 将 Firecrawl 作为工具调用。
+
+<CardGroup cols={3}>
+  <Card title="Claude Code" icon="terminal" href="/zh/quickstarts/claude-code">
+    Anthropic 的 CLI——在 Claude Code 中设置 Firecrawl MCP。
+  </Card>
+
+  <Card title="Cursor" icon="arrow-pointer" href="/zh/quickstarts/cursor">
+    IDE 代理——一键在 Cursor 中安装 Firecrawl MCP。
+  </Card>
+
+  <Card title="OpenCode" icon="code-branch" href="/zh/quickstarts/opencode">
+    将 Firecrawl MCP 接入 OpenCode。
+  </Card>
+
+  <Card title="Codex CLI" icon="code" href="/zh/quickstarts/codex-cli">
+    将 Firecrawl MCP 接入 OpenAI Codex CLI。
+  </Card>
+
+  <Card title="OpenRouter" icon="route" href="/zh/quickstarts/openrouter">
+    让任意 OpenRouter 模型搭配 Firecrawl 网页工具使用。
+  </Card>
+
+  <Card title="Amp" icon="bolt" href="/zh/quickstarts/amp">
+    将 Firecrawl MCP 接入 Sourcegraph Amp。
+  </Card>
+
+  <Card title="Windsurf" icon="wind" href="/zh/quickstarts/windsurf">
+    代理式 IDE——在 Windsurf 中设置 Firecrawl MCP。
+  </Card>
+
+  <Card title="Antigravity" icon="rocket" href="/zh/quickstarts/antigravity">
+    为 Google 的代理式 IDE 添加 Firecrawl MCP。
+  </Card>
+
+  <Card title="Gemini CLI" icon="gem" href="/zh/quickstarts/gemini-cli">
+    将 Firecrawl MCP 接入 Google Gemini CLI。
+  </Card>
+
+  <Card title="Nous Research" icon="brain" href="/zh/quickstarts/nous-research">
+    将 Firecrawl 作为工具与 Hermes 模型配合使用。
+  </Card>
+
+  <Card title="AutoGen" icon="robot" href="/zh/quickstarts/autogen">
+    在 Microsoft AutoGen 多代理团队中接入 Firecrawl 工具。
+  </Card>
+</CardGroup>
+
+<div id="sdks">
+  ## SDKs
+</div>
+
+官方类型化 SDK，覆盖完整的 Firecrawl API。为你的代理选择与你技术栈相匹配的语言 SDK。
+
+<CardGroup cols={3}>
+  <Card title="Python" icon="python" href="/zh/sdks/python" />
+
+  <Card title="Node" icon="node-js" href="/zh/sdks/node" />
+
+  <Card title="Go" icon="golang" href="/zh/sdks/go" />
+
+  <Card title="Java" icon="java" href="/zh/sdks/java" />
+
+  <Card title="Ruby" icon="gem" href="/zh/sdks/ruby" />
+
+  <Card title="Rust" icon="rust" href="/zh/sdks/rust" />
+
+  <Card title=".NET" icon="microsoft" href="/zh/sdks/dotnet" />
+
+  <Card title="PHP" icon="php" href="/zh/sdks/php" />
+
+  <Card title="Elixir" icon="droplet" href="/zh/sdks/elixir" />
+
+  <Card title="CLI" icon="terminal" href="/zh/sdks/cli" />
+</CardGroup>
+
+Firecrawl 还为主流 LLM SDK 和代理框架提供了原生 SDK 绑定——请参见 [LLM SDKs and Frameworks](/zh/developer-guides/llm-sdks-and-frameworks/openai)，了解 OpenAI、Anthropic、Gemini、Google ADK、Vercel AI SDK、LangChain、LangGraph、LlamaIndex、Mastra 和 ElevenAgents。

@@ -1,0 +1,256 @@
+---
+title: Introduction
+description: "Recherchez sur le web, extrayez n’importe quelle page et interagissez avec elle, le tout via une seule API."
+og:title: "Introduction | Firecrawl"
+og:description: "Recherchez sur le web, extrayez n’importe quelle page et interagissez avec elle, le tout via une seule API."
+---
+
+import SearchPython from "/snippets/fr/v2/search/base/python.mdx";
+import SearchNode from "/snippets/fr/v2/search/base/js.mdx";
+import SearchCURL from "/snippets/fr/v2/search/base/curl.mdx";
+import SearchCLI from "/snippets/fr/v2/search/base/cli.mdx";
+import SearchResponse from "/snippets/fr/v2/search/base/output.mdx";
+import ScrapePython from "/snippets/fr/v2/scrape/base/python.mdx";
+import ScrapeNode from "/snippets/fr/v2/scrape/base/js.mdx";
+import ScrapeCURL from "/snippets/fr/v2/scrape/base/curl.mdx";
+import ScrapeCLI from "/snippets/fr/v2/scrape/base/cli.mdx";
+import ScrapeResponse from "/snippets/fr/v2/scrape/base/output.mdx";
+import InteractPython from "/snippets/fr/v2/interact/quickstart/python.mdx";
+import InteractNode from "/snippets/fr/v2/interact/quickstart/js.mdx";
+import InteractCURL from "/snippets/fr/v2/interact/quickstart/curl.mdx";
+import InteractCLI from "/snippets/fr/v2/interact/quickstart/cli.mdx";
+import InteractResponse from "/snippets/fr/v2/interact/response/output.mdx";
+import {
+  AgentSetupButton,
+  McpClientSelector,
+} from "/snippets/shared/agent-first-onboarding.jsx";
+import GeneralFeedbackCTA from "/snippets/fr/general-feedback-cta.mdx";
+
+<div id="get-started">
+  ## Premiers pas
+</div>
+
+<Visibility for="humans">
+  <McpClientSelector variant="human" />
+</Visibility>
+
+<Visibility for="agents">
+  Connectez-vous via Streamable HTTP. L’URL du serveur sans clé (recherche, Scrape et Parse ; aucune information d’identification requise) est `https://mcp.firecrawl.dev/v2/mcp`.
+
+  * Codex : `codex mcp add firecrawl --url https://mcp.firecrawl.dev/v2/mcp`
+  * Claude Code : `claude mcp add --transport http firecrawl https://mcp.firecrawl.dev/v2/mcp`
+  * Cursor ou tout client configuré en JSON : `{"mcpServers": {"firecrawl": {"url": "https://mcp.firecrawl.dev/v2/mcp"}}}`
+  * OpenCode (`opencode.json`) : `{"mcp": {"firecrawl": {"type": "remote", "url": "https://mcp.firecrawl.dev/v2/mcp", "enabled": true}}}`
+  * ChatGPT ou Claude.ai : utilisez le connecteur Firecrawl natif — [ChatGPT](https://chatgpt.com/plugins?q=firecrawl) ou [Claude](https://claude.ai/directory/connectors/firecrawl).
+
+  Les deux méthodes de configuration et la configuration avec une clé API : [Premiers pas avec MCP](/fr/mcp-server.md), [Pour les agents](/fr/mcp-server/keyless.md) et [Pour les humains](/fr/mcp-server/oauth.md).
+</Visibility>
+
+<div id="build-directly-with-the-api">
+  ### Créez directement avec l’API
+</div>
+
+Extrayez votre première page dès maintenant. Aucun compte ni clé API ne sont requis pour cette requête.
+
+<ScrapeCURL />
+
+Ajoutez une [clé d’API](https://www.firecrawl.dev/app/api-keys) si vous avez besoin de limites plus élevées. Consultez le [SDK Python](/fr/sdks/python), le [SDK Node](/fr/sdks/node) ou la [référence de l’API](/fr/api-reference/endpoint/scrape) pour l’intégrer à votre application.
+
+<div id="other-ways-to-get-started">
+  ## Autres façons de commencer
+</div>
+
+<div id="install-the-firecrawl-cli">
+  ### Installer le CLI Firecrawl
+</div>
+
+Une seule commande installe le CLI Firecrawl, vous authentifie dans votre Browser et ajoute des skills à chaque agent de codage détecté.
+
+```bash
+npx -y firecrawl-cli@latest init --all --browser
+```
+
+<Note>
+  Redémarrez votre agent de codage après la configuration afin qu’il puisse découvrir les nouveaux skills. Consultez
+  [CLI](/fr/sdks/cli) pour la configuration complète.
+</Note>
+
+<div id="set-up-with-an-agent">
+  ### Configurer avec un agent
+</div>
+
+Fournissez à votre agent ce prompt de configuration Firecrawl, ou consultez [toutes les options de configuration MCP](/fr/mcp-server).
+
+<AgentSetupButton />
+
+<Note>
+  **Pour les agents IA :** Utilisez [llms.txt](https://docs.firecrawl.dev/llms.txt) pour accéder à un index de la documentation, ou [llms-full.txt](https://docs.firecrawl.dev/llms-full.txt) pour consulter le texte complet.
+</Note>
+
+<div id="build-and-test-directly">
+  ### Créez et testez directement
+</div>
+
+<CardGroup cols={2}>
+  <Card title="Obtenez votre clé d'API" icon="key" href="https://www.firecrawl.dev/app/api-keys">
+    Créez un compte gratuit pour un accès direct à l&#39;API et des limites plus élevées
+  </Card>
+
+  <Card title="Essayez-le dans le Playground" icon="play" href="https://www.firecrawl.dev/playground">
+    Testez Firecrawl dans le navigateur sans écrire de code
+  </Card>
+</CardGroup>
+
+***
+
+<div id="what-can-firecrawl-do">
+  ## Que peut faire Firecrawl ?
+</div>
+
+<CardGroup cols={3}>
+  <Card title="Recherche" icon="magnifying-glass" href="#search">
+    Rechercher sur le web et obtenir le contenu complet des pages à partir des résultats
+  </Card>
+
+  <Card title="Scrape" icon="file-lines" href="#scrape">
+    Extraire le contenu de n’importe quelle URL en markdown, HTML ou JSON structuré
+  </Card>
+
+  <Card title="Interact" icon="hand-pointer" href="#interact">
+    Continuer à travailler avec n’importe quelle page scrapée : cliquer, remplir des formulaires, extraire du contenu dynamique
+  </Card>
+</CardGroup>
+
+<div id="why-firecrawl">
+  ### Pourquoi Firecrawl ?
+</div>
+
+* **Sortie prête pour les LLM** : Markdown propre, JSON structuré, captures d’écran, et plus encore.
+* **Gère les aspects complexes** : proxys, protections anti-bot, rendu JavaScript et contenu dynamique.
+* **Fiable** : conçu pour la production, avec une haute disponibilité et des résultats constants.
+* **Rapide** : des résultats en quelques secondes, optimisé pour un débit élevé.
+* **MCP Server** : connectez Firecrawl à n’importe quel outil d’IA via le [Model Context Protocol](/fr/mcp-server).
+
+<GeneralFeedbackCTA src="docs-introduction" />
+
+***
+
+<div id="search">
+  ## Recherche
+</div>
+
+Effectuez une recherche sur le web et obtenez le contenu complet des pages à partir des résultats en un seul appel. Consultez la [documentation de la fonctionnalité de recherche](/fr/features/search) pour toutes les options.
+
+<CodeGroup>
+  <SearchPython />
+
+  <SearchNode />
+
+  <SearchCURL />
+
+  <SearchCLI />
+</CodeGroup>
+
+<Accordion title="Réponse">
+  Les SDK renverront directement l’objet `data`. cURL renverra la charge utile complète.
+
+  <SearchResponse />
+</Accordion>
+
+<div id="scrape">
+  ## Scrape
+</div>
+
+Extrayez n’importe quelle URL et obtenez son contenu en markdown, HTML ou d’autres formats. Consultez la [documentation de la fonctionnalité Scrape](/fr/features/scrape) pour toutes les options.
+
+<CodeGroup>
+  <ScrapePython />
+
+  <ScrapeNode />
+
+  <ScrapeCURL />
+
+  <ScrapeCLI />
+</CodeGroup>
+
+<Accordion title="Réponse">
+  Les SDK vont renvoyer directement l’objet data. cURL renverra la charge utile exactement comme indiqué ci-dessous.
+
+  <ScrapeResponse />
+</Accordion>
+
+<div id="interact">
+  ## Interact
+</div>
+
+Scrapez une page, puis continuez à travailler avec elle : cliquez sur des boutons, remplissez des formulaires, extrayez du contenu dynamique ou naviguez plus en profondeur. Décrivez ce que vous voulez en anglais courant ou écrivez du code pour un contrôle total. Consultez la [documentation de la fonctionnalité Interact](/fr/features/interact) pour toutes les options.
+
+<CodeGroup>
+  <InteractPython />
+
+  <InteractNode />
+
+  <InteractCURL />
+
+  <InteractCLI />
+</CodeGroup>
+
+<Accordion title="Réponse">
+  <InteractResponse />
+</Accordion>
+
+***
+
+<div id="more-capabilities">
+  ## Plus de fonctionnalités
+</div>
+
+<CardGroup cols={2}>
+  <Card title="Interact" icon="hand-pointer" href="/fr/features/interact">
+    Cliquer, remplir des formulaires, extraire du contenu dynamique
+  </Card>
+
+  <Card title="Webhooks" icon="webhook" href="/fr/webhooks">
+    Envoi asynchrone d’événements
+  </Card>
+
+  <Card title="Browser Sandbox" icon="browser" href="/fr/features/browser">
+    Gérer des sessions de navigateur pour des workflows interactifs
+  </Card>
+
+  <Card title="Parse" icon="file-magnifying-glass" href="/fr/features/parse">
+    Transformer des PDF, DOCX, XLSX, HTML locaux et plus encore en Markdown ou JSON structuré
+  </Card>
+
+  <Card title="Map" icon="map" href="/fr/features/map">
+    Découvrir toutes les URL d’un site web
+  </Card>
+
+  <Card title="Crawl" icon="spider-web" href="/fr/features/crawl">
+    Collecter récursivement le contenu de sites entiers
+  </Card>
+</CardGroup>
+
+***
+
+<div id="resources">
+  ## Ressources
+</div>
+
+<CardGroup cols={2}>
+  <Card title="Référence de l’API" icon="code" href="/fr/api-reference/v2-introduction">
+    Documentation complète de l’API avec des exemples interactifs
+  </Card>
+
+  <Card title="SDKs" icon="boxes-stacked" href="/fr/sdks/overview">
+    SDKs Python, Node.js, CLI et communautaires
+  </Card>
+
+  <Card title="Open Source" icon="github" href="/fr/contributing/open-source-or-cloud">
+    Hébergez Firecrawl vous-même ou contribuez au projet
+  </Card>
+
+  <Card title="Intégrations" icon="puzzle-piece" href="/fr/developer-guides/llm-sdks-and-frameworks/openai">
+    LangChain, LlamaIndex, OpenAI et plus encore
+  </Card>
+</CardGroup>

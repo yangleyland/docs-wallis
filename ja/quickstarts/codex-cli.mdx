@@ -1,0 +1,58 @@
+---
+title: "Codex CLI での MCP Web Search & スクレイピング"
+description: "OpenAI Codex CLI に Firecrawl の Web スクレイピングと検索を追加"
+sidebarTitle: "Codex CLI"
+---
+
+ホスト型 OAuth MCP サーバーを介して、[OpenAI Codex CLI](https://github.com/openai/codex) を Firecrawl に接続します。
+
+<div id="quick-setup">
+  ## クイックスタート
+</div>
+
+<div id="1-add-firecrawl">
+  ### 1. Firecrawl を追加する
+</div>
+
+```bash
+codex mcp add firecrawl --url https://mcp.firecrawl.dev/v2/mcp-oauth
+codex mcp login firecrawl
+```
+
+URL はクライアントの構成値であり、ブラウザで直接開くページではありません。Codex を使用すると Firecrawl のサインインフローが開くので、そこでチームを選択し、接続を承認します。
+
+<div id="2-start-codex-and-verify">
+  ### 2. Codexを起動して動作を確認する
+</div>
+
+```bash
+codex
+```
+
+`/mcp` を入力し、`firecrawl` が接続されていることを確認してください。既存のFirecrawl接続を変更した場合は、再試行する前に新しいCodexセッションを開始してください。
+
+次を試してください：
+
+```text
+Next.js App Routerの最新リリースノートをウェブで検索し、ソースを要約してください。
+```
+
+```text
+スクレイピング https://docs.firecrawl.dev and list the top-level sections.
+```
+
+<div id="other-connection-modes">
+  ## その他の接続モード
+</div>
+
+* アカウントやキーを使わずに 検索、スクレイピング、解析を試すには、[keyless MCP を試す](/ja/mcp-server/keyless#try-keyless)を参照してください。
+* ユーザー操作なしで使用する場合は、`bearer_token_env_var` を使用して [API キーを設定](/ja/mcp-server/keyless#add-an-api-key)します。シークレットは Agent のチャットやソース管理には含めないでください。
+* ローカルプロセスまたはセルフホスト型 Firecrawl API が必要な場合にのみ、[MCP をローカルで実行](/ja/mcp-server/local)してください。ローカルパッケージには Node.js 22 以降が必要です。
+
+<div id="troubleshooting">
+  ## トラブルシューティング
+</div>
+
+* **Codex にツールが表示されない:** `codex mcp list` を実行し、`firecrawl` エントリが 1 つだけ存在することを確認してから、Codex を再起動します。
+* **OAuth が `401` を返す:** `codex mcp login firecrawl` を実行してサインインを完了します。認証前に OAuth サーバーへ直接リクエストすると `401` が返るのは想定どおりです。
+* **API キー接続で `401` が返る:** Codex を起動する環境のキーを置き換え、新しいセッションを開始します。

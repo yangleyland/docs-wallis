@@ -1,0 +1,74 @@
+---
+title: "Camel AI"
+description: "O Firecrawl integra-se ao Camel AI como carregador de dados."
+og:title: "Camel AI | Firecrawl"
+og:description: "O Firecrawl integra-se ao Camel AI como carregador de dados."
+---
+
+<Note>
+  **Documentação oficial do CAMEL:** [docs.camel-ai.org/key&#95;modules/loaders](https://docs.camel-ai.org/key_modules/loaders)
+
+  O Firecrawl é disponibilizado como um carregador do CAMEL, transformando qualquer site em markdown pronto para LLMs para seus agentes
+</Note>
+
+<div id="installation">
+  ## Instalação
+</div>
+
+```bash
+pip install camel-ai
+```
+
+Defina sua chave do Firecrawl para que o carregador a reconheça automaticamente:
+
+```bash
+export FIRECRAWL_API_KEY="fc-your-api-key"
+```
+
+<div id="usage">
+  ## Uso
+</div>
+
+Com Camel AI e Firecrawl, você pode criar rapidamente sistemas multiagentes que utilizam dados da web.
+
+<div id="using-firecrawl-to-gather-an-entire-website">
+  ### Usando o Firecrawl para coletar um site inteiro
+</div>
+
+`crawl` retorna quando o job é concluído. Verifique `status` e leia o markdown em `data`.
+
+```python
+from camel.loaders import Firecrawl
+
+firecrawl = Firecrawl()
+
+response = firecrawl.crawl(url="https://www.camel-ai.org/about")
+print(response["status"])  # "completed" quando o rastreamento é concluído
+
+print(response["data"][0]["markdown"])
+```
+
+<div id="using-firecrawl-to-gather-a-single-page">
+  ### Como usar o Firecrawl para obter uma única página
+</div>
+
+```python
+from camel.loaders import Firecrawl
+
+firecrawl = Firecrawl()
+
+response = firecrawl.scrape(url="https://www.camel-ai.org/about")
+print(response["markdown"])
+```
+
+<Tip>
+  `Firecrawl()` lê `FIRECRAWL_API_KEY` das variáveis de ambiente. Passe `api_key=...` para substituí-la ou `api_url=...` para apontar para uma instância [self-hosted](/pt-BR/contributing/self-host).
+</Tip>
+
+<div id="resources">
+  ## Recursos
+</div>
+
+* [Documentação dos carregadores do CAMEL](https://docs.camel-ai.org/key_modules/loaders)
+* [Guia do CAMEL e do Firecrawl](https://www.camel-ai.org/blogs/firecrawl)
+* Documentação de [scrape do Firecrawl](/pt-BR/features/scrape) e [rastreamento](/pt-BR/features/crawl)

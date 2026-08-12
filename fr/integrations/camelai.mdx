@@ -1,0 +1,74 @@
+---
+title: "Camel AI"
+description: "Firecrawl s’intègre à Camel AI comme chargeur de données."
+og:title: "Camel AI | Firecrawl"
+og:description: "Firecrawl s’intègre à Camel AI comme chargeur de données."
+---
+
+<Note>
+  **Documentation officielle de CAMEL :** [docs.camel-ai.org/key&#95;modules/loaders](https://docs.camel-ai.org/key_modules/loaders)
+
+  Firecrawl est disponible sous forme de chargeur CAMEL et transforme n’importe quel site en markdown prêt à être utilisé par les LLM pour vos agents
+</Note>
+
+<div id="installation">
+  ## Installation
+</div>
+
+```bash
+pip install camel-ai
+```
+
+Configurez votre clé Firecrawl pour que le chargeur la détecte automatiquement :
+
+```bash
+export FIRECRAWL_API_KEY="fc-your-api-key"
+```
+
+<div id="usage">
+  ## Utilisation
+</div>
+
+Avec Camel AI et Firecrawl, vous pouvez rapidement créer des systèmes multi-agents capables d’exploiter des données issues du web.
+
+<div id="using-firecrawl-to-gather-an-entire-website">
+  ### Utiliser Firecrawl pour collecter l’intégralité d’un site web
+</div>
+
+`crawl` renvoie le résultat une fois la tâche terminée. Vérifiez l’`état`, puis lisez le markdown dans `data`.
+
+```python
+from camel.loaders import Firecrawl
+
+firecrawl = Firecrawl()
+
+response = firecrawl.crawl(url="https://www.camel-ai.org/about")
+print(response["status"])  # "completed" une fois le crawl terminé
+
+print(response["data"][0]["markdown"])
+```
+
+<div id="using-firecrawl-to-gather-a-single-page">
+  ### Utiliser Firecrawl pour récupérer une page unique
+</div>
+
+```python
+from camel.loaders import Firecrawl
+
+firecrawl = Firecrawl()
+
+response = firecrawl.scrape(url="https://www.camel-ai.org/about")
+print(response["markdown"])
+```
+
+<Tip>
+  `Firecrawl()` lit `FIRECRAWL_API_KEY` depuis l’environnement. Passez `api_key=...` pour la remplacer ou `api_url=...` pour utiliser une instance [auto-hébergée](/fr/contributing/self-host).
+</Tip>
+
+<div id="resources">
+  ## Ressources
+</div>
+
+* [Documentation des chargeurs CAMEL](https://docs.camel-ai.org/key_modules/loaders)
+* [Guide pratique sur CAMEL et Firecrawl](https://www.camel-ai.org/blogs/firecrawl)
+* Documentation de [scrape Firecrawl](/fr/features/scrape) et de [crawl](/fr/features/crawl)

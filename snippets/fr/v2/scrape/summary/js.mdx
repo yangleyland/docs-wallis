@@ -1,0 +1,14 @@
+```js Node
+import { Firecrawl } from 'firecrawl';
+
+const firecrawl = new Firecrawl({
+  // Aucune clé API requise pour démarrer — ajoutez-en une pour des limites de débit plus élevées :
+  // apiKey: "fc-YOUR-API-KEY",
+});
+
+const doc = await firecrawl.scrape('https://firecrawl.dev', {
+  formats: ['summary']
+});
+
+console.log(doc.summary);
+```

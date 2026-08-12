@@ -1,0 +1,413 @@
+---
+title: 'Python'
+description: 'Firecrawl Python SDK は、Firecrawl API のラッパーで、ウェブサイトを手軽に Markdown に変換できます。'
+icon: 'python'
+og:title: "Python SDK | Firecrawl"
+og:description: "Firecrawl Python SDK は、Firecrawl API のラッパーで、ウェブサイトを手軽に Markdown に変換できます。"
+---
+
+import InstallationPython from '/snippets/ja/v2/installation/python.mdx'
+import ScrapePythonShort from '/snippets/ja/v2/scrape/short/python.mdx'
+import CrawlPythonShort from '/snippets/ja/v2/crawl/short/python.mdx'
+import CrawlSitemapOnlyPython from '/snippets/ja/v2/crawl/sitemap-only/python.mdx'
+import CheckCrawlStatusPythonShort from '/snippets/ja/v2/crawl-status/short/python.mdx'
+import StartCrawlPythonShort from '/snippets/ja/v2/start-crawl/short/python.mdx'
+import CancelCrawlPythonShort from '/snippets/ja/v2/crawl-delete/short/python.mdx'
+import MapPythonShort from '/snippets/ja/v2/map/short/python.mdx'
+import ExtractPythonShort from '/snippets/v2/extract/short/python.mdx'
+import ScrapeAndCrawlExamplePython from '/snippets/ja/v2/scrape-and-crawl/python.mdx'
+import CrawlWebSocketPythonBase from '/snippets/ja/v2/crawl-websocket/base/python.mdx'
+import PersistentPython from '/snippets/ja/v2/browser/persistent/python.mdx'
+import AIOPython from '/snippets/ja/v2/async/base/python.mdx'
+
+<div id="installation">
+  ## インストール
+</div>
+
+Firecrawl の Python SDK をインストールするには、pip を使用します：
+
+<InstallationPython />
+
+<div id="usage">
+  ## 使い方
+</div>
+
+[firecrawl.dev](https://firecrawl.dev) で API キーを取得し、環境変数 `FIRECRAWL_API_KEY` に設定するか、`Firecrawl` クラスに直接渡します。
+
+<Note>
+  **API キーをお持ちでないですか？** `Firecrawl` はキーなしでも作成でき、キー不要の Free ティアで `scrape`、`search`、`interact` を使用できます (IP ごとにレート制限あり。詳しくは [Rate Limits](/ja/rate-limits#keyless-no-api-key) を参照してください) 。それ以外のすべてのメソッドではキーが必要です。
+</Note>
+
+<ScrapeAndCrawlExamplePython />
+
+<div id="scraping-a-url">
+  ### URLのスクレイピング
+</div>
+
+`scrape` メソッドを使用して単一のURLをスクレイピングします。ページのコンテンツを、Markdown、メタデータ、およびリクエストしたその他のフォーマットを含む構造化データとして返します。
+
+<ScrapePythonShort />
+
+<Note>
+  Python SDK は、すべてのレスポンスフィールド名を camelCase から snake&#95;case に変換します。たとえば、API の `ogImage`、`ogTitle`、`sourceURL` などのメタデータフィールドは、SDK のレスポンスでは `og_image`、`og_title`、`source_url` になります。
+</Note>
+
+<div id="parsing-uploaded-files">
+  ### アップロードしたファイルの解析
+</div>
+
+`parse` を使うと、ローカルファイル (`html`、`pdf`、`docx`、`xlsx` など) を `/v2/parse` に直接アップロードできます。
+`parse` は `changeTracking` や、アクション、wait&#95;for、ロケーション、mobile、screenshot、branding などのブラウザ専用オプションには対応していません。
+
+```python Python
+from firecrawl.v2.types import ParseOptions
+
+parsed = firecrawl.parse(
+    b"<!DOCTYPE html><html><body><h1>Python Parse</h1></body></html>",
+    filename="upload.html",
+    content_type="text/html",
+    options=ParseOptions(formats=["markdown"]),
+)
+
+print(parsed.markdown)
+```
+
+<div id="crawl-a-website">
+  ### ウェブサイトをクロールする
+</div>
+
+ウェブサイトをクロールするには、`crawl` メソッドを使用します。開始URLと任意のオプションを引数に取ります。オプションでは、クロールするページ数の上限、許可するドメイン、出力フォーマットなど、クロールジョブの追加設定を指定できます。自動/手動のページネーションや制限については [Pagination](#pagination) を参照してください。
+
+<CrawlPythonShort />
+
+<div id="sitemap-only-crawl">
+  ### サイトマップのみクロール
+</div>
+
+`sitemap="only"` を使用して、サイトマップの URL のみをクロールします (開始 URL は常に含まれ、HTML のリンク探索は行われません) 。
+
+<CrawlSitemapOnlyPython />
+
+<div id="start-a-crawl">
+  ### クロールを開始
+</div>
+
+<Tip>ノンブロッキングがお好みですか？下の[Async Class](#async-class)セクションをご覧ください。</Tip>
+
+`start_crawl` を使うと待たずにジョブを開始できます。ステータス確認に使えるジョブの `ID` を返します。完了までブロックして待機したい場合は `crawl` を使用してください。ページングの動作と制限は [Pagination](#pagination) を参照してください。
+
+<StartCrawlPythonShort />
+
+<div id="checking-crawl-status">
+  ### クロールのステータスを確認する
+</div>
+
+`get_crawl_status` を使用して、クロールジョブのステータスを確認します。ジョブ ID を渡すと、現在のステータスと、それまでに収集された結果を取得できます。
+
+<CheckCrawlStatusPythonShort />
+
+<div id="cancelling-a-crawl">
+  ### クロールのキャンセル
+</div>
+
+クロールジョブをキャンセルするには、`cancel_crawl` メソッドを使用します。`start_crawl` が返すジョブIDを渡すと、キャンセル結果のステータスを受け取れます。
+
+<CancelCrawlPythonShort />
+
+<div id="map-a-website">
+  ### ウェブサイトをマッピングする
+</div>
+
+`map` を使って、ウェブサイトから URL の一覧を生成します。オプションで、サブドメインの除外やサイトマップの利用など、マッピングの挙動をカスタマイズできます。
+
+<MapPythonShort />
+
+{/* ### ウェブサイトから構造化データを抽出する
+
+  ウェブサイトから構造化データを抽出するには、`extract` メソッドを使用します。抽出対象の URL、プロンプト、スキーマを引数に取ります。スキーマは、抽出データの構造を定義する Pydantic モデルです。
+
+  <ExtractPythonShort /> */}
+
+<div id="crawling-a-website-with-websockets">
+  ### WebSockets を使ったウェブサイトのクロール
+</div>
+
+WebSockets でウェブサイトをクロールするには、`start_crawl` でジョブを開始し、`watcher` ヘルパーで購読します。ジョブ ID を指定して watcher を作成し、`start()` を呼び出す前にハンドラー (例: page、completed、failed) を登録します。
+
+<CrawlWebSocketPythonBase />
+
+<div id="pagination">
+  ### ページネーション
+</div>
+
+Firecrawl の /crawl および batch scrape の各エンドポイントは、追加のデータがある場合に `next` URL を返します。Python SDK はデフォルトで自動ページネーションを行い、すべてのドキュメントを集約します。この場合、`next` は `None` になります。自動ページネーションを無効化したり、ページネーションの動作を制御するための上限を設定することも可能です。
+
+<div id="paginationconfig">
+  #### PaginationConfig
+</div>
+
+`get_crawl_status` または `get_batch_scrape_status` を呼び出す際のページネーション動作を制御するには、`PaginationConfig` を使用します。
+
+```python Python
+from firecrawl.v2.types import PaginationConfig
+```
+
+| オプション           | 型      | デフォルト  | 説明                                                                |
+| --------------- | ------ | ------ | ----------------------------------------------------------------- |
+| `auto_paginate` | `bool` | `True` | `True` の場合、すべてのページを自動的に取得して結果を集約します。1 ページずつ取得するには `False` に設定します。 |
+| `max_pages`     | `int`  | `None` | 指定したページ数を取得したら終了します (`auto_paginate=True` の場合にのみ適用されます) 。           |
+| `max_results`   | `int`  | `None` | 指定したドキュメント数を収集したら終了します (`auto_paginate=True` の場合にのみ適用されます) 。        |
+| `max_wait_time` | `int`  | `None` | 指定した秒数が経過したら終了します (`auto_paginate=True` の場合にのみ適用されます) 。             |
+
+<div id="manual-pagination-helpers">
+  #### 手動ページネーションヘルパー
+</div>
+
+`auto_paginate=False` の場合、追加のデータがあると、レスポンスに `next` URL が含まれます。次のページを取得するには、これらのヘルパーメソッドを使用します:
+
+* **`get_crawl_status_page(next_url)`** - 前のレスポンスに含まれる不透明な `next` URL を使用して、クロール結果の次のページを取得します。
+* **`get_batch_scrape_status_page(next_url)`** - 前のレスポンスに含まれる不透明な `next` URL を使用して、バッチスクレイプ結果の次のページを取得します。
+
+これらのメソッドは、元のステータス呼び出しと同じ型のレスポンスを返し、さらにページが残っている場合は新しい `next` URL を含みます。
+
+<div id="crawl">
+  #### クロール
+</div>
+
+最も手軽なのはウェイター方式の `crawl` を使うことです。もしくはジョブを開始して手動でページ処理を行ってください。
+
+<div id="simple-crawl-auto-pagination-default">
+  ##### シンプルなクロール (自動ページネーション、デフォルト) 
+</div>
+
+* 既定のフローについては[ウェブサイトをクロールする](#crawl-a-website)を参照してください。
+
+<div id="manual-crawl-with-pagination-control">
+  ##### ページネーションを制御した手動クロール
+</div>
+
+ジョブを開始し、`auto_paginate=False` を指定して 1 ページずつ取得します。後続のページを取得するには `get_crawl_status_page` を使用します。
+
+```python Python
+crawl_job = client.start_crawl("https://example.com", limit=100)
+
+# 最初のページを取得
+status = client.get_crawl_status(
+    crawl_job.id,
+    pagination_config=PaginationConfig(auto_paginate=False)
+)
+print("First page:", len(status.data), "docs")
+
+# get_crawl_status_pageを使用して後続のページを取得
+while status.next:
+    status = client.get_crawl_status_page(status.next)
+    print("Next page:", len(status.data), "docs")
+```
+
+<div id="manual-crawl-with-limits-auto-pagination-early-stop">
+  ##### Manual crawl with limits (auto-pagination + early stop)
+</div>
+
+自動ページネーションは有効のまま、`max_pages`、`max_results`、または `max_wait_time` で早期停止します。
+
+```python Python
+status = client.get_crawl_status(
+    crawl_job.id,
+    pagination_config=PaginationConfig(max_pages=2, max_results=50, max_wait_time=15),
+)
+print("クロール制限:", status.status, "ドキュメント数:", len(status.data), "次のページ:", status.next)
+```
+
+<div id="batch-scrape">
+  #### バッチスクレイプ
+</div>
+
+waiter メソッド `batch_scrape` を使うか、ジョブを開始して手動でページングします。
+
+<div id="simple-batch-scrape-auto-pagination-default">
+  ##### シンプルなバッチスクレイプ (自動ページネーション、デフォルト) 
+</div>
+
+* 既定のフローは [Batch Scrape](/ja/features/batch-scrape) を参照してください。
+
+<div id="manual-batch-scrape-with-pagination-control">
+  ##### ページネーション制御付きの手動バッチスクレイピング
+</div>
+
+`auto_paginate=False` を指定してジョブを開始し、1ページずつ取得します。後続のページを取得するには `get_batch_scrape_status_page` を使用します。
+
+```python Python
+batch_job = client.start_batch_scrape(urls)
+
+# 最初のページを取得
+status = client.get_batch_scrape_status(
+    batch_job.id,
+    pagination_config=PaginationConfig(auto_paginate=False)
+)
+print("First page:", len(status.data), "docs")
+
+# get_batch_scrape_status_pageを使用して後続のページを取得
+while status.next:
+    status = client.get_batch_scrape_status_page(status.next)
+    print("Next page:", len(status.data), "docs")
+```
+
+<div id="manual-batch-scrape-with-limits-auto-pagination-early-stop">
+  ##### 制限付きの手動バッチスクレイプ (自動ページネーション + 早期停止)
+</div>
+
+自動ページネーションは有効にしたまま、`max_pages`、`max_results`、または `max_wait_time` で早期に停止します：
+
+```python Python
+status = client.get_batch_scrape_status(
+    batch_job.id,
+    pagination_config=PaginationConfig(max_pages=2, max_results=100, max_wait_time=20),
+)
+print("バッチ制限:", status.status, "ドキュメント数:", len(status.data), "次:", status.next)
+```
+
+<div id="error-handling">
+  ## エラーハンドリング
+</div>
+
+リクエストが失敗すると、SDK は何が原因かを説明するメッセージを含む例外を発生させます。これらの例外を捕捉し、アプリケーション内で失敗に対処できるように、呼び出しは `try`/`except` で囲んでください。
+
+<div id="async-class">
+  ## 非同期クラス
+</div>
+
+非同期処理には `AsyncFirecrawl` クラスを使用します。メソッドは `Firecrawl` と同等ですが、メインスレッドをブロックしません。
+
+<AIOPython />
+
+```python Python
+from firecrawl import AsyncFirecrawl
+
+async_firecrawl = AsyncFirecrawl(api_key="fc-YOUR-API-KEY")
+
+parsed = await async_firecrawl.parse(
+    b"<!DOCTYPE html><html><body><h1>Async Parse</h1></body></html>",
+    filename="upload.html",
+    content_type="text/html",
+)
+```
+
+<div id="browser">
+  ## ブラウザ
+</div>
+
+クラウドブラウザセッションを起動し、リモートでコードを実行できます。
+
+<div id="create-a-session">
+  ### セッションの作成
+</div>
+
+```python Python
+from firecrawl import Firecrawl
+
+app = Firecrawl(api_key="fc-YOUR-API-KEY")
+
+session = app.browser()
+print(session.id)             # セッションID
+print(session.cdp_url)        # wss://cdp-proxy.firecrawl.dev/cdp/...
+print(session.live_view_url)  # https://liveview.firecrawl.dev/...
+```
+
+<div id="execute-code">
+  ### コードの実行
+</div>
+
+```python Python
+result = app.browser_execute(
+    session.id,
+    code='await page.goto("https://news.ycombinator.com")\ntitle = await page.title()\nprint(title)',
+    language="python",
+)
+print(result.result)  # "Hacker News"
+```
+
+Python の代わりに JavaScript を実行する:
+
+```python Python
+result = app.browser_execute(
+    session.id,
+    code='await page.goto("https://example.com"); const t = await page.title(); console.log(t);',
+    language="node",
+)
+```
+
+<div id="profiles">
+  ### プロファイル
+</div>
+
+セッション間でブラウザの状態 (クッキーや localStorage など) を保存して再利用します：
+
+<PersistentPython />
+
+<div id="connect-via-cdp">
+  ### CDP 経由で接続する
+</div>
+
+Playwright をフルに制御するには、CDP URL を使用して直接接続します。
+
+```python Python
+from playwright.sync_api import sync_playwright
+
+with sync_playwright() as p:
+    browser = p.chromium.connect_over_cdp(session.cdp_url)
+    context = browser.contexts[0]
+    page = context.pages[0] if context.pages else context.new_page()
+
+    page.goto("https://example.com")
+    print(page.title())
+
+    browser.close()
+```
+
+<div id="list-close-sessions">
+  ### セッションの一覧表示とクローズ
+</div>
+
+```python Python
+# アクティブなセッションを一覧表示
+sessions = app.list_browsers(status="active")
+for s in sessions.sessions:
+    print(s.id, s.status, s.created_at)
+
+# セッションをクローズ
+app.delete_browser(session.id)
+```
+
+<div id="scrape-bound-interactive-session">
+  ### スクレイピングに紐づいたインタラクティブセッション
+</div>
+
+スクレイピングの `job ID` を使用すると、そのスクレイピングで再現されたページコンテキストに対して引き続き操作できます。
+
+* `interact(job_id, ...)` は、スクレイピングに紐づいたブラウザセッション内でコードを実行します。
+* 最初の `interact` 呼び出しでは、スクレイピングコンテキストからセッションが自動的に初期化されます。
+* 同じ `job ID` に対する後続の `interact` 呼び出しでは、そのブラウザのライブ状態が再利用されます。
+* `stop_interaction(job_id)` は、操作が完了したらインタラクティブセッションを停止します。
+
+```python Python
+doc = app.scrape(
+    "https://example.com",
+    actions=[{"type": "click", "selector": "a[href='/pricing']"}],
+)
+
+scrape_job_id = doc.metadata_typed.scrape_id
+if not scrape_job_id:
+    raise RuntimeError("Missing scrape job id")
+
+run = app.interact(
+    scrape_job_id,
+    code="print(await page.url())",
+    language="python",
+    timeout=60,
+)
+print(run.stdout)
+
+app.stop_interaction(scrape_job_id)
+```
+
+> Firecrawl API key が必要な AI agent ですか？自動オンボーディングの手順については、[firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) をご覧ください。

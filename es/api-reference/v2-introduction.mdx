@@ -1,0 +1,111 @@
+---
+title: "Introducción"
+description: "Referencia de la API de Firecrawl (v2)"
+---
+
+<Note>
+  **Para agentes de IA:** Usa [llms.txt](/es/llms.txt) para obtener un índice completo de toda la documentación.
+</Note>
+
+La API de Firecrawl proporciona acceso programático a datos de la web. Todos los endpoints comparten la misma URL base, el mismo esquema de autenticación y el formato de respuesta descritos en esta página.
+
+<div id="features">
+  ## Funcionalidades
+</div>
+
+<CardGroup cols={3}>
+  <Card title="Search" icon="magnifying-glass" href="/es/api-reference/endpoint/search" color="FF713C">
+    Busca en la web y obtén el contenido completo de la página en cualquier formato.
+  </Card>
+
+  <Card title="Scrape" icon="markdown" href="/es/api-reference/endpoint/scrape" color="FF713C">
+    Extrae contenido de cualquier página web en formato markdown o JSON.
+  </Card>
+
+  <Card title="Interact" icon="hand-pointer" href="/es/api-reference/endpoint/browser-create" color="FF713C">
+    Crea una sesión de Interact para hacer clic, rellenar formularios y navegar por páginas.
+  </Card>
+
+  <Card title="Parse" icon="markdown" href="/es/api-reference/endpoint/parse" color="FF713C">
+    Sube archivos y procésalos en markdown u otros formatos.
+  </Card>
+
+  <Card title="Monitor" icon="radar" href="/es/api-reference/endpoint/monitor-create" color="FF713C">
+    Programa verificaciones recurrentes y recibe notificaciones cuando cambie el contenido.
+  </Card>
+
+  <Card title="Crawl" icon="spider" href="/es/api-reference/endpoint/crawl-post" color="FF713C">
+    Rastrea sitios web completos y obtén el contenido de todas sus páginas.
+  </Card>
+
+  <Card title="Map" icon="map" href="/es/api-reference/endpoint/map" color="FF713C">
+    Obtén un listado completo de URLs de cualquier sitio web de forma rápida y confiable.
+  </Card>
+
+  <Card title="Agent" icon="robot" href="/es/api-reference/endpoint/agent" color="FF713C">
+    Recopilación autónoma de datos web impulsada por IA.
+  </Card>
+</CardGroup>
+
+<div id="base-url">
+  ## URL base
+</div>
+
+Todas las solicitudes utilizan la siguiente URL base:
+
+```bash
+https://api.firecrawl.dev
+```
+
+<div id="authentication">
+  ## Autenticación
+</div>
+
+Todas las solicitudes deben incluir un encabezado `Authorization` con tu clave de API:
+
+```bash
+Authorization: Bearer fc-YOUR-API-KEY
+```
+
+Incluye este encabezado en todas las llamadas a la API. Puedes encontrar tu clave de API en el [dashboard de Firecrawl](https://www.firecrawl.dev/app/api-keys).
+
+Si eres un agente sin una clave de API, comienza con [Obtener credenciales](/es/ai-onboarding#get-credentials). Si tu plataforma es compatible con WorkOS ID-JAG, usa [`auth.md`](https://www.firecrawl.dev/auth.md) para ver las instrucciones de registro.
+
+<CodeGroup>
+  ```bash cURL
+  curl -X POST "https://api.firecrawl.dev/v2/scrape" \
+    -H "Authorization: Bearer fc-YOUR-API-KEY" \
+    -H "Content-Type: application/json" \
+    -d '{"url": "https://example.com"}'
+  ```
+
+  ```python Python
+  from firecrawl import Firecrawl
+
+  firecrawl = Firecrawl(api_key="fc-YOUR-API-KEY")
+
+  result = firecrawl.scrape("https://example.com")
+  ```
+
+  ```js Node
+  import { Firecrawl } from 'firecrawl';
+
+  const firecrawl = new Firecrawl({ apiKey: "fc-YOUR-API-KEY" });
+
+  const result = await firecrawl.scrape('https://example.com');
+  ```
+</CodeGroup>
+
+<div id="response-codes">
+  ## Códigos de respuesta
+</div>
+
+Firecrawl utiliza códigos de estado HTTP convencionales para indicar el resultado de tus solicitudes. Los códigos en el rango `2xx` indican éxito, los códigos `4xx` indican errores del cliente y los códigos `5xx` indican errores del servidor.
+
+Consulta [Errores](/es/api-reference/errors) para obtener la referencia completa, incluida la cadena `error` que se devuelve para cada tipo de fallo, la guía de reintentos y un fragmento de backoff listo para copiar y pegar.
+
+<div id="429-responses">
+  ## Respuestas 429
+</div>
+
+Cuando superas los límites de tasa o de concurrencia de tu plan, la API devuelve un código de estado `429`. Consulta [Rate Limits](/es/rate-limits) para ver los límites por plan y [Errores](/es/api-reference/errors) para obtener orientación sobre los reintentos.

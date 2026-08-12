@@ -1,0 +1,56 @@
+---
+title: はじめに
+description: "キーレスアクセス、アカウントへのサインイン、またはAPIキーを使用してFirecrawl MCPを設定します。"
+og:title: 'Firecrawl MCP: はじめに'
+og:description: "キーレスアクセス、アカウントへのサインイン、またはAPIキーを使用してFirecrawl MCPに接続します。"
+sidebarTitle: 'はじめに'
+---
+
+接続の認証方法を選択します。サインインとAPIキーの追加は同じアクセス権を取得するための2つの方法であり、どちらでもチームのプランで利用できるすべてのツールを使用できます。
+
+<CardGroup cols={3}>
+  <Card title="すぐに試す" icon="bolt" href="/ja/mcp-server/keyless#try-keyless" cta="キーレス設定を開始" arrow>
+    アカウントやキーは不要です。1日の上限内でSearch、Scrape、Parseを利用できます。
+  </Card>
+
+  <Card title="サインイン" icon="right-to-bracket" href="/ja/mcp-server/oauth" cta="アカウントに接続" arrow>
+    Codex、Claude Code、またはお好みのハーネスからブラウザでサインインできます。
+  </Card>
+
+  <Card title="APIキーを使用" icon="key" href="/ja/mcp-server/keyless#add-an-api-key" cta="APIキーを設定" arrow>
+    ブラウザを使わずに、クライアントでAPIキーを設定できます。
+  </Card>
+</CardGroup>
+
+<div id="add-an-api-key">
+  ## APIキーを追加する
+</div>
+
+[Firecrawl APIキーを作成](https://www.firecrawl.dev/app/api-keys)し、Bearerトークンとして送信します。
+
+```text
+URL: https://mcp.firecrawl.dev/v2/mcp
+Authorization: Bearer <FIRECRAWL_API_KEY>
+```
+
+キーは MCP URL ではなく、環境変数またはクライアントのシークレットストレージで設定してください。
+
+<Note>
+  これは MCP クライアント用のサーバー URL であり、ブラウザで直接開くページではありません。サインイン接続には代わりに `https://mcp.firecrawl.dev/v2/mcp-oauth` を使用します。クライアントがブラウザフローを開始します。
+</Note>
+
+<div id="client-setup">
+  ## クライアントのセットアップ
+</div>
+
+<CardGroup cols={2}>
+  <Card title="エージェント向け" icon="robot" href="/ja/mcp-server/keyless">
+    キーレスで始めるか、API キーを使用します。
+  </Card>
+
+  <Card title="人間向け" icon="user" href="/ja/mcp-server/oauth">
+    ブラウザからサインインします。
+  </Card>
+</CardGroup>
+
+次のステップ: [ツールを選択](/ja/mcp-server/tools) または [サーバーをローカルで実行](/ja/mcp-server/local)。

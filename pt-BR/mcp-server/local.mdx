@@ -1,0 +1,127 @@
+---
+title: Execute o Firecrawl MCP localmente
+description: Inicie e configure o servidor Firecrawl MCP de código aberto via stdio ou Streamable HTTP.
+sidebarTitle: Execute o MCP localmente
+---
+
+Execute o Firecrawl MCP localmente quando um cliente precisar iniciar um processo local, quando você precisar de um transporte HTTP local ou quando o servidor MCP precisar se conectar a uma API do Firecrawl auto-hospedada. Para o serviço gerenciado, comece por [Primeiros passos](/pt-BR/mcp-server).
+
+<div id="prerequisites">
+  ## Pré-requisitos
+</div>
+
+* Node.js 22 ou posterior
+* npm e `npx`, incluídos no Node.js
+* Uma chave de API do Firecrawl para a API em nuvem ou uma URL de API do Firecrawl auto-hospedada
+
+Confirme a versão do Node.js instalada:
+
+```bash
+node --version
+```
+
+<div id="start-the-server">
+  ## Inicie o servidor
+</div>
+
+<Tabs>
+  <Tab title="stdio">
+    Use stdio quando o cliente MCP iniciar o Firecrawl como um processo local:
+
+    ```bash
+    env FIRECRAWL_API_KEY=fc-YOUR-API-KEY \
+      npx -y firecrawl-mcp@3.23.7
+    ```
+
+    Configure o cliente para executar `npx -y firecrawl-mcp@3.23.7` e forneça `FIRECRAWL_API_KEY` por meio do ambiente protegido ou do mecanismo de gerenciamento de segredos do cliente.
+  </Tab>
+
+  <Tab title="Streamable HTTP">
+    Use HTTP quando um cliente, como o n8n, se conectar a um servidor que já está em execução:
+
+    ```bash
+    env HTTP_STREAMABLE_SERVER=true \
+      FIRECRAWL_API_KEY=fc-YOUR-API-KEY \
+      npx -y firecrawl-mcp@3.23.7
+    ```
+
+    Conecte o cliente a:
+
+    ```text
+    http://localhost:3000/mcp
+    ```
+
+    Confirme que o servidor está pronto:
+
+    ```bash
+    curl http://localhost:3000/health
+    ```
+
+    A verificação de integridade retorna `ok`. A rota local é `/mcp`; `/v2/mcp` pertence ao serviço Firecrawl hospedado.
+  </Tab>
+</Tabs>
+
+<div id="configure-the-firecrawl-api">
+  ## Configure a API do Firecrawl
+</div>
+
+| Variável de ambiente     | Finalidade                                                                                                       |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `FIRECRAWL_API_KEY`      | Autentica na API em nuvem do Firecrawl. É opcional somente quando uma API auto-hospedada não exige autenticação. |
+| `FIRECRAWL_API_URL`      | Envia solicitações para uma API do Firecrawl auto-hospedada em vez da API em nuvem.                              |
+| `HTTP_STREAMABLE_SERVER` | Defina como `true` para iniciar o transporte Streamable HTTP local em vez de stdio.                              |
+
+<CodeGroup>
+  ```bash API em nuvem
+  export FIRECRAWL_API_KEY=fc-YOUR-API-KEY
+  npx -y firecrawl-mcp@3.23.7
+  ```
+
+  ```bash API auto-hospedada
+  export FIRECRAWL_API_URL=https://firecrawl.your-domain.com
+  export FIRECRAWL_API_KEY=your-api-key # Omita se a instância não exigir autenticação
+  npx -y firecrawl-mcp@3.23.7
+  ```
+</CodeGroup>
+
+<Note>
+  A análise direta de arquivos locais com `firecrawl_parse` exige que `FIRECRAWL_API_URL` aponte para uma API do Firecrawl auto-hospedada. Um servidor MCP local conectado apenas à API em nuvem não pode fazer upload de um arquivo local por essa ferramenta; em vez disso, o [servidor hospedado usa uma transferência de upload assinada](/pt-BR/mcp-server/tools#important-behavior).
+</Note>
+
+<div id="install-globally">
+  ## Instalar globalmente
+</div>
+
+Use `npx` para a configuração mais simples. Para instalar globalmente a mesma versão revisada:
+
+```bash
+npm install -g firecrawl-mcp@3.23.7
+```
+
+Em seguida, execute:
+
+```bash
+env FIRECRAWL_API_KEY=fc-YOUR-API-KEY firecrawl-mcp
+```
+
+<div id="troubleshooting">
+  ## Solução de problemas
+</div>
+
+<AccordionGroup>
+  <Accordion title="O cliente relata o erro spawn npx ENOENT">
+    Instale o Node.js 22 ou uma versão mais recente, confirme que `npx` está no `PATH` do cliente e reinicie-o completamente. No Windows, execute `where npx` no Prompt de Comando e configure o cliente para usar o caminho retornado para `npx.cmd`.
+  </Accordion>
+
+  <Accordion title="O cliente HTTP não consegue se conectar">
+    Confirme que `HTTP_STREAMABLE_SERVER=true` e, em seguida, acesse `http://localhost:3000/health`. Use `http://localhost:3000/mcp` como endpoint do cliente, não o caminho hospedado `/v2/mcp`.
+  </Accordion>
+
+  <Accordion title="Uma ferramenta não está disponível">
+    A disponibilidade das ferramentas depende dos serviços do Firecrawl habilitados na implantação de destino. Compare a conexão em [Ferramentas](/pt-BR/mcp-server/tools) e verifique a saída do processo local em busca de erros de registro ou autenticação.
+  </Accordion>
+
+  <Accordion title="O servidor está sujeito a limite de taxa">
+    Os limites de taxa são aplicados pela API do Firecrawl conectada. Consulte os [limites de taxa](/pt-BR/rate-limits) atuais e os limites configurados para uma implantação auto-hospedada.
+  </Accordion>
+</AccordionGroup>

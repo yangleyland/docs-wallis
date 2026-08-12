@@ -1,0 +1,694 @@
+---
+title: "scraping"
+description: "Convierte cualquier URL en datos limpios"
+og:title: "scraping | Firecrawl"
+og:description: "Convierte cualquier URL en datos limpios"
+---
+
+import InstallationPython from "/snippets/es/v2/installation/python.mdx";
+import InstallationNode from "/snippets/es/v2/installation/js.mdx";
+import InstallationCLI from "/snippets/es/v2/installation/cli.mdx";
+import ScrapePython from "/snippets/es/v2/scrape/base/python.mdx";
+import ScrapeNode from "/snippets/es/v2/scrape/base/js.mdx";
+import ScrapeCURL from "/snippets/es/v2/scrape/base/curl.mdx";
+import ScrapeCLI from "/snippets/es/v2/scrape/base/cli.mdx";
+import ScrapeResponse from "/snippets/es/v2/scrape/base/output.mdx";
+import ExtractCURL from "/snippets/es/v2/scrape/json/base/curl.mdx";
+import ExtractPython from "/snippets/es/v2/scrape/json/base/python.mdx";
+import ExtractNode from "/snippets/es/v2/scrape/json/base/js.mdx";
+import ExtractOutput from "/snippets/es/v2/scrape/json/base/output.mdx";
+import ExtractNoSchemaCURL from "/snippets/es/v2/scrape/json/no-schema/curl.mdx";
+import ExtractNoSchemaPython from "/snippets/es/v2/scrape/json/no-schema/python.mdx";
+import ExtractNoSchemaNode from "/snippets/es/v2/scrape/json/no-schema/js.mdx";
+import ExtractNoSchemaOutput from "/snippets/es/v2/scrape/json/no-schema/output.mdx";
+import ScrapeActionsPython from "/snippets/es/v2/scrape/actions/python.mdx";
+import ScrapeActionsNode from "/snippets/es/v2/scrape/actions/js.mdx";
+import ScrapeActionsCURL from "/snippets/es/v2/scrape/actions/curl.mdx";
+import ScrapeActionsOutput from "/snippets/es/v2/scrape/actions/output.mdx";
+import BatchScrapePython from "/snippets/es/v2/batch-scrape/short/python.mdx";
+import BatchScrapeNode from "/snippets/es/v2/batch-scrape/short/js.mdx";
+import BatchScrapeCURL from "/snippets/es/v2/batch-scrape/short/curl.mdx";
+import BatchScrapeOutput from "/snippets/es/v2/batch-scrape/base/output.mdx";
+import BatchScrapeAsyncOutput from "/snippets/es/v2/batch-scrape/base/async-output.mdx";
+import ScrapeLocationPython from "/snippets/es/v2/scrape/location/python.mdx";
+import ScrapeLocationNode from "/snippets/es/v2/scrape/location/js.mdx";
+import ScrapeLocationCURL from "/snippets/es/v2/scrape/location/curl.mdx";
+import ScrapeBrandingPython from "/snippets/es/v2/scrape/branding/base/python.mdx";
+import ScrapeBrandingNode from "/snippets/es/v2/scrape/branding/base/js.mdx";
+import ScrapeBrandingCURL from "/snippets/es/v2/scrape/branding/base/curl.mdx";
+import ScrapeBrandingOutput from "/snippets/es/v2/scrape/branding/base/output.mdx";
+import ScrapeBrandingCombinedPython from "/snippets/es/v2/scrape/branding/combined/python.mdx";
+import ScrapeBrandingCombinedNode from "/snippets/es/v2/scrape/branding/combined/js.mdx";
+import ScrapeBrandingCombinedCURL from "/snippets/es/v2/scrape/branding/combined/curl.mdx";
+import ScrapeProductPython from "/snippets/es/v2/scrape/product/base/python.mdx";
+import ScrapeProductNode from "/snippets/es/v2/scrape/product/base/js.mdx";
+import ScrapeProductCURL from "/snippets/es/v2/scrape/product/base/curl.mdx";
+import ScrapeProductOutput from "/snippets/es/v2/scrape/product/base/output.mdx";
+import ScrapeProductCombinedPython from "/snippets/es/v2/scrape/product/combined/python.mdx";
+import ScrapeProductCombinedNode from "/snippets/es/v2/scrape/product/combined/js.mdx";
+import ScrapeProductCombinedCURL from "/snippets/es/v2/scrape/product/combined/curl.mdx";
+import ScrapeAudioPython from "/snippets/es/v2/scrape/audio/python.mdx";
+import ScrapeAudioNode from "/snippets/es/v2/scrape/audio/js.mdx";
+import ScrapeAudioCURL from "/snippets/es/v2/scrape/audio/curl.mdx";
+import ScrapeVideoPython from "/snippets/es/v2/scrape/video/python.mdx";
+import ScrapeVideoNode from "/snippets/es/v2/scrape/video/js.mdx";
+import ScrapeVideoCURL from "/snippets/es/v2/scrape/video/curl.mdx";
+import ScrapeQuestionPython from "/snippets/es/v2/scrape/question/python.mdx";
+import ScrapeQuestionNode from "/snippets/es/v2/scrape/question/js.mdx";
+import ScrapeQuestionCURL from "/snippets/es/v2/scrape/question/curl.mdx";
+import ScrapeHighlightsPython from "/snippets/es/v2/scrape/highlights/python.mdx";
+import ScrapeHighlightsNode from "/snippets/es/v2/scrape/highlights/js.mdx";
+import ScrapeHighlightsCURL from "/snippets/es/v2/scrape/highlights/curl.mdx";
+import PlaygroundCTA from "/snippets/es/shared/playground-cta-scrape.mdx";
+
+Firecrawl convierte páginas web en markdown, ideal para aplicaciones con LLM.
+
+* Gestiona la complejidad: proxies, caching, límites de tasa y contenido bloqueado por JS
+* Maneja contenido dinámico: sitios web dinámicos, sitios renderizados con JS, PDF e imágenes
+* Genera markdown limpio, datos estructurados, capturas de pantalla o html.
+
+Para más detalles, consulta la [referencia de la API del endpoint scraping](https://docs.firecrawl.dev/api-reference/endpoint/scrape).
+
+<PlaygroundCTA />
+
+<Note>Si una solicitud falla, consulta [Errores](/es/api-reference/errors) para ver el catálogo completo de códigos de error, causas, soluciones y recomendaciones sobre reintentos.</Note>
+
+<div id="scraping-a-url-with-firecrawl">
+  ## Extraer datos de una URL con Firecrawl
+</div>
+
+<div id="scrape-endpoint">
+  ### punto de conexión /scrape
+</div>
+
+Se utiliza para extraer el contenido de una URL.
+
+<div id="installation">
+  ### Instalación
+</div>
+
+<CodeGroup>
+  <InstallationPython />
+
+  <InstallationNode />
+
+  <InstallationCLI />
+</CodeGroup>
+
+### Uso
+
+<CodeGroup>
+  <ScrapePython />
+
+  <ScrapeNode />
+
+  <ScrapeCURL />
+
+  <ScrapeCLI />
+</CodeGroup>
+
+Para más información sobre los parámetros, consulta la [Referencia de la API](https://docs.firecrawl.dev/api-reference/endpoint/scrape).
+
+<Tip>
+  **PDF y documentos:** `/scrape` detecta automáticamente archivos PDF, DOCX y otros tipos de documentos a partir de las URL. Pasa la URL de un PDF igual que harías con cualquier página web -- Firecrawl lo procesa y devuelve markdown limpio. Para archivos locales a los que no se puede acceder mediante una URL, usa [`/parse`](/es/features/parse) en su lugar.
+
+  ```python Python
+  doc = firecrawl.scrape("https://example.com/report.pdf", formats=["markdown"])
+  print(doc.markdown)
+  ```
+</Tip>
+
+<Info>
+  Cada scrape consume 1 crédito. Se aplican créditos adicionales para ciertas opciones: el modo JSON cuesta 4 créditos adicionales por página, los formatos de question y highlights cuestan 4 créditos adicionales por página por formato, el proxy mejorado cuesta 4 créditos adicionales por página, la redacción de PII cuesta 4 créditos adicionales por página, el procesamiento de PDF cuesta 1 crédito por página de PDF y la extracción de audio o video cuesta 4 créditos adicionales por página.
+</Info>
+
+<div id="response">
+  ### Respuesta
+</div>
+
+Los SDK devolverán el objeto de datos directamente. cURL devolverá el payload exactamente como se muestra a continuación.
+
+<ScrapeResponse />
+
+<div id="scrape-formats">
+  ## Formatos de scraping
+</div>
+
+Ahora puedes elegir en qué formatos quieres el resultado. Puedes especificar múltiples formatos de salida. Los formatos compatibles son:
+
+* Markdown (`markdown`)
+* Resumen (`summary`)
+* HTML (`html`) - versión limpia del HTML de la página
+* HTML sin procesar (`rawHtml`) - HTML sin modificar tal como se recibe de la página
+* Captura de pantalla (`screenshot`, con opciones como `fullPage`, `quality`, `viewport`) — las URL de las capturas de pantalla caducan después de 24 horas
+* Enlaces (`links`)
+* JSON (`json`) - salida estructurada
+* Imágenes (`images`) - extrae todas las URL de imágenes de la página
+* Branding (`branding`) - extrae la identidad de marca y el sistema de diseño
+* Producto (`product`) - extrae un producto estructurado (título, precio, disponibilidad y variantes) de las páginas de producto
+* Audio (`audio`) - extrae audio MP3 de URL de vídeo compatibles, p. ej., YouTube (devuelve una URL firmada de GCS, caduca después de 1 hora)
+* Vídeo (`video`) - extrae vídeo de la mejor calidad de URL de vídeo compatibles, p. ej., YouTube (devuelve una URL firmada de GCS, caduca después de 1 hora)
+* Query (`query`, con `prompt` y `mode` opcional) - haz una pregunta en lenguaje natural sobre la página; la respuesta se devuelve en el campo `answer`
+
+Las claves de salida coincidirán con el formato que elijas.
+
+<div id="extract-structured-data">
+  ## Extrae datos estructurados
+</div>
+
+<div id="scrape-with-json-endpoint">
+  ### punto de conexión /scrape (con json)
+</div>
+
+Se usa para extraer datos estructurados de páginas rastreadas.
+
+<Tip>
+  ¿Vas a extraer productos? En las páginas de producto, el `format` [`product`](#extract-product-data) devuelve campos de producto estructurados (título, precio, disponibilidad y variantes) de forma determinista, sin llamada al LLM ni `schema` que definir. Usa `json` cuando necesites campos personalizados o páginas que no sean de producto.
+</Tip>
+
+<CodeGroup>
+  <ExtractPython />
+
+  <ExtractNode />
+
+  <ExtractCURL />
+</CodeGroup>
+
+Salida:
+
+<ExtractOutput />
+
+<div id="extracting-without-schema">
+  ### Extracción sin esquema
+</div>
+
+Ahora puedes extraer sin un esquema con solo pasar un `prompt` al punto de conexión. El LLM elige la estructura de los datos.
+
+<CodeGroup>
+  <ExtractNoSchemaPython />
+
+  <ExtractNoSchemaNode />
+
+  <ExtractNoSchemaCURL />
+</CodeGroup>
+
+Salida:
+
+<ExtractNoSchemaOutput />
+
+<div id="json-format-options">
+  ### Opciones del formato JSON
+</div>
+
+Al usar el formato `json`, pasa un objeto dentro de `formats` con los siguientes parámetros:
+
+* `schema`: JSON Schema para la salida estructurada.
+* `prompt`: Prompt opcional para ayudar a guiar la extracción cuando hay un esquema o cuando prefieras una guía ligera.
+
+<div id="extract-brand-identity">
+  ## Extraer la identidad de la marca
+</div>
+
+<div id="scrape-with-branding-endpoint">
+  ### endpoint /scrape (con branding)
+</div>
+
+El formato de branding extrae información completa sobre la identidad de marca de una página web, incluidos colores, fuentes, tipografía, espaciado, componentes de la UI y más. Es útil para analizar sistemas de diseño, monitorear marcas o crear herramientas que necesiten comprender la identidad visual de un sitio web.
+
+<CodeGroup>
+  <ScrapeBrandingPython />
+
+  <ScrapeBrandingNode />
+
+  <ScrapeBrandingCURL />
+</CodeGroup>
+
+### Respuesta
+
+El formato de marca devuelve un objeto `BrandingProfile` completo con la siguiente estructura:
+
+<ScrapeBrandingOutput />
+
+<div id="branding-profile-structure">
+  ### Estructura del perfil de marca
+</div>
+
+El objeto `branding` contiene las siguientes propiedades:
+
+* `colorScheme`: El esquema de color detectado (&quot;light&quot; o &quot;dark&quot;)
+* `logo`: URL del logotipo principal
+* `colors`: Objeto que contiene los colores de la marca:
+  * `primary`, `secondary`, `accent`: Colores principales de la marca
+  * `background`, `textPrimary`, `textSecondary`: Colores de la interfaz
+  * `link`, `success`, `warning`, `error`: Colores semánticos
+* `fonts`: Lista de familias tipográficas usadas en la página
+* `typography`: Información tipográfica detallada:
+  * `fontFamilies`: Familias tipográficas principal, de encabezados y de código
+  * `fontSizes`: Definiciones de tamaños para encabezados y cuerpo de texto
+  * `fontWeights`: Definiciones de grosor (light, regular, medium, bold)
+  * `lineHeights`: Valores de interlineado para distintos tipos de texto
+* `spacing`: Información de espaciado y maquetación:
+  * `baseUnit`: Unidad base de espaciado en píxeles
+  * `borderRadius`: Radio de borde predeterminado
+  * `padding`, `margins`: Valores de espaciado
+* `components`: Estilos de componentes de la interfaz:
+  * `buttonPrimary`, `buttonSecondary`: Estilos de botones
+  * `input`: Estilos de campos de entrada
+* `icons`: Información sobre el estilo de los íconos
+* `images`: Imágenes de marca (logo, favicon, og:image)
+* `animations`: Configuración de animaciones y transiciones
+* `layout`: Configuración de distribución (grid, alturas de encabezado/pie)
+* `personality`: Rasgos de personalidad de la marca (tono, energía, público objetivo)
+
+<div id="combining-with-other-formats">
+  ### Combinar con otros formatos
+</div>
+
+Puedes combinar el formato de branding con otros formatos para obtener datos completos de la página:
+
+<CodeGroup>
+  <ScrapeBrandingCombinedPython />
+
+  <ScrapeBrandingCombinedNode />
+
+  <ScrapeBrandingCombinedCURL />
+</CodeGroup>
+
+<div id="extract-product-data">
+  ## Extraer datos de productos
+</div>
+
+El formato `product` extrae un producto estructurado **de forma determinista**: el mismo tipo de salida estructurada que el [formato `json`](#extract-structured-data), pero sin una llamada a un LLM ni un esquema definido por ti, y diseñado específicamente para páginas de producto. Si has estado extrayendo campos de producto con un esquema `json`, usa `formats: ["product"]` en su lugar: es más rápido y más barato, aunque se limita a productos.
+
+Devuelve un objeto `product` con título, marca, categoría, descripción y variantes, donde cada variante incluye precio, precio original, disponibilidad e imágenes; útil para el seguimiento de precios, la ingesta de catálogos o las herramientas de comparación de precios.
+
+<div id="scrape-with-product-endpoint">
+  ### punto de conexión /scrape (con producto)
+</div>
+
+<CodeGroup>
+  <ScrapeProductPython />
+
+  <ScrapeProductNode />
+
+  <ScrapeProductCURL />
+</CodeGroup>
+
+### Respuesta
+
+El formato `product` devuelve un objeto `product` con la siguiente estructura:
+
+<ScrapeProductOutput />
+
+<div id="product-object-structure">
+  ### Estructura del objeto product
+</div>
+
+El objeto `product` contiene las siguientes propiedades:
+
+* `title`: El nombre del producto
+* `brand`: La marca del producto (opcional)
+* `category`: La categoría del producto (opcional)
+* `url`: La URL canónica del producto
+* `description`: La descripción del producto (opcional)
+* `variants`: array de variantes del producto. El precio, la disponibilidad y las imágenes se encuentran en cada variante; un producto con un solo SKU sigue devolviendo exactamente una variante que contiene estos datos. Cada variante tiene:
+  * `id`, `sku`, `title`: identificadores y nombre de la variante (todos opcionales)
+  * `values`: un mapa del nombre de la opción a su valor, p. ej., `{ "color": "Charcoal" }` (opcional)
+  * `price`: el objeto del precio actual (opcional):
+    * `amount`: El valor numérico del precio
+    * `currency`: El código de moneda, solo se informa cuando la página lo proporciona (opcional)
+    * `formatted`: El precio tal como se muestra en la página (opcional)
+  * `sale`: presente solo cuando la variante tiene descuento (opcional). Contiene:
+    * `originalPrice`: El precio original (antes del descuento), con la misma estructura que `price`
+  * `availability`: información de disponibilidad, siempre presente en una variante:
+    * `inStock`: Si la variante está en stock
+    * `text`: El texto de disponibilidad sin procesar de la página (opcional)
+  * `images`: array de imágenes de la variante, cada una con una `url` y texto `alt` opcional (opcional)
+
+<div id="how-product-extraction-works">
+  ### Cómo funciona la extracción de productos
+</div>
+
+El formato de producto extrae el producto de forma determinista a partir de los datos estructurados de la página; no interviene ningún LLM. Combina varias fuentes por prioridad: **JSON-LD &gt; microdatos de schema.org &gt; RDFa &gt; estado integrado (`__NEXT_DATA__`/Nuxt/Apollo/Redux/Remix) &gt; `runParams` de AliExpress &gt; `dataLayer` de GA4 &gt; OpenGraph/`<meta>`**. La combinación tiene en cuenta la identidad, por lo que nunca se mezclan campos de productos distintos. La moneda solo se informa cuando aparece en las fuentes de la página.
+
+<Note>
+  La extracción de productos funciona en modo fail-closed: las páginas ambiguas no devuelven ningún producto, y las fuentes menos fiables, como OpenGraph, solo contribuyen cuando hay un precio presente. En una página sin un producto extraíble, la respuesta omite el objeto `product` y añade una advertencia (`warning`) (por ejemplo, &quot;No product found...&quot;).
+</Note>
+
+<Note>
+  **Alojamiento propio:** el formato `product` depende de un servicio dedicado de extracción de productos. En Firecrawl Cloud funciona de inmediato. Si haces self-hosting, configura `PRODUCT_EXTRACTION_SERVICE_URL` para que apunte a ese servicio; si no está definida, solicitar el formato `product` devuelve una advertencia y ningún producto (el mismo patrón que usan los formatos de audio/video para su servicio).
+</Note>
+
+### Combinación con otros formatos
+
+Puedes combinar el formato de producto con otros formatos para obtener datos completos de la página:
+
+<CodeGroup>
+  <ScrapeProductCombinedPython />
+
+  <ScrapeProductCombinedNode />
+
+  <ScrapeProductCombinedCURL />
+</CodeGroup>
+
+<div id="audio-extraction">
+  ## Extracción de audio
+</div>
+
+El formato `audio` extrae el audio de sitios web compatibles (p. ej., YouTube) como archivos MP3 y devuelve una URL firmada de Google Cloud Storage. Esto es útil para crear flujos de procesamiento de audio, servicios de transcripción o herramientas para pódcasts.
+
+<Info>
+  La extracción de audio cuesta 5 créditos por página (1 base + 4 adicionales).
+</Info>
+
+<CodeGroup>
+  <ScrapeAudioPython />
+
+  <ScrapeAudioNode />
+
+  <ScrapeAudioCURL />
+</CodeGroup>
+
+<div id="video-extraction">
+  ## Extracción de video
+</div>
+
+El formato `video` extrae el video con la mejor calidad de sitios web compatibles (p. ej., YouTube) y devuelve una URL firmada de Google Cloud Storage. Esto resulta útil para crear pipelines de procesamiento de video, herramientas de moderación o flujos de trabajo de archivado de contenido multimedia.
+
+<Info>
+  La extracción de video cuesta 5 créditos por página (1 base + 4 adicionales).
+</Info>
+
+<CodeGroup>
+  <ScrapeVideoPython />
+
+  <ScrapeVideoNode />
+
+  <ScrapeVideoCURL />
+</CodeGroup>
+
+<span id="question-format" />
+
+<div id="question-format">
+  ## Formato de pregunta
+</div>
+
+Usa el formato `question` para hacer una pregunta en lenguaje natural sobre la página. Firecrawl devuelve la respuesta en el campo `answer` de la respuesta.
+
+<Info>
+  El formato `question` cuesta 5 créditos por página (1 base + 4 adicionales por la llamada al LLM).
+</Info>
+
+Opciones dentro del objeto de formato:
+
+* `question` (obligatorio para `type: "question"`): la pregunta que se debe responder. Máximo: 10.000 caracteres.
+
+Puedes combinar `question` con otros formatos; por ejemplo, solicita `markdown` y `question` a la vez para obtener el contenido de la página y una respuesta en una sola llamada.
+
+<CodeGroup>
+  <ScrapeQuestionPython />
+
+  <ScrapeQuestionNode />
+
+  <ScrapeQuestionCURL />
+</CodeGroup>
+
+El formato `question` también está disponible en `/search` mediante `scrapeOptions`, que ejecuta la misma extracción en cada resultado de búsqueda.
+
+<span id="highlights-format" />
+
+<div id="highlights-format">
+  ## Formato highlights
+</div>
+
+Usa el formato `highlights` para encontrar texto fuente relevante en la página. Firecrawl devuelve el texto seleccionado en el campo `highlights` de la respuesta.
+
+<Info>
+  El formato `highlights` cuesta 5 créditos por página (1 base + 4 adicionales por la llamada al LLM).
+</Info>
+
+Opciones dentro del objeto de formato:
+
+* `query` (obligatorio para `type: "highlights"`): la solicitud para seleccionar texto fuente. Máximo 10.000 caracteres.
+
+Puedes combinar `highlights` con otros formatos; por ejemplo, solicita `markdown` y `highlights` juntos para obtener el contenido de la página y el texto fuente en una sola llamada.
+
+<CodeGroup>
+  <ScrapeHighlightsPython />
+
+  <ScrapeHighlightsNode />
+
+  <ScrapeHighlightsCURL />
+</CodeGroup>
+
+El formato `highlights` también está disponible en `/search` mediante `scrapeOptions`, que ejecuta la misma extracción en cada resultado de búsqueda.
+
+<div id="pii-redaction">
+  ## Ocultación de PII
+</div>
+
+Configura `redactPII: true` para ocultar la información de identificación personal del markdown devuelto. El campo `markdown` contiene el resultado con la información ocultada.
+
+Consulta [Ocultación de PII](/es/features/pii-redaction) para ver ejemplos de SDK, cURL, CLI y MCP.
+
+<div id="interacting-with-the-page-with-actions">
+  ## Interacción con la página mediante acciones
+</div>
+
+Firecrawl te permite realizar varias acciones en una página web antes de extraer su contenido. Esto es especialmente útil para interactuar con contenido dinámico, navegar entre páginas o acceder a contenido que requiera interacción del usuario.
+
+<Tip>
+  **Recomendamos [Interact](/es/features/interact) en lugar de las acciones: nuestra forma más reciente y potente de interactuar con páginas extraídas.**
+
+  Interact se ejecuta como una sesión de navegador con estado que permanece activa entre llamadas, para que puedas controlar una página paso a paso con cualquiera de estas opciones:
+
+  * **Lenguaje natural** para flujos flexibles y no deterministas. Por ejemplo, *“busca ‘wireless headphones’, filtra a 4+ estrellas por menos de $200 y devuelve los resultados”*.
+  * **Código de Playwright o agent-browser** para pasos deterministas. Por ejemplo, `await page.click('#export')`.
+
+  Interact también admite perfiles, sesiones persistentes y una vista del navegador en vivo que se puede integrar (con un modo interactivo en el que los usuarios finales pueden controlar el navegador por sí mismos).
+</Tip>
+
+Aquí tienes un ejemplo de cómo usar acciones para ir a google.com, buscar Firecrawl, hacer clic en el primer resultado y tomar una captura de pantalla.
+
+Es importante usar casi siempre la acción `wait` antes y/o después de ejecutar otras acciones para dar tiempo suficiente a que la página cargue.
+
+<div id="example">
+  ### Ejemplo
+</div>
+
+<CodeGroup>
+  <ScrapeActionsPython />
+
+  <ScrapeActionsNode />
+
+  <ScrapeActionsCURL />
+</CodeGroup>
+
+<div id="output">
+  ### Salida
+</div>
+
+<CodeGroup>
+  <ScrapeActionsOutput />
+</CodeGroup>
+
+Para los flujos de trabajo que requieren un mayor control del navegador después del scraping, como sesiones autenticadas, navegación de varios pasos o una vista en vivo de la página, recomendamos [Interact](/es/features/interact) en lugar de ampliar el array de acciones.
+
+<div id="location-and-language">
+  ## Ubicación e idioma
+</div>
+
+Especifica el país y los idiomas preferidos para obtener contenido relevante según tu ubicación de destino y tus preferencias de idioma.
+
+<div id="how-it-works">
+  ### Cómo funciona
+</div>
+
+Cuando especificas la ubicación, Firecrawl usará un proxy adecuado si está disponible y emulará el idioma y la zona horaria correspondientes. De forma predeterminada, la ubicación se establece en &quot;US&quot; si no se indica lo contrario.
+
+<div id="usage">
+  ### Uso
+</div>
+
+Para usar la configuración de ubicación e idioma, incluye el objeto `location` en el cuerpo de la solicitud con las siguientes propiedades:
+
+* `country`: código de país ISO 3166-1 alfa-2 (p. ej., &#39;US&#39;, &#39;AU&#39;, &#39;DE&#39;, &#39;JP&#39;). Por defecto: &#39;US&#39;.
+* `languages`: una lista de idiomas y configuraciones regionales preferidas para la solicitud en orden de prioridad. Por defecto, usa el idioma de la ubicación especificada.
+
+<CodeGroup>
+  <ScrapeLocationPython />
+
+  <ScrapeLocationNode />
+
+  <ScrapeLocationCURL />
+</CodeGroup>
+
+Para más información sobre las ubicaciones compatibles, consulta la [documentación de proxies](/es/features/proxies).
+
+<div id="caching-and-maxage">
+  ## Caché y maxAge
+</div>
+
+Para acelerar las solicitudes, Firecrawl sirve resultados desde la caché por defecto cuando hay una copia reciente disponible.
+
+* **Ventana de frescura predeterminada**: `maxAge = 172800000` ms (2 días). Si la copia en caché es más reciente que esto, se devuelve al instante; de lo contrario, la página se vuelve a extraer y luego se almacena en caché.
+* **Rendimiento**: Esto puede acelerar las extracciones hasta 5× cuando los datos no necesitan estar ultra frescos.
+* **Obtener siempre contenido fresco**: Establece `maxAge` en `0`. Ten en cuenta que esto evita el uso de la caché por completo, por lo que cada solicitud recorre todo el pipeline de scraping, lo que significa que la solicitud tardará más en completarse y es más probable que falle. Utiliza un `maxAge` distinto de cero si la frescura en cada solicitud no es crítica.
+* **Evitar almacenamiento**: Establece `storeInCache` en `false` si no quieres que Firecrawl almacene/guarde los resultados de esta solicitud en la caché.
+* **Consulta solo en caché**: Establece `minAge` para realizar una consulta solo en caché sin activar una nueva extracción. El valor está en milisegundos y especifica la antigüedad mínima que deben tener los datos en caché. Si no se encuentran datos en caché, se devuelve un `404` con el código de error `SCRAPE_NO_CACHED_DATA`. Establece `minAge` en `1` para aceptar cualquier dato en caché independientemente de su antigüedad.
+* **Seguimiento de cambios**: Las solicitudes que incluyen `changeTracking` omiten la caché, por lo que se ignora `maxAge`.
+* **Créditos**: Los resultados en caché siguen costando 1 crédito por página. El almacenamiento en caché mejora la velocidad, no el consumo de créditos.
+
+Ejemplo (forzar contenido fresco):
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+  firecrawl = Firecrawl(api_key='fc-YOUR_API_KEY')
+
+  doc = firecrawl.scrape(url='https://example.com', max_age=0, formats=['markdown'])
+  print(doc)
+  ```
+
+  ```js Node
+  import { Firecrawl } from 'firecrawl';
+
+  const firecrawl = new Firecrawl({ apiKey: "fc-YOUR-API-KEY" });
+
+  const doc = await firecrawl.scrape('https://example.com', { maxAge: 0, formats: ['markdown'] });
+  console.log(doc);
+  ```
+
+  ```bash cURL
+  curl -s -X POST "https://api.firecrawl.dev/v2/scrape" \
+    -H "Authorization: Bearer $FIRECRAWL_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "url": "https://example.com",
+      "maxAge": 0,
+      "formats": ["markdown"]
+    }'
+  ```
+</CodeGroup>
+
+Ejemplo (usar una ventana de caché de 10 minutos):
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+  firecrawl = Firecrawl(api_key='fc-YOUR_API_KEY')
+
+  doc = firecrawl.scrape(url='https://example.com', max_age=600000, formats=['markdown', 'html'])
+  print(doc)
+  ```
+
+  ```js Node
+
+  const firecrawl = new Firecrawl({ apiKey: "fc-YOUR-API-KEY" });
+
+  const doc = await firecrawl.scrape('https://example.com', { maxAge: 600000, formats: ['markdown', 'html'] });
+  console.log(doc);
+  ```
+
+  ```bash cURL
+  curl -s -X POST "https://api.firecrawl.dev/v2/scrape" \
+    -H "Authorization: Bearer $FIRECRAWL_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "url": "https://example.com",
+      "maxAge": 600000,
+      "formats": ["markdown", "html"]
+    }'
+  ```
+</CodeGroup>
+
+<div id="freshness-and-item-status">
+  ### Frescura y estado del elemento
+</div>
+
+`maxAge` controla si Firecrawl puede devolver una copia almacenada en caché; no indica si el estado representado por una página sigue vigente. Cuando la frescura sea importante, usa `maxAge: 0` para omitir la caché y, después, inspecciona el contenido devuelto y cualquier señal de estado de redirección o específica de la fuente. Una respuesta correcta por sí sola no demuestra que el estado esté vigente.
+
+Consulta [Verificación de frescura y disponibilidad](/es/developer-guides/usage-guides/verifying-freshness-and-liveness) para ver una lista de comprobación y ejemplos.
+
+<div id="batch-scraping-multiple-urls">
+  ## Raspado por lotes de múltiples URL
+</div>
+
+Ahora puedes raspar varias URL en lote al mismo tiempo. Recibe las URL iniciales y parámetros opcionales como argumentos. El argumento params te permite especificar opciones adicionales para el trabajo de raspado por lotes, como los formatos de salida.
+
+<div id="how-it-works">
+  ### Cómo funciona
+</div>
+
+Es muy similar al funcionamiento del punto de conexión `/crawl`. Envía un trabajo de scraping por lotes y devuelve un ID de trabajo para consultar el estado del scraping por lotes.
+
+El SDK ofrece 2 métodos: sincrónico y asincrónico. El método sincrónico devuelve los resultados del trabajo de scraping por lotes, mientras que el asincrónico devuelve un ID de trabajo que puedes usar para consultar el estado del scraping por lotes.
+
+<div id="usage">
+  ### Uso
+</div>
+
+<CodeGroup>
+  <BatchScrapePython />
+
+  <BatchScrapeNode />
+
+  <BatchScrapeCURL />
+</CodeGroup>
+
+<div id="response">
+  ### Respuesta
+</div>
+
+Si usas los métodos síncronos de los SDK, devolverá los resultados del scraping por lotes. De lo contrario, devolverá un ID de tarea que puedes usar para consultar el estado del scraping por lotes.
+
+<div id="synchronous">
+  #### Sincronía
+</div>
+
+<BatchScrapeOutput />
+
+<div id="asynchronous">
+  #### Asíncrono
+</div>
+
+Luego puedes usar el ID del trabajo para consultar el estado del scrape por lotes llamando al punto de conexión `/batch/scrape/{id}`. Este punto de conexión está pensado para usarse mientras el trabajo sigue en ejecución o justo después de que haya finalizado, **ya que los trabajos de scrape por lotes expiran a las 24 horas**.
+
+<BatchScrapeAsyncOutput />
+
+<div id="enhanced-mode">
+  ## Modo mejorado
+</div>
+
+Para sitios web complejos, Firecrawl ofrece un modo mejorado que proporciona mayores tasas de éxito a la vez que mantiene la privacidad.
+
+Obtén más información sobre el [Modo mejorado](/es/features/enhanced-mode).
+
+<div id="zero-data-retention-zdr">
+  ## Retención cero de datos (ZDR)
+</div>
+
+Firecrawl admite la Retención cero de datos (ZDR) para equipos con requisitos estrictos de gestión de datos. Cuando está habilitada, Firecrawl no conservará ningún contenido de la página ni datos extraídos más allá de la duración de la solicitud.
+
+Para habilitar ZDR, establece `zeroDataRetention: true` en tu solicitud:
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/scrape \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -d '{
+    "url": "https://example.com",
+    "formats": ["markdown"],
+    "zeroDataRetention": true
+  }'
+```
+
+ZDR está disponible en los planes Enterprise y debe estar habilitado para tu equipo. Visita [firecrawl.dev/enterprise](https://www.firecrawl.dev/enterprise) para comenzar.
+
+ZDR añade **1 crédito adicional por página** además del costo base del scrape.
+
+<Note>
+  Las capturas de pantalla no están disponibles en el modo ZDR. Como requieren cargarse en almacenamiento persistente, son incompatibles con la garantía de ZDR. Las solicitudes que incluyan tanto `zeroDataRetention: true` como un formato `screenshot` devolverán un error.
+</Note>
+
+> ¿Eres un agente de IA que necesita una clave de API de Firecrawl? Consulta [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) para ver las instrucciones de incorporación automatizada.

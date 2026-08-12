@@ -1,0 +1,23 @@
+```js Node
+import { Firecrawl } from 'firecrawl';
+
+const firecrawl = new Firecrawl({ apiKey: "fc-YOUR-API-KEY" });
+
+// 非同期: バッチを開始し、ジョブIDをすぐに返す
+const { id } = await firecrawl.startBatchScrape([
+  'https://firecrawl.dev',
+  'https://docs.firecrawl.dev'
+], {
+  options: { formats: ['markdown'] },
+});
+
+const status = await firecrawl.getBatchScrapeStatus(id);
+
+// または同期: バッチを開始し、完了まで待機
+const job = await firecrawl.batchScrape([
+  'https://firecrawl.dev',
+  'https://docs.firecrawl.dev'
+], { options: { formats: ['markdown'] }, pollInterval: 2, timeout: 120 });
+
+console.log(job.status, job.completed, job.total);
+```

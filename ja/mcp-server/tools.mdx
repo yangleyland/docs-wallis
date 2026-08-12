@@ -1,0 +1,127 @@
+---
+title: Firecrawl MCP ツール
+description: Firecrawl MCP ツールを選択し、利用可否と動作を確認します。
+sidebarTitle: ツール
+---
+
+Firecrawl MCP は、ウェブコンテンツの検索、抽出、操作、監視を行うためのツールを提供します。MCP クライアントは接続時に、利用可能な各ツールの正確な入力スキーマを受け取ります。
+
+<div id="tool-availability">
+  ## ツールの利用可否
+</div>
+
+| 接続モード                             | 利用可能なツール                                                |
+| --------------------------------- | ------------------------------------------------------- |
+| ホスト型 OAuth                        | プランおよびチームポリシーに応じたすべてのツール                                |
+| ホスト型 API キー                       | プランおよびチームポリシーに応じたすべてのツール                                |
+| ホスト型キーなし                          | `firecrawl_search`、`firecrawl_scrape`、`firecrawl_parse` |
+| Firecrawl cloud API を使用するローカル環境   | API ベースのツール。ローカルファイルの直接解析は利用できません                       |
+| セルフホスト型 Firecrawl API を使用するローカル環境 | そのデプロイで有効なサービスがサポートするツール                                |
+
+まずは [Get Started](/ja/mcp-server)を確認し、[For Agents](/ja/mcp-server/keyless)または[For Humans](/ja/mcp-server/oauth)を選択してください。一部の任意ツールは、環境やチームポリシーによって無効にされる場合があります。
+
+<div id="choose-a-tool">
+  ## ツールを選択
+</div>
+
+| ジョブ               | ツール                                                  | 使用する場面                                                           |
+| ----------------- | ---------------------------------------------------- | ---------------------------------------------------------------- |
+| 1 ページを取得する        | `firecrawl_scrape`                                   | URL がわかっており、ページコンテンツや構造化フィールドが必要な場合。                             |
+| 構造化データを抽出する       | JSON 形式の `firecrawl_scrape`                          | URL があり、prompt または JSON スキーマ に一致するデータが必要な場合。                     |
+| サイトの URL を見つける    | `firecrawl_map`                                      | 抽出対象を決める前にページを探す必要がある場合。                                         |
+| Web を検索する         | `firecrawl_search`                                   | URL ではなく query がある場合。                                            |
+| ファイルを解析する         | `firecrawl_parse`                                    | PDF、ドキュメント、スプレッドシート、HTML ファイルのコンテンツが必要な場合。                       |
+| 複数ページを抽出する        | `firecrawl_crawl` and `firecrawl_check_crawl_status` | サイトまたはセクションをクロールする必要がある場合。クロールツールは、結果を返す前にジョブが終端状態になるまでポーリングします。 |
+| 自律型リサーチを実行する      | `firecrawl_agent` and `firecrawl_agent_status`       | タスクが複数のソースにまたがり、対象ページが特定されていない場合。                                |
+| ライブページを操作する       | `firecrawl_interact` and `firecrawl_interact_stop`   | クリック、フォーム入力、ナビゲーション、動的ページの抽出が必要な場合。                              |
+| 論文とリポジトリをリサーチする   | `firecrawl_research_*`                               | 論文のディスカバリー、閲覧、関連研究の検索、公開リポジトリの検索が必要な場合。                          |
+| プログラミングに関する質問に答える | `firecrawl_developer_search`                         | issues、マージ済みのプルリクエスト、README、厳選されたドキュメントに基づく一次情報の回答が必要な場合。        |
+| 変更を監視する           | `firecrawl_monitor_*`                                | 定期チェック、diff、webhook または email 通知が必要な場合。                          |
+| プロダクトフィードバックを送信する | `firecrawl_search_feedback` and `firecrawl_feedback` | 検索結果を評価したり、エンドポイント単位の品質を報告したりする場合。                               |
+
+<Note>
+  以前の Extract MCP ツールは非推奨であり、現在のツール群には含まれていません。既知のページには JSON 形式の スクレイピング を使用し、Firecrawl がソースを発見する必要がある場合は Agent を使用してください。完全な比較については、[データ抽出ツールの選択](/ja/developer-guides/usage-guides/choosing-the-data-extractor)を参照してください。
+</Note>
+
+<Tip>
+  現在の引数については、MCP クライアントに表示される スキーマ を使用してください。以下の機能ガイドでは、スキーマ をここで重複して記載せず、Firecrawl の基本的な動作を説明します。
+</Tip>
+
+<div id="important-behavior">
+  ## 重要な動作
+</div>
+
+<AccordionGroup>
+  <Accordion title="ローカルファイルを解析する">
+    セルフホスト型 Firecrawl API に接続されたローカル MCP Server は、`filePath` を直接読み取れます。ホスト型サーバーはローカルマシン上のファイルを読み取れないため、2 段階の呼び出しで受け渡しを行います。
+
+    1. `filePath` を指定して `firecrawl_parse` を呼び出し、アップロードコマンドと `uploadRef` を取得します。
+    2. ファイルを読み取れるマシンでアップロードコマンドを実行します。
+    3. 返された `uploadRef` を指定して、再度 `firecrawl_parse` を呼び出します。
+
+    アップロードコマンドでは短時間のみ有効な署名付きターゲットを使用し、Firecrawl APIキーは含まれません。公開ドキュメントの URL には `firecrawl_scrape` を使用してください。
+  </Accordion>
+
+  <Accordion title="実行中のクロールを確認する">
+    `firecrawl_crawl` は通常、クロールを開始し、終了状態になるまでポーリングしてから戻ります。この待機がタイムアウトした場合は、クロール ID を指定して `firecrawl_check_crawl_status` でジョブを再開します。現在の MCP 呼び出しの外部で作成されたクロールにも、同じステータスツールを使用してください。
+
+    `firecrawl_agent` は非同期です。ジョブ ID を返し、`firecrawl_agent_status` でそのジョブが完了または失敗するまで確認します。
+  </Accordion>
+
+  <Accordion title="Interact セッションを終了する">
+    `url` を指定して開始するか、以前の スクレイピング 呼び出しで取得した `scrapeId` を再利用します。ワークフローが完了したら、`scrapeId` を指定して `firecrawl_interact_stop` を呼び出し、セッションを解放します。
+  </Accordion>
+
+  <Accordion title="モニターを安全に管理する">
+    `firecrawl_monitor_*` ファミリーでは、定期的に実行されるモニターの作成、一覧表示、更新、実行、確認を行えます。`firecrawl_monitor_delete` はモニターを完全に削除するため、ユーザーが明示的に削除を意図している場合にのみ呼び出してください。
+  </Accordion>
+
+  <Accordion title="任意のフィードバックツールを有効にする">
+    `firecrawl_search_feedback` を登録しない場合は、`FIRECRAWL_NO_SEARCH_FEEDBACK=1` を設定します。`firecrawl_feedback` を登録しない場合は、`FIRECRAWL_NO_ENDPOINT_FEEDBACK=1` を設定します。
+  </Accordion>
+</AccordionGroup>
+
+<div id="feature-guides">
+  ## 機能ガイド
+</div>
+
+<CardGroup cols={3}>
+  <Card title="スクレイピング" href="/ja/features/scrape" icon="file-lines">
+    1つのURLからコンテンツまたは構造化フィールドを抽出します。
+  </Card>
+
+  <Card title="検索" href="/ja/features/search" icon="magnifying-glass">
+    関連するWeb、ニュース、画像、開発者向けのソースを検索します。
+  </Card>
+
+  <Card title="クロール" href="/ja/features/crawl" icon="spider-web">
+    サイトまたはセクションをクロールして抽出します。
+  </Card>
+
+  <Card title="解析" href="/ja/features/parse" icon="file-import">
+    ファイルをLLM対応の出力に変換します。
+  </Card>
+
+  <Card title="Interact" href="/ja/features/interact" icon="arrow-pointer">
+    ライブブラウザセッションで動的なページを操作します。
+  </Card>
+
+  <Card title="Agent" href="/ja/features/agent" icon="sparkles">
+    複数のソースを対象とした自律型リサーチを実行します。
+  </Card>
+
+  <Card title="モニタリング" href="/ja/features/monitoring" icon="bell">
+    ページの変更を追跡し、通知を受け取ります。
+  </Card>
+</CardGroup>
+
+<div id="troubleshooting">
+  ## トラブルシューティング
+</div>
+
+* **ツールが表示されない:** [Get Started](/ja/mcp-server)の接続モードを確認し、クライアントを再接続または再起動して、チームポリシーによって任意のツールが無効化されていないか確認してください。
+* **クライアントが`401`を返す:** まず設定したサーバーURLを確認してください。
+  * 設定したURLが`/v2/mcp-oauth`の場合は、クライアントから再度サインインしてください。
+  * `/v2/mcp`の場合は、そのサーバーのAPIキーを置き換えるか、既存のサーバーURLを`/v2/mcp-oauth`に更新してサインインを完了してください。
+  * いずれかの変更後に、新しいクライアントセッションを開始してください。
+* **クライアントがレート制限に達している:** 現在の[レート制限](/ja/rate-limits)を確認し、再試行間隔が過ぎるまで待つか、キーなしアクセスから認証済みアクセスに切り替えてください。

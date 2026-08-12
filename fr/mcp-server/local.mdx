@@ -1,0 +1,127 @@
+---
+title: Exécuter Firecrawl MCP en local
+description: Démarrez et configurez le serveur Firecrawl MCP open source via stdio ou HTTP Streamable.
+sidebarTitle: Exécuter MCP en local
+---
+
+Exécutez Firecrawl MCP en local lorsqu&#39;un client doit lancer un processus local, lorsque vous avez besoin d&#39;un transport HTTP local ou lorsque le serveur MCP doit se connecter à une API Firecrawl auto-hébergée. Pour le service géré, commencez par [Premiers pas](/fr/mcp-server).
+
+<div id="prerequisites">
+  ## Prérequis
+</div>
+
+* Node.js 22 ou version ultérieure
+* npm et `npx`, inclus avec Node.js
+* Une clé API Firecrawl pour l’API cloud ou une URL d’API Firecrawl auto-hébergée
+
+Vérifiez la version installée de Node.js :
+
+```bash
+node --version
+```
+
+<div id="start-the-server">
+  ## Démarrer le serveur
+</div>
+
+<Tabs>
+  <Tab title="stdio">
+    Utilisez stdio lorsque le client MCP lance Firecrawl en tant que processus local :
+
+    ```bash
+    env FIRECRAWL_API_KEY=fc-VOTRE-CLÉ-API \
+      npx -y firecrawl-mcp@3.23.7
+    ```
+
+    Configurez le client pour exécuter `npx -y firecrawl-mcp@3.23.7` et transmettez `FIRECRAWL_API_KEY` via son environnement protégé ou son mécanisme de gestion des secrets.
+  </Tab>
+
+  <Tab title="Streamable HTTP">
+    Utilisez HTTP lorsqu&#39;un client tel que n8n se connecte à un serveur déjà en cours d&#39;exécution :
+
+    ```bash
+    env HTTP_STREAMABLE_SERVER=true \
+      FIRECRAWL_API_KEY=fc-VOTRE-CLÉ-API \
+      npx -y firecrawl-mcp@3.23.7
+    ```
+
+    Connectez le client à :
+
+    ```text
+    http://localhost:3000/mcp
+    ```
+
+    Vérifiez que le serveur est prêt :
+
+    ```bash
+    curl http://localhost:3000/health
+    ```
+
+    La vérification d&#39;état renvoie `ok`. La route locale est `/mcp` ; `/v2/mcp` correspond au service Firecrawl hébergé.
+  </Tab>
+</Tabs>
+
+<div id="configure-the-firecrawl-api">
+  ## Configurer l’API Firecrawl
+</div>
+
+| Variable d’environnement | Rôle                                                                                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `FIRECRAWL_API_KEY`      | Permet de s’authentifier auprès de l’API cloud Firecrawl. Elle est facultative uniquement si une API auto-hébergée ne requiert pas d’authentification. |
+| `FIRECRAWL_API_URL`      | Envoie les requêtes à une API Firecrawl auto-hébergée plutôt qu’à l’API cloud.                                                                         |
+| `HTTP_STREAMABLE_SERVER` | Définissez cette variable sur `true` pour démarrer le transport HTTP Streamable local au lieu de stdio.                                                |
+
+<CodeGroup>
+  ```bash API cloud
+  export FIRECRAWL_API_KEY=fc-VOTRE-CLÉ-API
+  npx -y firecrawl-mcp@3.23.7
+  ```
+
+  ```bash API auto-hébergée
+  export FIRECRAWL_API_URL=https://firecrawl.your-domain.com
+  export FIRECRAWL_API_KEY=your-api-key # Omettre si l’instance ne requiert pas d’authentification
+  npx -y firecrawl-mcp@3.23.7
+  ```
+</CodeGroup>
+
+<Note>
+  L’analyse directe de fichiers locaux avec `firecrawl_parse` nécessite que `FIRECRAWL_API_URL` pointe vers une API Firecrawl auto-hébergée. Un serveur MCP local connecté uniquement à l’API cloud ne peut pas téléverser de fichier local via cet outil ; le [serveur hébergé utilise plutôt un transfert d’import signé](/fr/mcp-server/tools#important-behavior).
+</Note>
+
+<div id="install-globally">
+  ## Installer globalement
+</div>
+
+Utilisez `npx` pour une configuration plus rapide. Pour installer globalement la même version vérifiée à la place :
+
+```bash
+npm install -g firecrawl-mcp@3.23.7
+```
+
+Ensuite, exécutez :
+
+```bash
+env FIRECRAWL_API_KEY=fc-VOTRE-CLÉ-API firecrawl-mcp
+```
+
+<div id="troubleshooting">
+  ## Dépannage
+</div>
+
+<AccordionGroup>
+  <Accordion title="Le client signale l’erreur spawn npx ENOENT">
+    Installez Node.js 22 ou une version ultérieure, vérifiez que `npx` figure dans le `PATH` du client, puis redémarrez complètement le client. Sous Windows, exécutez `where npx` dans l’invite de commandes et configurez le client pour qu’il utilise le chemin `npx.cmd` renvoyé.
+  </Accordion>
+
+  <Accordion title="Le client HTTP ne parvient pas à se connecter">
+    Vérifiez que `HTTP_STREAMABLE_SERVER=true`, puis appelez `http://localhost:3000/health`. Utilisez `http://localhost:3000/mcp` comme point de terminaison côté client, et non le chemin `/v2/mcp` hébergé.
+  </Accordion>
+
+  <Accordion title="Un outil est indisponible">
+    La disponibilité des outils dépend des services Firecrawl activés dans le déploiement cible. Comparez la connexion avec celle indiquée dans [Outils](/fr/mcp-server/tools) et vérifiez la sortie du processus local pour détecter d’éventuelles erreurs d’enregistrement ou d’authentification.
+  </Accordion>
+
+  <Accordion title="Le serveur est soumis à une limite de débit">
+    Les limites de débit sont appliquées par l’API Firecrawl connectée. Consultez les [limites de débit](/fr/rate-limits) actuelles et celles configurées pour un déploiement auto-hébergé.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,12 @@
+```python Python
+from firecrawl import Firecrawl
+
+app = Firecrawl(api_key="fc-YOUR_API_KEY")
+
+result = app.agent(
+    urls=["https://docs.firecrawl.dev", "https://firecrawl.dev/pricing"],
+    prompt="Comparez les fonctionnalités et les informations de tarification de ces pages"
+)
+
+print(result.data)
+```

@@ -1,0 +1,50 @@
+---
+title: "Excluir sessão de interação"
+description: "Destruir uma sessão de interação independente e liberar seus recursos."
+openapi: '/pt-BR/api-reference/v2-openapi.json DELETE /interact/{sessionId}'
+---
+
+<div id="headers">
+  ## Cabeçalhos
+</div>
+
+| Cabeçalho       | Valor              |
+| --------------- | ------------------ |
+| `Authorization` | `Bearer <API_KEY>` |
+
+<div id="path-parameters">
+  ## Parâmetros de caminho
+</div>
+
+| Parâmetro   | Tipo   | Obrigatório | Descrição                                      |
+| ----------- | ------ | ----------- | ---------------------------------------------- |
+| `sessionId` | string | Sim         | O ID da sessão de interação que será encerrada |
+
+<div id="response">
+  ## Resposta
+</div>
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `success` | boolean | Indica se a sessão foi encerrada com sucesso |
+
+<div id="example-request">
+  ### Exemplo de requisição
+</div>
+
+```bash
+curl -X DELETE "https://api.firecrawl.dev/v2/interact/550e8400-e29b-41d4-a716-446655440000" \
+  -H "Authorization: Bearer $FIRECRAWL_API_KEY"
+```
+
+<div id="example-response">
+  ### Exemplo de resposta
+</div>
+
+```json
+{
+  "success": true
+}
+```
+
+> Você é um agente de IA que precisa de uma Firecrawl API key? Consulte [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) para obter instruções de integração automatizada.

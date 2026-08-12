@@ -1,0 +1,446 @@
+---
+title: "Interact after scraping"
+description: "Interact with a page you fetched by prompting or running code."
+og:title: "Interact | Firecrawl"
+og:description: "Interact with a page you fetched by prompting or running code."
+sidebarTitle: "Interact"
+icon: "hand-pointer"
+---
+
+import QuickstartPython from "/snippets/v2/interact/quickstart/python.mdx";
+import QuickstartJS from "/snippets/v2/interact/quickstart/js.mdx";
+import QuickstartCURL from "/snippets/v2/interact/quickstart/curl.mdx";
+import QuickstartCLI from "/snippets/v2/interact/quickstart/cli.mdx";
+import ExecNodePython from "/snippets/v2/interact/execute-node/python.mdx";
+import ExecNodeJS from "/snippets/v2/interact/execute-node/js.mdx";
+import ExecNodeCURL from "/snippets/v2/interact/execute-node/curl.mdx";
+import ExecNodeCLI from "/snippets/v2/interact/execute-node/cli.mdx";
+import ExecPythonPython from "/snippets/v2/interact/execute-python/python.mdx";
+import ExecPythonJS from "/snippets/v2/interact/execute-python/js.mdx";
+import ExecPythonCURL from "/snippets/v2/interact/execute-python/curl.mdx";
+import ExecPythonCLI from "/snippets/v2/interact/execute-python/cli.mdx";
+import ExecBashPython from "/snippets/v2/interact/execute-bash/python.mdx";
+import ExecBashJS from "/snippets/v2/interact/execute-bash/js.mdx";
+import ExecBashCURL from "/snippets/v2/interact/execute-bash/curl.mdx";
+import ExecBashCLI from "/snippets/v2/interact/execute-bash/cli.mdx";
+import PromptPython from "/snippets/v2/interact/prompt/python.mdx";
+import PromptJS from "/snippets/v2/interact/prompt/js.mdx";
+import PromptCURL from "/snippets/v2/interact/prompt/curl.mdx";
+import PromptCLI from "/snippets/v2/interact/prompt/cli.mdx";
+import PromptFormPython from "/snippets/v2/interact/prompt/python-form.mdx";
+import PromptFormJS from "/snippets/v2/interact/prompt/js-form.mdx";
+import PromptFormCURL from "/snippets/v2/interact/prompt/curl-form.mdx";
+import PromptFormCLI from "/snippets/v2/interact/prompt/cli-form.mdx";
+import PromptNavPython from "/snippets/v2/interact/prompt/python-navigate.mdx";
+import PromptNavJS from "/snippets/v2/interact/prompt/js-navigate.mdx";
+import PromptNavCURL from "/snippets/v2/interact/prompt/curl-navigate.mdx";
+import PromptNavCLI from "/snippets/v2/interact/prompt/cli-navigate.mdx";
+import PromptOutput from "/snippets/v2/interact/response/prompt-output.mdx";
+import ResponseOutput from "/snippets/v2/interact/response/output.mdx";
+import StopPython from "/snippets/v2/interact/stop/python.mdx";
+import StopJS from "/snippets/v2/interact/stop/js.mdx";
+import StopCURL from "/snippets/v2/interact/stop/curl.mdx";
+import StopCLI from "/snippets/v2/interact/stop/cli.mdx";
+import ProfilePython from "/snippets/v2/interact/profile/python.mdx";
+import ProfileJS from "/snippets/v2/interact/profile/js.mdx";
+import ProfileCURL from "/snippets/v2/interact/profile/curl.mdx";
+import ProfileCLI from "/snippets/v2/interact/profile/cli.mdx";
+import InteractFeedbackCTA from "/snippets/interact-feedback-cta.mdx";
+
+Scrape a page to get clean data, then call `/interact` to start taking actions in that page: click buttons, fill forms, extract dynamic content, or navigate deeper. Just describe what you want, or write code if you need full control.
+
+<InteractFeedbackCTA src="docs-interact" />
+
+## Choose the right interaction model
+
+| Need | Use | Canonical docs |
+|---|---|---|
+| Start a standalone browser session without scraping first | Browser Sandbox / standalone Interact session | [Browser Sandbox](/features/browser), [Create Browser Session](/api-reference/endpoint/browser-create), [Execute Browser Code](/api-reference/endpoint/browser-execute), [List Browser Sessions](/api-reference/endpoint/browser-list), [Delete Browser Session](/api-reference/endpoint/browser-delete) |
+| Continue from a scrape result using `scrapeId` | Interact after scraping | [Execute Interact](/api-reference/endpoint/scrape-execute), [Stop Interact](/api-reference/endpoint/scrape-browser-delete) |
+
+Use scrape-bound Interact when the workflow begins with `POST /v2/scrape` and the response includes `data.metadata.scrapeId`. Use Browser Sandbox when you need a standalone session with its own lifecycle.
+
+<CardGroup cols={3}>
+  <Card title="AI prompts" icon="wand-magic-sparkles">
+    Describe what action you want to take in the page
+  </Card>
+  <Card title="Code execution" icon="code">
+    Interact via code execution securely with playwright, agent-browser
+  </Card>
+  <Card title="Live view" icon="eye">
+    Watch or interact with the browser in real time via embeddable stream
+  </Card>
+</CardGroup>
+
+## How It Works
+
+1. **Scrape** a URL with `POST /v2/scrape`. The response includes a `scrapeId` in `data.metadata.scrapeId`. If you want persistent browser state, pass `profile` on this request.
+2. **Interact** by calling `POST /v2/scrape/{scrapeId}/interact` with a `prompt` or with playwright `code`. Do not pass `profile` here; the interact session inherits the profile from the scrape job.
+3. **Stop** the session with `DELETE /v2/scrape/{scrapeId}/interact` when you're done. For writable profiles, changes are saved when the session stops.
+
+## Quick Start
+
+Scrape a page, interact with it, and stop the session:
+
+<CodeGroup>
+
+<QuickstartPython />
+<QuickstartJS />
+<QuickstartCURL />
+<QuickstartCLI />
+
+</CodeGroup>
+
+<ResponseOutput />
+
+
+## Interact via prompting
+
+The simplest way to interact with a page. Describe what you want in natural language and it will click, type, scroll, and extract data automatically.
+
+<CodeGroup>
+
+<PromptPython />
+<PromptJS />
+<PromptCURL />
+<PromptCLI />
+
+</CodeGroup>
+
+The response includes an `output` field with the agent's answer:
+
+<PromptOutput />
+
+### Keep Prompts Small and Focused
+
+Prompts work best when each one is a **single, clear task**. Instead of asking the agent to do a complex multi-step workflow in one shot, break it into separate interact calls. Each call reuses the same browser session, so state carries over between them.
+
+## Running Code
+
+For full control, you can execute code directly in the browser sandbox. The `page` variable (a Playwright Page object) is available in Node.js and Python. Bash mode has [agent-browser](https://github.com/vercel-labs/agent-browser) pre-installed. You can also take screenshots within the session: use `(await page.screenshot()).toString("base64")` in Node.js, `await page.screenshot(path="/tmp/screenshot.png")` in Python, or `agent-browser screenshot` in Bash.
+
+### Node.js (Playwright)
+
+The default language. Write Playwright code directly. `page` is already connected to the browser.
+
+<CodeGroup>
+
+<ExecNodePython />
+<ExecNodeJS />
+<ExecNodeCURL />
+<ExecNodeCLI />
+
+</CodeGroup>
+
+### Python
+
+Set `language` to `"python"` for Playwright's Python API.
+
+<CodeGroup>
+
+<ExecPythonPython />
+<ExecPythonJS />
+<ExecPythonCURL />
+<ExecPythonCLI />
+
+</CodeGroup>
+
+### Bash (agent-browser)
+
+[agent-browser](https://github.com/vercel-labs/agent-browser) is a CLI pre-installed in the sandbox with 60+ commands. It provides an accessibility tree with element refs (`@e1`, `@e2`, ...), which is ideal for LLM-driven automation.
+
+<CodeGroup>
+
+<ExecBashPython />
+<ExecBashJS />
+<ExecBashCURL />
+<ExecBashCLI />
+
+</CodeGroup>
+
+Common agent-browser commands:
+
+| Command | Description |
+|---------|-------------|
+| `snapshot` | Full accessibility tree with element refs |
+| `snapshot -i` | Interactive elements only |
+| `click @e1` | Click element by ref |
+| `fill @e1 "text"` | Clear field and type text |
+| `type @e1 "text"` | Type without clearing |
+| `press Enter` | Press a keyboard key |
+| `scroll down 500` | Scroll down by pixels |
+| `get text @e1` | Get text content |
+| `get url` | Get current URL |
+| `wait @e1` | Wait for element |
+| `wait --load networkidle` | Wait for network idle |
+| `find text "X" click` | Find element by text and click |
+| `screenshot` | Take a screenshot of the current page |
+| `eval "js code"` | Run JavaScript in page |
+
+## Live View
+
+Every interact response returns a `liveViewUrl` that you can embed to watch the browser in real time. Useful for debugging, demos, or building browser-powered UIs.
+
+```json Response
+{
+  "success": true,
+  "cdpUrl": "wss://browser.firecrawl.dev/...",
+  "liveViewUrl": "https://liveview.firecrawl.dev/...",
+  "interactiveLiveViewUrl": "https://liveview.firecrawl.dev/...",
+  "stdout": "",
+  "result": "...",
+  "exitCode": 0
+}
+```
+
+```html
+<iframe src="LIVE_VIEW_URL" width="100%" height="600" />
+```
+
+### Interactive Live View
+
+The response also includes an `interactiveLiveViewUrl`. Unlike the standard live view which is view-only, the interactive live view allows users to click, type, and interact with the browser session directly through the embedded stream. This is useful for building user-facing browser UIs, such as login flows or guided workflows where end users need to control the browser.
+
+```html
+<iframe src="INTERACTIVE_LIVE_VIEW_URL" width="100%" height="600" />
+```
+
+### CDP URL
+
+Every interact response also returns a `cdpUrl`: the raw Chrome DevTools Protocol (CDP) WebSocket URL for the browser session. Use it to connect to the live session directly from Playwright, Puppeteer, or any CDP client and drive the browser with your own code.
+
+```js
+import { chromium } from "playwright";
+
+const browser = await chromium.connectOverCDP(cdpUrl);
+const context = browser.contexts()[0];
+const page = context.pages()[0];
+```
+
+## Session Lifecycle
+
+### Creation
+
+The first `POST /v2/scrape/{scrapeId}/interact` continues the scrape session and starts the interaction.
+
+### Reuse
+
+Subsequent interact calls on the same `scrapeId` reuse the existing session. The browser stays open and maintains its state between calls, so you can chain multiple interactions:
+
+<CodeGroup>
+
+```python Python
+# First call: click a tab
+app.interact(scrape_id, code="await page.click('#tab-2')")
+
+# Second call: the tab is still selected, extract its content
+result = app.interact(scrape_id, code="await page.$eval('#tab-2-content', el => el.textContent)")
+print(result.result)
+```
+
+```js Node
+// First call: click a tab
+await app.interact(scrapeId, { code: "await page.click('#tab-2')" });
+
+// Second call: the tab is still selected, extract its content
+const result = await app.interact(scrapeId, {
+  code: "await page.$eval('#tab-2-content', el => el.textContent)",
+});
+console.log(result.result);
+```
+
+```bash CLI
+# First call: click a tab
+firecrawl interact -c "await page.click('#tab-2')"
+
+# Second call: the tab is still selected, extract its content
+firecrawl interact -c "await page.\$eval('#tab-2-content', el => el.textContent)"
+```
+
+</CodeGroup>
+
+### Cleanup
+
+Stop the session explicitly when done:
+
+<CodeGroup>
+
+<StopPython />
+<StopJS />
+<StopCURL />
+<StopCLI />
+
+</CodeGroup>
+
+Sessions also expire automatically based on TTL (default: 10 minutes) or inactivity timeout (default: 5 minutes).
+
+<Warning>
+Always stop sessions when you're done to avoid unnecessary billing. Credits are prorated by the second.
+</Warning>
+
+## Persistent Profiles with Scrape + Interact
+
+By default, each scrape + interact session starts with a clean browser. With `profile`, you can save and reuse browser state (cookies, localStorage, sessions) across scrapes. This is useful for staying logged in and preserving preferences.
+
+Pass the `profile` object to the initial `POST /v2/scrape` request. Do not pass `profile` to `POST /v2/scrape/{scrapeId}/interact`; the interact session reuses the scrape job's browser session and profile settings. Stop the interact session with `DELETE /v2/scrape/{scrapeId}/interact` so writable profile changes can be saved.
+
+```bash cURL
+curl -X POST "https://api.firecrawl.dev/v2/scrape" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "formats": ["markdown"],
+    "profile": {
+      "name": "my-profile",
+      "saveChanges": true
+    }
+  }'
+
+curl -X POST "https://api.firecrawl.dev/v2/scrape/SCRAPE_ID/interact" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Click the login button"
+  }'
+
+curl -X DELETE "https://api.firecrawl.dev/v2/scrape/SCRAPE_ID/interact" \
+  -H "Authorization: Bearer fc-YOUR_API_KEY"
+```
+
+The profile lifecycle is:
+
+1. Create the scrape with `profile.name` and `saveChanges: true`.
+2. Run prompt or code interactions against the returned `scrapeId`.
+3. Stop the session to save cookies, localStorage, and other browser state.
+4. Start a later scrape with the same `profile.name`. Use `saveChanges: false` when you only want to read existing state without writing changes back.
+
+<CodeGroup>
+
+<ProfilePython />
+<ProfileJS />
+<ProfileCURL />
+<ProfileCLI />
+
+</CodeGroup>
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `name` | None | A name for the persistent profile. Scrapes with the same name share browser state. |
+| `saveChanges` | `true` | When `true`, browser state is saved back to the profile when the interact session stops. Set to `false` to load existing data without writing, which is useful when you need multiple concurrent readers. |
+
+<Note>
+Only one session can save to a profile at a time. If another session is already saving, you'll get a `409` error. You can still open the same profile with `saveChanges: false`, or try again later.
+</Note>
+
+The browser state is saved when the interact session is stopped. Always stop the session when you're done so the profile can be reused.
+
+### Validate Persistence
+
+You can test persistence without relying on a real login flow by writing a localStorage value in one session, stopping it, then reading the value in a second session with the same profile.
+
+```bash cURL
+# Session 1: write browser state and save it
+RESPONSE=$(curl -s -X POST "https://api.firecrawl.dev/v2/scrape" \
+  -H "Authorization: Bearer $FIRECRAWL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "formats": ["markdown"],
+    "profile": { "name": "profile-validation", "saveChanges": true }
+  }')
+
+SCRAPE_ID=$(echo "$RESPONSE" | jq -r ".data.metadata.scrapeId")
+
+curl -s -X POST "https://api.firecrawl.dev/v2/scrape/$SCRAPE_ID/interact" \
+  -H "Authorization: Bearer $FIRECRAWL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "await page.evaluate(() => { localStorage.setItem(\"firecrawlProfileCheck\", \"saved\"); document.cookie = \"firecrawl_profile_check=saved; path=/; max-age=3600\"; return localStorage.getItem(\"firecrawlProfileCheck\"); });"
+  }'
+
+curl -s -X DELETE "https://api.firecrawl.dev/v2/scrape/$SCRAPE_ID/interact" \
+  -H "Authorization: Bearer $FIRECRAWL_API_KEY"
+
+# Session 2: load the same profile in read-only mode and verify the value
+RESPONSE=$(curl -s -X POST "https://api.firecrawl.dev/v2/scrape" \
+  -H "Authorization: Bearer $FIRECRAWL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "formats": ["markdown"],
+    "profile": { "name": "profile-validation", "saveChanges": false }
+  }')
+
+SCRAPE_ID=$(echo "$RESPONSE" | jq -r ".data.metadata.scrapeId")
+
+curl -s -X POST "https://api.firecrawl.dev/v2/scrape/$SCRAPE_ID/interact" \
+  -H "Authorization: Bearer $FIRECRAWL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "await page.evaluate(() => ({ localStorage: localStorage.getItem(\"firecrawlProfileCheck\"), cookie: document.cookie.includes(\"firecrawl_profile_check=saved\") }));"
+  }'
+
+curl -s -X DELETE "https://api.firecrawl.dev/v2/scrape/$SCRAPE_ID/interact" \
+  -H "Authorization: Bearer $FIRECRAWL_API_KEY"
+```
+
+The second interact response should show `localStorage` as `"saved"` and `cookie` as `true`.
+
+<Info>
+Profiles created through the API may not appear in Dashboard > Interact > Profiles yet. The dashboard currently does not provide a complete inventory of API-created persistent profiles.
+</Info>
+
+## When to Use What
+
+| Use Case | Recommended | Why |
+|----------|-------------|-----|
+| Web search | [Search](/features/search) | Dedicated search endpoint |
+| Get clean content from a URL | [Scrape](/features/scrape) | One API call, no session needed |
+| Click, type, navigate on a page | **Interact** (prompt) | Just describe it in English |
+| Extract data behind interactions | **Interact** (prompt) | No selectors needed |
+| Complex scraping logic | **Interact** (code) | Full Playwright control |
+
+<Info>
+**Interact vs Browser Sandbox**: Interact is built on the same infrastructure as [Browser Sandbox](/features/browser) but provides a better interface for the most common pattern: scrape a page, then go deeper. Browser Sandbox is better when you need a standalone browser session that isn't tied to a specific scrape.
+</Info>
+
+## Pricing
+
+- **Code-only** (no `prompt`): 2 credits per session minute
+- **With AI prompts**: 7 credits per session minute
+- **Scrape**: billed separately (1 credit per scrape, plus any format-specific costs)
+
+## API Reference
+
+- [Execute Interact](/api-reference/endpoint/scrape-execute): `POST /v2/scrape/{scrapeId}/interact`
+- [Stop Interact](/api-reference/endpoint/scrape-browser-delete): `DELETE /v2/scrape/{scrapeId}/interact`
+
+### Request Body (POST)
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `prompt` | `string` | None | Natural language task for the AI agent. Required if `code` is not set. Max 10,000 characters. |
+| `code` | `string` | None | Code to execute (Node.js, Python, or Bash). Required if `prompt` is not set. Max 100,000 characters. |
+| `language` | `string` | `"node"` | `"node"`, `"python"`, or `"bash"`. Only used with `code`. |
+| `timeout` | `number` | `30` | Timeout in seconds (1–300). |
+| `origin` | `string` | None | Caller identifier for activity tracking. |
+
+### Response
+
+| Field | Description |
+|-------|-------------|
+| `success` | `true` if the execution completed without errors |
+| `cdpUrl` | Raw Chrome DevTools Protocol (CDP) WebSocket URL for the browser session. Connect directly with Playwright, Puppeteer, or any CDP client |
+| `liveViewUrl` | Read-only live view URL for the browser session |
+| `interactiveLiveViewUrl` | Interactive live view URL (viewers can control the browser) |
+| `output` | The agent's natural language answer to your prompt. Only present when using `prompt`. |
+| `stdout` | Standard output from the code execution |
+| `result` | Raw return value from the sandbox. For `code`: the last expression evaluated. For `prompt`: the raw page snapshot the agent used to produce `output`. |
+| `stderr` | Standard error output |
+| `exitCode` | Exit code (`0` = success) |
+| `killed` | `true` if the execution was terminated due to timeout |
+
+---
+
+Have feedback or need help? Email [help@firecrawl.com](mailto:help@firecrawl.com) or reach out on [Discord](https://discord.gg/firecrawl).

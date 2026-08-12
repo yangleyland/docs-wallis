@@ -1,0 +1,16 @@
+---
+title: 'Raspar'
+openapi: '/pt-BR/api-reference/v2-openapi.json POST /scrape'
+---
+
+<div id="interactions">
+  ## Interações
+</div>
+
+Para interações no navegador (clicar, digitar, navegar, extrair conteúdo dinâmico), use o [endpoint Interact](/pt-BR/features/interact). Primeiro, faça o scraping da página e, em seguida, chame `POST /v2/scrape/{scrapeId}/interact` com um prompt em linguagem natural ou código Playwright para executar ações na página.
+
+Consulte a [documentação do Interact](/pt-BR/features/interact) para ver todos os detalhes e exemplos.
+
+Opcionalmente, você também pode usar o parâmetro `actions`, embora ele não seja recomendado para interações complexas.
+
+> Você é um agente de IA que precisa de uma API key do Firecrawl? Consulte [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) para instruções de onboarding automatizado.

@@ -1,0 +1,233 @@
+---
+title: "速率限制"
+description: "不同定价方案与 API 请求的速率限制"
+og:title: "速率限制 | Firecrawl"
+og:description: "不同定价方案与 API 请求的速率限制"
+---
+
+速率限制用于限定你的团队每分钟可发出的请求数，而并发限制用于限定可并行运行的任务数。当你超出速率限制或并发限制时，API 会返回 `429` 响应。请参见 [Errors](/zh/api-reference/errors) 了解完整的错误列表以及采用退避策略的重试代码片段。
+
+<div id="concurrent-browser-limits">
+  ## 并发浏览器限制
+</div>
+
+并发浏览器决定了 Firecrawl 可为你并行处理的页面数量。你的套餐设定了上限；超出上限的任务将进入队列等待，直到有浏览器空闲出来。
+
+请注意，在队列中等待的时间也会计入该请求的 [`timeout`](/zh/advanced-scraping-guide#timing-and-cache) 参数，因此你可以设置较低的 `timeout` 以快速失败，而不是等待。若要在发送任务前查看当前可用情况，请调用 [Queue Status](/zh/api-reference/endpoint/queue-status) 端点。在并发队列中等待的任务最长会在 48 小时后超时。
+
+<div id="current-plans">
+  ### 当前方案
+</div>
+
+<div style={{ overflowX: 'auto', maxWidth: '100%' }}>
+  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <thead>
+      <tr>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>方案</th>
+        <th style={{ padding: '8px 12px' }}>并发浏览器</th>
+        <th style={{ padding: '8px 12px' }}>最大排队任务数</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Free (免费) </td>
+        <td style={{ padding: '8px 12px' }}>2</td>
+        <td style={{ padding: '8px 12px' }}>50,000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Hobby (入门) </td>
+        <td style={{ padding: '8px 12px' }}>5</td>
+        <td style={{ padding: '8px 12px' }}>50,000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Standard (标准) </td>
+        <td style={{ padding: '8px 12px' }}>50</td>
+        <td style={{ padding: '8px 12px' }}>100,000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Growth (增长) </td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+        <td style={{ padding: '8px 12px' }}>200,000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Scale / Enterprise</td>
+        <td style={{ padding: '8px 12px' }}>150+</td>
+        <td style={{ padding: '8px 12px' }}>300,000+</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+每个团队在并发队列中可等待的任务数都有上限。如果超过此限制，在现有任务完成之前，新任务都会以 `429` 状态码被拒绝。对于带有自定义并发限制的更高阶方案，最大排队任务数为并发限制的 2,000 倍，最高不超过 2,000,000。
+
+如果您需要更高的并发限制，请[联系我们咨询企业方案](https://firecrawl.dev/enterprise)。
+
+<div id="api-rate-limits">
+  ## API 速率限制
+</div>
+
+速率限制以每分钟请求数来衡量，主要用于防止滥用。正确配置后，你真正的瓶颈将是并发浏览器的数量。速率限制按团队生效，因此同一团队中的所有 API 密钥共享相同的速率限制计数器。
+
+<div id="keyless-no-api-key">
+  ### 无密钥 (无需 API 密钥)
+</div>
+
+托管的 Firecrawl MCP 无密钥端点仅提供**搜索、抓取和解析**，无需 API 密钥。其他托管 MCP 工具需要连接账户或 API 密钥。
+
+对于 Firecrawl 官方客户端、CLI、SDKs 和 REST API，无密钥访问还包括**交互**。在 Firecrawl Cloud 上，研究和开发者搜索端点也可以在无需 API 密钥的情况下使用。除此之外，其他端点 (如 crawl、extract、map、batch scrape 等) 在没有密钥的情况下均不可用。
+
+无密钥使用是免费的，但会按每个 IP 地址每天受到**两项限制**，超过任一限制都会返回 `429`：
+
+* 每天**请求**的最大数量。
+* 每天**额度**的最大数量。不同操作消耗的额度不同 (例如，交互和 JSON 提取比基础抓取消耗更多) ，因此使用量越大，就越容易更快达到额度上限。
+
+[注册一个免费的 API 密钥](https://firecrawl.dev)即可免费获得 1,000 额度和更高的速率限制——配置完成后，官方客户端会自动使用你的密钥。
+
+<div id="current-plans">
+  ### 当前方案
+</div>
+
+<div style={{ overflowX: 'auto', maxWidth: '100%' }}>
+  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <thead>
+      <tr>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>方案</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/scrape</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/map</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/crawl</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/search</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/agent</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/crawl/status</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/agent/status</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Free (免费) </td>
+        <td style={{ padding: '8px 12px' }}>10</td>
+        <td style={{ padding: '8px 12px' }}>10</td>
+        <td style={{ padding: '8px 12px' }}>2</td>
+        <td style={{ padding: '8px 12px' }}>10</td>
+        <td style={{ padding: '8px 12px' }}>2</td>
+        <td style={{ padding: '8px 12px' }}>500</td>
+        <td style={{ padding: '8px 12px' }}>500</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Hobby (入门) </td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+        <td style={{ padding: '8px 12px' }}>20</td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+        <td style={{ padding: '8px 12px' }}>20</td>
+        <td style={{ padding: '8px 12px' }}>5000</td>
+        <td style={{ padding: '8px 12px' }}>5000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Standard (标准) </td>
+        <td style={{ padding: '8px 12px' }}>500</td>
+        <td style={{ padding: '8px 12px' }}>500</td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+        <td style={{ padding: '8px 12px' }}>500</td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+        <td style={{ padding: '8px 12px' }}>25000</td>
+        <td style={{ padding: '8px 12px' }}>25000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Growth (增长) </td>
+        <td style={{ padding: '8px 12px' }}>5000</td>
+        <td style={{ padding: '8px 12px' }}>5000</td>
+        <td style={{ padding: '8px 12px' }}>1000</td>
+        <td style={{ padding: '8px 12px' }}>5000</td>
+        <td style={{ padding: '8px 12px' }}>1000</td>
+        <td style={{ padding: '8px 12px' }}>250000</td>
+        <td style={{ padding: '8px 12px' }}>250000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Scale (扩展) </td>
+        <td style={{ padding: '8px 12px' }}>10000</td>
+        <td style={{ padding: '8px 12px' }}>10000</td>
+        <td style={{ padding: '8px 12px' }}>2000</td>
+        <td style={{ padding: '8px 12px' }}>10000</td>
+        <td style={{ padding: '8px 12px' }}>2000</td>
+        <td style={{ padding: '8px 12px' }}>500000</td>
+        <td style={{ padding: '8px 12px' }}>500000</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+这些速率限制旨在确保所有用户都能公平使用，并保障 API 的可用性。如果您需要更高的配额，请通过 [help@firecrawl.com](mailto:help@firecrawl.com) 与我们联系，商讨自定义方案。
+
+<div id="extract-endpoints">
+  ### Extract Endpoints
+</div>
+
+`extract` 端点与对应的 `/agent` 端点共用同一套速率限制。
+
+<div id="batch-scrape-endpoints">
+  ### 批量抓取端点
+</div>
+
+批量抓取端点与对应的 `/crawl` 端点共享相同的速率限制。
+
+<div id="browser-sandbox">
+  ### 浏览器沙箱
+</div>
+
+浏览器沙箱端点的速率限制会随您订阅的方案而提高：
+
+<div style={{ overflowX: 'auto', maxWidth: '100%' }}>
+  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <thead>
+      <tr>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>方案</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/interact</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/interact/&#123;id&#125;/execute</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Free (免费) </td>
+        <td style={{ padding: '8px 12px' }}>2</td>
+        <td style={{ padding: '8px 12px' }}>10</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Hobby (入门) </td>
+        <td style={{ padding: '8px 12px' }}>20</td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Standard (标准) </td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+        <td style={{ padding: '8px 12px' }}>500</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Growth (增长) </td>
+        <td style={{ padding: '8px 12px' }}>1,000</td>
+        <td style={{ padding: '8px 12px' }}>5,000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Scale (扩展) </td>
+        <td style={{ padding: '8px 12px' }}>1,500</td>
+        <td style={{ padding: '8px 12px' }}>7,500</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+此外，每个团队所订阅的方案还决定了可同时活跃的浏览器会话数量 (请参见上方的 并发浏览器限制) 。如果超出此限制，新的会话请求将返回 `429` 状态码，直到现有会话被销毁。

@@ -1,0 +1,325 @@
+---
+title: "Rastrear"
+description: "Rastrea recursivamente un sitio web y obtén contenido de cada página"
+og:title: "Rastrear | Firecrawl"
+og:description: "Rastrea recursivamente un sitio web y obtén contenido de cada página"
+icon: "spider"
+---
+
+import InstallationPython from '/snippets/es/v2/installation/python.mdx';
+import InstallationNode from '/snippets/es/v2/installation/js.mdx';
+import InstallationCLI from '/snippets/es/v2/installation/cli.mdx';
+import CrawlPython from '/snippets/es/v2/crawl/base/python.mdx';
+import CrawlNode from '/snippets/es/v2/crawl/base/js.mdx';
+import CrawlCURL from '/snippets/es/v2/crawl/base/curl.mdx';
+import CrawlCLI from '/snippets/es/v2/crawl/base/cli.mdx';
+import CheckCrawlJobPython from '/snippets/es/v2/crawl-status/short/python.mdx';
+import CheckCrawlJobNode from '/snippets/es/v2/crawl-status/short/js.mdx';
+import CheckCrawlJobCURL from '/snippets/es/v2/crawl-status/short/curl.mdx';
+import CheckCrawlJobCLI from '/snippets/es/v2/crawl-status/short/cli.mdx';
+import CheckCrawlJobOutputScraping from '/snippets/es/v2/crawl-status/base/output-scraping.mdx';
+import CheckCrawlJobOutputCompleted from '/snippets/es/v2/crawl-status/base/output-completed.mdx';
+import CrawlWebSocketPython from '/snippets/es/v2/crawl-websocket/base/python.mdx';
+import CrawlWebSocketNode from '/snippets/es/v2/crawl-websocket/base/js.mdx';
+import CrawlWebhookCURL from '/snippets/es/v2/crawl-webhook/base/curl.mdx';
+import PythonCrawlExample from '/snippets/es/v2/crawl/sdk-example/python.mdx';
+import NodeCrawlExample from '/snippets/es/v2/crawl/sdk-example/js.mdx';
+import PythonCrawlExampleResponse from '/snippets/es/v2/crawl/sdk-example/python-response.mdx';
+import NodeCrawlExampleResponse from '/snippets/es/v2/crawl/sdk-example/js-response.mdx';
+import StartCrawlPython from '/snippets/es/v2/start-crawl/base/python.mdx';
+import StartCrawlNode from '/snippets/es/v2/start-crawl/base/js.mdx';
+import StartCrawlCURL from '/snippets/es/v2/start-crawl/base/curl.mdx';
+import StartCrawlCLI from '/snippets/es/v2/start-crawl/base/cli.mdx';
+import StartCrawlOutput from '/snippets/es/v2/start-crawl/base/output.mdx';
+import PlaygroundCTA from "/snippets/es/shared/playground-cta-crawl.mdx";
+
+Rastrear envía una URL a Firecrawl y descubre y extrae de forma recursiva todas las subpáginas accesibles. Gestiona automáticamente sitemaps, renderizado de JavaScript y límites de tasa, y devuelve Markdown limpio o datos estructurados para cada página.
+
+* Descubre páginas mediante sitemap y recorrido recursivo de enlaces
+* Admite filtrado por ruta, límites de profundidad y control de subdominios/enlaces externos
+* Devuelve resultados mediante polling, WebSocket o webhook
+
+<PlaygroundCTA />
+
+<div id="installation">
+  ## Instalación
+</div>
+
+<CodeGroup>
+  <InstallationPython />
+
+  <InstallationNode />
+
+  <InstallationCLI />
+</CodeGroup>
+
+<div id="basic-usage">
+  ## Uso básico
+</div>
+
+Envía un trabajo de rastreo llamando a `POST /v2/crawl` con una URL inicial. El endpoint devuelve un ID de trabajo que usas para consultar los resultados.
+
+<CodeGroup>
+  <CrawlPython />
+
+  <CrawlNode />
+
+  <CrawlCURL />
+
+  <CrawlCLI />
+</CodeGroup>
+
+<Info>
+  Cada página rastreada consume 1 crédito. El `limit` de rastreo predeterminado es de 10.000
+  páginas. Antes de comenzar, el endpoint de rastreo comprueba que tus créditos restantes
+  alcancen para cubrir el `limit`; si no es así, devuelve un error **402 (Pago requerido)**.
+  Establece un `limit` más bajo que se ajuste al tamaño de rastreo previsto (por ejemplo, `limit: 100`) para
+  evitarlo. Se aplican créditos adicionales para ciertas opciones: el modo JSON cuesta 4
+  créditos adicionales por página, el proxy mejorado cuesta 4 créditos adicionales por
+  página y el análisis de PDF cuesta 1 crédito por página de PDF.
+</Info>
+
+<div id="scrape-options">
+  ### Opciones de scraping
+</div>
+
+Todas las opciones del [endpoint Scrape](/es/api-reference/endpoint/scrape) están disponibles en rastreo mediante `scrapeOptions` (JS) / `scrape_options` (Python). Se aplican a cada página que el crawler raspa, incluidos formatos, proxy, caché, acciones, ubicación y etiquetas.
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+
+  firecrawl = Firecrawl(api_key='fc-YOUR_API_KEY')
+
+  # Crawl con opciones de scraping
+  response = firecrawl.crawl('https://example.com',
+      limit=100,
+      scrape_options={
+          'formats': [
+              'markdown',
+              { 'type': 'json', 'schema': { 'type': 'object', 'properties': { 'title': { 'type': 'string' } } } }
+          ],
+          'proxy': 'auto',
+          'max_age': 600000,
+          'only_main_content': True
+      }
+  )
+  ```
+
+  ```js Node
+  import { Firecrawl } from 'firecrawl';
+
+  const firecrawl = new Firecrawl({ apiKey: 'fc-YOUR_API_KEY' });
+
+  // Crawl con opciones de scraping
+  const crawlResponse = await firecrawl.crawl('https://example.com', {
+    limit: 100,
+    scrapeOptions: {
+      formats: [
+        'markdown',
+        {
+          type: 'json',
+          schema: { type: 'object', properties: { title: { type: 'string' } } },
+        },
+      ],
+      proxy: 'auto',
+      maxAge: 600000,
+      onlyMainContent: true,
+    },
+  });
+  ```
+</CodeGroup>
+
+<div id="checking-crawl-status">
+  ## Verificar el estado del rastreo
+</div>
+
+Usa el ID del trabajo para consultar el estado del rastreo y recuperar los resultados.
+
+<CodeGroup>
+  <CheckCrawlJobPython />
+
+  <CheckCrawlJobNode />
+
+  <CheckCrawlJobCURL />
+
+  <CheckCrawlJobCLI />
+</CodeGroup>
+
+<Note>
+  Los resultados de los trabajos están disponibles a través de la API durante 24 horas después de su finalización. Después de este periodo, aún puedes ver tu historial de rastreos y resultados en los [activity logs](https://www.firecrawl.dev/app/logs).
+</Note>
+
+<Note>
+  Las páginas en el array `data` de los resultados del rastreo son páginas que Firecrawl extrajo correctamente, incluso si el sitio de destino devolvió un error HTTP como 404. El campo `metadata.statusCode` muestra el código de estado HTTP del sitio de destino. Para recuperar las páginas que Firecrawl no pudo extraer (por ejemplo, errores de red, tiempos de espera o bloqueos por robots.txt), usa el endpoint dedicado [Get Crawl Errors](/es/api-reference/endpoint/crawl-get-errors) (`GET /crawl/{id}/errors`).
+</Note>
+
+<div id="response-handling">
+  ### Manejo de respuestas
+</div>
+
+La respuesta varía según el estado del rastreo. Para respuestas incompletas o de gran tamaño que superen los 10 MB, se proporciona un parámetro de URL `next`. Debes solicitar esta URL para obtener los siguientes 10 MB de datos. Si el parámetro `next` no está presente, indica el final de los datos del rastreo.
+
+<Info>
+  Los parámetros `skip` y `next` solo son relevantes cuando se consume la API directamente.
+  Si usas el SDK, la paginación se gestiona automáticamente y todos
+  los resultados se devuelven de una vez.
+</Info>
+
+<CodeGroup>
+  <CheckCrawlJobOutputScraping />
+
+  <CheckCrawlJobOutputCompleted />
+</CodeGroup>
+
+<div id="sdk-methods">
+  ## Métodos del SDK
+</div>
+
+Hay dos maneras de usar `crawl` con el SDK.
+
+<div id="crawl-and-wait">
+  ### Rastrear y esperar
+</div>
+
+El método `crawl` espera a que el rastreo termine y devuelve la respuesta completa. Gestiona la paginación automáticamente. Esto se recomienda para la mayoría de los casos de uso.
+
+<CodeGroup>
+  <PythonCrawlExample />
+
+  <NodeCrawlExample />
+</CodeGroup>
+
+La respuesta incluye el estado del rastreo y todos los datos extraídos:
+
+<CodeGroup>
+  <PythonCrawlExampleResponse />
+
+  <NodeCrawlExampleResponse />
+</CodeGroup>
+
+<div id="start-and-check-later">
+  ### Iniciar y luego verificar el estado
+</div>
+
+El método `startCrawl` / `start_crawl` devuelve de inmediato un ID de rastreo. Luego puedes verificar el estado manualmente. Esto es útil para rastreos de larga duración o lógica de sondeo personalizada.
+
+<CodeGroup>
+  <StartCrawlPython />
+
+  <StartCrawlNode />
+
+  <StartCrawlCURL />
+
+  <StartCrawlCLI />
+</CodeGroup>
+
+La respuesta inicial devuelve el ID del trabajo:
+
+<StartCrawlOutput />
+
+<div id="real-time-results-with-websocket">
+  ## Resultados en tiempo real con WebSocket
+</div>
+
+El método watcher proporciona actualizaciones en tiempo real a medida que se rastrean las páginas. Inicia un rastreo y luego suscríbete a los eventos para procesar los datos de inmediato.
+
+<CodeGroup>
+  <CrawlWebSocketPython />
+
+  <CrawlWebSocketNode />
+</CodeGroup>
+
+<div id="webhooks">
+  ## Webhooks
+</div>
+
+Puedes configurar webhooks para recibir notificaciones en tiempo real a medida que avanza el rastreo. Esto te permite procesar las páginas conforme se van extrayendo, en lugar de esperar a que finalice todo el rastreo.
+
+<CrawlWebhookCURL />
+
+<div id="event-types">
+  ### Tipos de eventos
+</div>
+
+| Evento            | Descripción                                     |
+| ----------------- | ----------------------------------------------- |
+| `crawl.started`   | Se emite cuando comienza el rastreo             |
+| `crawl.page`      | Se emite por cada página extraída correctamente |
+| `crawl.completed` | Se emite cuando finaliza el rastreo             |
+| `crawl.failed`    | Se emite si el rastreo encuentra un error       |
+
+<div id="payload">
+  ### Carga útil
+</div>
+
+```json
+{
+  "success": true,
+  "type": "crawl.page",
+  "id": "crawl-job-id",
+  "data": [...], // Datos de página para eventos 'page'
+  "metadata": {}, // Your custom metadata
+  "error": null
+}
+```
+
+<div id="verifying-webhook-signatures">
+  ### Verificación de firmas de webhooks
+</div>
+
+Cada solicitud de webhook de Firecrawl incluye un encabezado `X-Firecrawl-Signature` que contiene una firma HMAC-SHA256. Verifica siempre esta firma para asegurarte de que el webhook sea auténtico y no haya sido manipulado.
+
+1. Obtén tu secreto de webhook en la [pestaña Advanced](https://www.firecrawl.dev/app/settings?tab=advanced) de la configuración de tu cuenta
+2. Extrae la firma del encabezado `X-Firecrawl-Signature`
+3. Calcula el HMAC-SHA256 del cuerpo sin procesar (raw) de la solicitud usando tu secreto
+4. Compárala con el encabezado de la firma usando una función segura frente a ataques de temporización
+
+<Warning>
+  Nunca proceses un webhook sin verificar primero su firma. El encabezado `X-Firecrawl-Signature` contiene la firma en el formato: `sha256=abc123def456...`
+</Warning>
+
+Para ver ejemplos completos de implementación en JavaScript y Python, consulta la [documentación de seguridad de webhooks](/es/webhooks/security). Para consultar la documentación completa sobre webhooks, incluidos payloads de eventos detallados, estructura de payloads, configuración avanzada y solución de problemas, consulta la [documentación de webhooks](/es/webhooks/overview).
+
+<div id="configuration-reference">
+  ## Referencia de configuración
+</div>
+
+El conjunto completo de parámetros disponibles al enviar un trabajo de rastreo:
+
+| Parámetro               | Tipo       | Predeterminado | Descripción                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------------- | ---------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`                   | `string`   | (obligatorio)  | La URL inicial desde la que se realizará el rastreo                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `limit`                 | `integer`  | `10000`        | Número máximo de páginas que se rastrearán                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `maxDiscoveryDepth`     | `integer`  | (ninguno)      | Profundidad máxima desde la URL raíz según los saltos de descubrimiento de enlaces, no la cantidad de segmentos `/` en la URL. Cada vez que se encuentra una nueva URL en una página, se le asigna una profundidad una unidad mayor que la de la página en la que fue descubierta. El sitio raíz y las páginas del sitemap tienen una profundidad de descubrimiento de 0. Las páginas en la profundidad máxima igualmente se extraen, pero no se siguen los enlaces que contienen. |
+| `includePaths`          | `string[]` | (ninguno)      | Patrones regex de rutas de URL que se incluirán. Solo se rastrean las rutas que coinciden.                                                                                                                                                                                                                                                                                                                                                                                         |
+| `excludePaths`          | `string[]` | (ninguno)      | Patrones regex de rutas de URL que se excluirán del rastreo                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `regexOnFullURL`        | `boolean`  | `false`        | Hace coincidir `includePaths`/`excludePaths` con la URL completa (incluidos los parámetros de consulta) en lugar de solo con la ruta                                                                                                                                                                                                                                                                                                                                               |
+| `crawlEntireDomain`     | `boolean`  | `false`        | Sigue enlaces internos a URL del mismo nivel o superiores, no solo a rutas hijas                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `allowSubdomains`       | `boolean`  | `false`        | Sigue enlaces a subdominios del dominio principal                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `allowExternalLinks`    | `boolean`  | `false`        | Sigue enlaces a sitios web externos                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `sitemap`               | `string`   | `"include"`    | Gestión del sitemap: `"include"` (predeterminado), `"skip"` o `"only"`                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `ignoreQueryParameters` | `boolean`  | `false`        | Evita volver a extraer la misma ruta con distintos parámetros de consulta                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `ignoreRobotsTxt`       | `boolean`  | `false`        | Ignora las reglas de robots.txt del sitio web. **Solo Enterprise** — contacta con support@firecrawl.com para habilitarlo.                                                                                                                                                                                                                                                                                                                                                          |
+| `robotsUserAgent`       | `string`   | (ninguno)      | Cadena User-Agent personalizada para evaluar robots.txt. Cuando se establece, robots.txt se obtiene con este User-Agent y las reglas se comparan con él en lugar del predeterminado. **Solo Enterprise** — contacta con support@firecrawl.com para habilitarlo.                                                                                                                                                                                                                    |
+| `delay`                 | `number`   | (ninguno)      | Retraso en segundos entre extracciones para respetar los límites de tasa. Establecer esto fuerza la concurrencia a 1.                                                                                                                                                                                                                                                                                                                                                              |
+| `maxConcurrency`        | `integer`  | (ninguno)      | Número máximo de extracciones concurrentes. De forma predeterminada, usa el límite de concurrencia de tu equipo.                                                                                                                                                                                                                                                                                                                                                                   |
+| `scrapeOptions`         | `object`   | (ninguno)      | Opciones aplicadas a cada página extraída (formatos, proxy, caché, acciones, etc.)                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `webhook`               | `object`   | (ninguno)      | Configuración del webhook para notificaciones en tiempo real                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `prompt`                | `string`   | (ninguno)      | Prompt en lenguaje natural para generar opciones de rastreo. Los parámetros establecidos explícitamente anulan los equivalentes generados.                                                                                                                                                                                                                                                                                                                                         |
+
+<div id="important-details">
+  ## Detalles importantes
+</div>
+
+<Warning>
+  De forma predeterminada, crawl ignora los subenlaces que no son descendientes de la URL que proporcionas. Por ejemplo, `website.com/other-parent/blog-1` no se devolvería si hicieras crawl de `website.com/blogs/`. Usa el parámetro `crawlEntireDomain` para incluir rutas hermanas y superiores. Para hacer crawl de subdominios como `blog.website.com` al hacer crawl de `website.com`, usa el parámetro `allowSubdomains`.
+</Warning>
+
+* **Descubrimiento del sitemap**: De forma predeterminada, el crawler incluye el sitemap del sitio web para descubrir URL (`sitemap: "include"`). Si estableces `sitemap: "skip"`, solo se encontrarán las páginas accesibles mediante enlaces HTML desde la URL raíz. Recursos como PDF o páginas muy anidadas incluidas en el sitemap, pero no enlazadas directamente desde el HTML, no se encontrarán. Para obtener la máxima cobertura, mantén la configuración predeterminada.
+* **Uso de créditos**: Cada página rastreada cuesta 1 crédito. El modo JSON añade 4 créditos por página, el proxy mejorado añade 4 créditos por página y el análisis de PDF cuesta 1 crédito por cada página del PDF.
+* **Expiración de resultados**: Los resultados del trabajo están disponibles a través de la API durante 24 horas después de completarse. Después de ese plazo, consulta los resultados en los [registros de actividad](https://www.firecrawl.dev/app/logs).
+* **Errores de crawl**: El array `data` contiene las páginas que Firecrawl extrajo correctamente. Usa el endpoint [Get Crawl Errors](/es/api-reference/endpoint/crawl-get-errors) para recuperar las páginas que fallaron debido a errores de red, tiempos de espera o bloqueos de robots.txt.
+* **Resultados no deterministas**: Los resultados de crawl pueden variar entre ejecuciones con la misma configuración. Las páginas se extraen de forma concurrente, por lo que el orden en que se descubren los enlaces depende de la latencia de la red y de qué páginas terminan de cargarse primero. Esto significa que diferentes ramas de un sitio pueden explorarse en distinta medida cerca del límite de profundidad, especialmente con valores altos de `maxDiscoveryDepth`. Para obtener resultados más deterministas, establece `maxConcurrency` en `1` o usa `sitemap: "only"` si el sitio tiene un sitemap completo.
+
+> ¿Eres un agente de IA que necesita una clave de API de Firecrawl? Consulta [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) para obtener instrucciones de incorporación automatizada.

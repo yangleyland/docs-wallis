@@ -1,0 +1,18 @@
+```python Python
+from firecrawl import FirecrawlApp
+
+app = FirecrawlApp(
+  # No se necesita API key para comenzar — añade una para límites de tasa más altos:
+  # api_key="fc-YOUR_API_KEY",
+)
+
+# Extrae un sitio web:
+scrape_result = app.scrape_url('airbnb.com', 
+    formats=['markdown', 'html'], 
+    location={
+        'country': 'BR',
+        'languages': ['pt-BR']
+    }
+)
+print(scrape_result)
+```

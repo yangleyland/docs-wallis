@@ -1,0 +1,23 @@
+```js Node
+import { Firecrawl } from 'firecrawl';
+
+const firecrawl = new Firecrawl({ apiKey: "fc-YOUR-API-KEY" });
+
+// 异步：启动批量任务并立即返回任务 ID
+const { id } = await firecrawl.startBatchScrape([
+  'https://firecrawl.dev',
+  'https://docs.firecrawl.dev'
+], {
+  options: { formats: ['markdown'] },
+});
+
+const status = await firecrawl.getBatchScrapeStatus(id);
+
+// 或同步：启动批量任务并等待完成
+const job = await firecrawl.batchScrape([
+  'https://firecrawl.dev',
+  'https://docs.firecrawl.dev'
+], { options: { formats: ['markdown'] }, pollInterval: 2, timeout: 120 });
+
+console.log(job.status, job.completed, job.total);
+```

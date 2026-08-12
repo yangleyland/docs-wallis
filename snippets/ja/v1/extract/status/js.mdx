@@ -1,0 +1,29 @@
+```js Node
+import { Firecrawl } from "firecrawl";
+
+const app = new Firecrawl({
+  apiKey: "fc-YOUR_API_KEY"
+});
+
+// まず抽出ジョブを開始します
+const extractJob = await app.asyncExtract([
+  'https://docs.firecrawl.dev/*', 
+  'https://firecrawl.dev/'
+], {
+  prompt: "Extract the company mission and features from these pages."
+});
+
+// 抽出ジョブのステータスを取得
+const jobStatus = await app.getExtractStatus(extractJob.jobId);
+
+console.log(jobStatus);
+// 出力例：
+// {
+//   status: "completed",
+//   progress: 100,
+//   results: [{
+//     url: "https://docs.firecrawl.dev",
+//     data: { ... }
+//   }]
+// }
+```

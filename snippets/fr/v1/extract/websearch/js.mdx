@@ -1,0 +1,20 @@
+```js Node
+import { Firecrawl } from "firecrawl";
+
+const app = new Firecrawl({
+apiKey: "fc-YOUR_API_KEY"
+});
+
+const scrapeResult = await app.extract([
+'https://nextbase.com/dash-cams/622gw-dash-cam'
+], {
+prompt: "Extract details about the best dash cams including prices, features, pros/cons and reviews.",
+enableWebSearch: true // Activer la recherche sur le web pour un meilleur contexte
+});
+
+if (!scrapeResult.success) {
+throw new Error(`Failed to scrape: ${scrapeResult.error}`)
+}
+
+console.log(scrapeResult.data);
+```

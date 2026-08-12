@@ -1,0 +1,112 @@
+---
+title: "Gere LLMs.txt com a API"
+description: "Gere arquivos LLMs.txt de qualquer site para treinamento e análise de LLMs"
+og:title: "Gerador de LLMs.txt | Firecrawl"
+og:description: "Transforme sites em arquivos de texto limpos e prontos para LLMs"
+icon: "file-text"
+sidebarTitle: "Gerar com a API"
+---
+
+import GenerateLLMsTxtCURL from "/snippets/pt-BR/v1/generatellmstxt/base/curl.mdx";
+import GenerateLLMsTxtPython from "/snippets/pt-BR/v1/generatellmstxt/base/python.mdx";
+import GenerateLLMsTxtNode from "/snippets/pt-BR/v1/generatellmstxt/base/js.mdx";
+import CheckStatusCURL from "/snippets/pt-BR/v1/generatellmstxt/status/curl.mdx";
+import CheckStatusPython from "/snippets/pt-BR/v1/generatellmstxt/status/python.mdx";
+import CheckStatusNode from "/snippets/pt-BR/v1/generatellmstxt/status/js.mdx";
+import StatusPending from "/snippets/pt-BR/v1/generatellmstxt/status/pending.mdx";
+import StatusCompleted from "/snippets/pt-BR/v1/generatellmstxt/status/completed.mdx";
+
+<Warning>
+  Esta API está sendo descontinuada em favor de nossos endpoints principais. Aqui está um repositório de exemplo que gera arquivos llms.txt: [https://github.com/firecrawl/create-llmstxt-py](https://github.com/firecrawl/create-llmstxt-py). Este endpoint continuará ativo, mas deixará de receber manutenção após 30 de junho de 2025.
+</Warning>
+
+
+<div id="introducing-llmstxt-generator-endpoint-alpha">
+  ## Apresentando o endpoint LLMs.txt Generator (Alpha) 📃
+</div>
+
+O endpoint `/llmstxt` permite transformar qualquer site em [arquivos de texto prontos para LLMs](https://www.firecrawl.dev/blog/How-to-Create-an-llms-txt-File-for-Any-Website). Basta fornecer uma URL, e o Firecrawl vai rastrear o site e gerar os arquivos `llms.txt` e `llms-full.txt`, que podem ser usados para treinamento ou análise com qualquer LLM.
+
+<div id="how-it-works">
+  ## Como Funciona
+</div>
+
+O Gerador de LLMs.txt:
+
+1. Rastreia a URL do site fornecida e suas páginas vinculadas
+2. Extrai texto limpo e relevante
+3. Gera dois formatos:
+   * `llms.txt`: Resumos concisos e informações-chave
+   * `llms-full.txt`: Texto completo com mais detalhes
+
+<div id="example-usage">
+  ### Exemplo de uso
+</div>
+
+<CodeGroup>
+  <GenerateLLMsTxtPython />
+
+  <GenerateLLMsTxtNode />
+
+  <GenerateLLMsTxtCURL />
+</CodeGroup>
+
+**Parâmetros principais:**
+
+* **url**: URL do site a partir da qual gerar os arquivos LLMs.txt
+* **maxUrls** (opcional): Número máximo de páginas a rastrear (1–100; padrão: 10)
+* **showFullText** (opcional): Gera llms-full.txt além de llms.txt (padrão: false)
+
+Veja a [Referência da API](/pt-BR/api-reference/endpoint/llmstxt) para mais detalhes.
+
+<div id="checking-generation-status">
+  ## Verificando o status da geração
+</div>
+
+A geração do LLMs.txt é assíncrona. Faça a chamada assíncrona e monitore o status com:
+
+<CodeGroup>
+  <CheckStatusPython />
+
+  <CheckStatusNode />
+
+  <CheckStatusCURL />
+</CodeGroup>
+
+<div id="status-examples">
+  ### Exemplos de status
+</div>
+
+<div id="in-progress">
+  #### Em andamento
+</div>
+
+<StatusPending />
+
+<div id="completed">
+  #### Concluído
+</div>
+
+<StatusCompleted />
+
+<div id="known-limitations-alpha">
+  ## Limitações conhecidas (Alpha)
+</div>
+
+1. **Restrições de acesso**\
+   Somente páginas publicamente acessíveis podem ser processadas. Conteúdos protegidos por login ou paywall não são suportados.
+
+2. **Tamanho do site**\
+   Durante a fase alpha, permitimos o processamento de até 5.000 URLs.
+
+3. **Estado alpha**\
+   Por ser um recurso em alpha, o formato de saída e o processamento podem evoluir com base no feedback.
+
+<div id="billing-and-usage">
+  ## Cobrança e Uso
+</div>
+
+A cobrança é baseada na quantidade de URLs processadas:
+
+- Custo base: 1 crédito por URL processada
+- Controle os custos com URLs usando o parâmetro `maxUrls`

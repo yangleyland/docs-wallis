@@ -1,0 +1,62 @@
+---
+title: "Proxies"
+description: "Conoce los tipos de proxies, las ubicaciones y cómo Firecrawl selecciona proxies para tus solicitudes."
+og:title: "Proxies | Firecrawl"
+og:description: "Conoce los tipos de proxies, las ubicaciones y cómo Firecrawl selecciona proxies para tus solicitudes."
+---
+
+import LocationPython from "/snippets/es/v1/scrape/location/python.mdx";
+import LocationNode from "/snippets/es/v1/scrape/location/js.mdx";
+import LocationCURL from "/snippets/es/v1/scrape/location/curl.mdx";
+import ProxyLocationsTable from "/snippets/es/shared/proxy-locations-table.mdx";
+
+Firecrawl ofrece diferentes tipos de proxy para ayudarte a extraer datos de sitios web con distintos niveles de complejidad. El tipo de proxy se puede especificar mediante el parámetro `proxy`.
+
+> De forma predeterminada, Firecrawl enruta todas las solicitudes a través de proxies para garantizar la fiabilidad y el acceso, incluso si no especificas un tipo de proxy o una ubicación.
+
+
+<div id="location-based-proxy-selection">
+  ## Selección de proxy por ubicación
+</div>
+
+Firecrawl selecciona automáticamente el mejor proxy según tu ubicación especificada o detectada. Esto ayuda a optimizar el rendimiento y la fiabilidad del scraping. Sin embargo, no todas las ubicaciones están admitidas actualmente. Las siguientes ubicaciones están disponibles:
+
+<ProxyLocationsTable />
+
+<Warning>La lista de ubicaciones de proxy admitidas cambiará con el tiempo.</Warning>
+
+Si necesitas proxies en una ubicación que no aparece arriba, por favor [contáctanos](mailto:help@firecrawl.com) y cuéntanos tus requisitos.
+
+Si no especificas un proxy o una ubicación, Firecrawl utilizará automáticamente proxies de EE. UU.
+
+<div id="how-to-specify-proxy-location">
+  ## Cómo especificar la ubicación del proxy
+</div>
+
+Puedes solicitar una ubicación de proxy específica configurando el parámetro `location.country` en tu solicitud. Por ejemplo, para usar un proxy de Brasil, establece `location.country` en `BR`.
+
+Para obtener todos los detalles, consulta la [referencia de la API de `location.country`](https://docs.firecrawl.dev/api-reference/endpoint/scrape#body-location-country).
+
+<CodeGroup>
+  <LocationPython />
+
+  <LocationNode />
+
+  <LocationCURL />
+</CodeGroup>
+
+<Info>Si solicitas un país donde no haya un proxy disponible, Firecrawl usará la región disponible más cercana (UE o EE. UU.) y configurará la ubicación del navegador en el país solicitado.</Info>
+
+<div id="proxy-types">
+  ## Tipos de proxy
+</div>
+
+Firecrawl admite tres tipos de proxy:
+
+* **basic**: Proxies para extraer datos de la mayoría de los sitios. Rápidos y suelen funcionar.
+* **enhanced**: Proxies mejorados para extraer datos de sitios complejos manteniendo la privacidad. Más lentos, pero más fiables en ciertos sitios. [Más información sobre el modo Enhanced →](/es/features/enhanced-mode)
+* **auto**: Firecrawl volverá a intentar automáticamente con proxies enhanced si el proxy basic falla. Si el reintento con enhanced tiene éxito, se cobrarán 5 créditos por la extracción. Si el primer intento con basic tiene éxito, solo se cobrará el costo regular.
+
+***
+
+> **Nota:** Para información detallada sobre el uso de proxies enhanced, incluidos los costos en créditos y las estrategias de reintento, consulta la [documentación del modo Enhanced](/es/features/enhanced-mode).

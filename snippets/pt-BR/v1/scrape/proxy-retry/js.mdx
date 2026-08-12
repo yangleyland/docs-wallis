@@ -1,0 +1,45 @@
+```js Node
+// npm install firecrawl
+
+import { Firecrawl } from 'firecrawl';
+
+const app = new Firecrawl({
+  // Nenhuma API key necessária para começar — adicione uma para limites de taxa mais altos:
+  // apiKey: 'YOUR_API_KEY',
+});
+
+// Função para fazer scraping com lógica de retry
+async function scrapeWithRetry(url) {
+  try {
+    // Primeira tentativa com proxy padrão
+    const content = await app.scrapeUrl(url);
+    
+    // Verificar se recebemos um código de status de erro
+    const statusCode = content?.metadata?.statusCode;
+    if ([401, 403, 500].includes(statusCode)) {
+      console.log(`Got status code ${statusCode}, retrying with enhanced proxy`);
+      // Tentar novamente com proxy enhanced
+      return await app.scrapeUrl(url, {
+        proxy: 'enhanced'
+      });
+    }
+    
+    return content;
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    // Tentar novamente com proxy enhanced em caso de exceção
+    try {
+      return await app.scrapeUrl(url, {
+        proxy: 'enhanced'
+      });
+    } catch (retryError) {
+      console.error(`Enhanced proxy also failed: ${retryError.message}`);
+      throw retryError;
+    }
+  }
+}
+
+// Uso
+const content = await scrapeWithRetry('https://example.com');
+console.log(content.markdown);
+```

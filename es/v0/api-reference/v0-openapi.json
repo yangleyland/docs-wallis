@@ -1,0 +1,947 @@
+{
+  "components": {
+    "schemas": {
+      "CrawlResponse": {
+        "properties": {
+          "jobId": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CrawlStatusResponseObj": {
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "html": {
+            "description": "Versión HTML del contenido de la página si `includeHtml` es true",
+            "nullable": true,
+            "type": "string"
+          },
+          "index": {
+            "description": "El número de la página que fue rastreada. Esto es útil para `partial_data`, ya que indica de qué página provienen los datos.",
+            "type": "integer"
+          },
+          "markdown": {
+            "type": "string"
+          },
+          "metadata": {
+            "properties": {
+              "<any other metadata> ": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "language": {
+                "nullable": true,
+                "type": "string"
+              },
+              "pageError": {
+                "description": "El mensaje de error de la página",
+                "nullable": true,
+                "type": "string"
+              },
+              "pageStatusCode": {
+                "description": "El código de estado de la página",
+                "type": "integer"
+              },
+              "sourceURL": {
+                "format": "uri",
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "rawHtml": {
+            "description": "Contenido HTML bruto de la página si `includeRawHtml` es true",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ScrapeResponse": {
+        "properties": {
+          "data": {
+            "properties": {
+              "content": {
+                "type": "string"
+              },
+              "html": {
+                "description": "Versión HTML del contenido de la página si `includeHtml` es `true`",
+                "nullable": true,
+                "type": "string"
+              },
+              "llm_extraction": {
+                "description": "Se muestra cuando se usa LLM Extraction. Datos extraídos de la página según el esquema definido.",
+                "nullable": true,
+                "type": "object"
+              },
+              "markdown": {
+                "type": "string"
+              },
+              "metadata": {
+                "properties": {
+                  "<any other metadata> ": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "language": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "pageError": {
+                    "description": "El mensaje de error de la página",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "pageStatusCode": {
+                    "description": "El código de estado de la página",
+                    "type": "integer"
+                  },
+                  "sourceURL": {
+                    "format": "uri",
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "rawHtml": {
+                "description": "Contenido HTML bruto de la página si `includeRawHtml` es `true`",
+                "nullable": true,
+                "type": "string"
+              },
+              "warning": {
+                "description": "Puede mostrarse al usar la extracción con LLM. El mensaje de advertencia indicará cualquier problema con la extracción.",
+                "nullable": true,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "SearchResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "properties": {
+                "content": {
+                  "type": "string"
+                },
+                "markdown": {
+                  "type": "string"
+                },
+                "metadata": {
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "language": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "sourceURL": {
+                      "format": "uri",
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "email": "support@firecrawl.dev",
+      "name": "Firecrawl Support",
+      "url": "https://firecrawl.dev/support"
+    },
+    "description": "API para interactuar con los servicios de Firecrawl y realizar tareas de scraping y rastreo web.",
+    "title": "Firecrawl API",
+    "version": "v0"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/crawl": {
+      "post": {
+        "operationId": "crawlUrls",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "crawlerOptions": {
+                    "properties": {
+                      "allowBackwardCrawling": {
+                        "default": false,
+                        "description": "Permite que el rastreador navegue desde una URL específica hacia páginas enlazadas previamente. Por ejemplo, desde \"example.com/product/123\" de vuelta a \"example.com/product\".",
+                        "type": "boolean"
+                      },
+                      "allowExternalContentLinks": {
+                        "default": false,
+                        "description": "Permite que el rastreador siga enlaces a sitios web externos.",
+                        "type": "boolean"
+                      },
+                      "excludes": {
+                        "description": "Patrones de URL para excluir",
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "generateImgAltText": {
+                        "default": false,
+                        "description": "Generar texto alternativo para imágenes usando LLMs (requiere un plan de pago)",
+                        "type": "boolean"
+                      },
+                      "ignoreSitemap": {
+                        "default": false,
+                        "description": "Ignorar el sitemap del sitio al rastrear",
+                        "type": "boolean"
+                      },
+                      "includes": {
+                        "description": "Patrones de URL que se deben incluir",
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "limit": {
+                        "default": 10000,
+                        "description": "Número máximo de páginas para rastrear",
+                        "type": "integer"
+                      },
+                      "maxDepth": {
+                        "description": "Profundidad máxima de rastreo respecto a la URL indicada. Un maxDepth de 0 rastrea solo la URL indicada. Un maxDepth de 1 rastrea la URL indicada y todas las páginas a un nivel de profundidad. Un maxDepth de 2 rastrea la URL indicada y todas las páginas hasta dos niveles de profundidad. Los valores más altos siguen el mismo patrón.",
+                        "type": "integer"
+                      },
+                      "mode": {
+                        "default": "default",
+                        "description": "El modo de rastreo a utilizar. El modo rápido rastrea sitios web sin sitemap 4 veces más rápido, pero puede no ser tan preciso y no debería usarse en sitios con mucho contenido renderizado con JavaScript.",
+                        "enum": [
+                          "default",
+                          "fast"
+                        ],
+                        "type": "string"
+                      },
+                      "returnOnlyUrls": {
+                        "default": false,
+                        "description": "Si es `true`, devuelve solo las URLs como una lista en el estado del rastreo. Ten en cuenta que la respuesta será una lista de URLs dentro de `data`, no una lista de documentos.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "pageOptions": {
+                    "properties": {
+                      "fullPageScreenshot": {
+                        "default": false,
+                        "description": "Incluye una captura de pantalla de toda la página que estás rastreando.",
+                        "type": "boolean"
+                      },
+                      "headers": {
+                        "description": "Encabezados que se enviarán con la solicitud. Se pueden usar para enviar cookies, user-agent, etc.",
+                        "type": "object"
+                      },
+                      "includeHtml": {
+                        "default": false,
+                        "description": "Incluir la versión HTML del contenido de la página. Devolverá una clave html en la respuesta.",
+                        "type": "boolean"
+                      },
+                      "includeRawHtml": {
+                        "default": false,
+                        "description": "Incluye el contenido HTML sin procesar de la página. Devolverá una clave rawHtml en la respuesta.",
+                        "type": "boolean"
+                      },
+                      "onlyIncludeTags": {
+                        "description": "Incluye únicamente en la salida final las etiquetas, clases e IDs de la página. Usa valores separados por comas. Ejemplo: 'script, .ad, #footer'",
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "onlyMainContent": {
+                        "default": false,
+                        "description": "Devuelve únicamente el contenido principal de la página, excluyendo encabezados, elementos de navegación, pies de página, etc.",
+                        "type": "boolean"
+                      },
+                      "removeTags": {
+                        "description": "Etiquetas, clases e IDs que eliminar de la página. Usa valores separados por comas. Ejemplo: 'script, .ad, #footer'",
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "replaceAllPathsWithAbsolutePaths": {
+                        "default": false,
+                        "description": "Reemplazar todas las rutas relativas por rutas absolutas en imágenes y enlaces",
+                        "type": "boolean"
+                      },
+                      "screenshot": {
+                        "default": false,
+                        "description": "Incluye una captura de pantalla de la parte superior de la página de la que estás extrayendo datos.",
+                        "type": "boolean"
+                      },
+                      "waitFor": {
+                        "default": 0,
+                        "description": "Espera x milisegundos a que cargue la página antes de extraer el contenido",
+                        "type": "integer"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "url": {
+                    "description": "La URL base desde la que se iniciará el rastreo",
+                    "format": "uri",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrawlResponse"
+                }
+              }
+            },
+            "description": "Respuesta satisfactoria"
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "Payment required to access this resource.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Se requiere pago"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "Request rate limit exceeded. Please wait and try again later.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Demasiadas solicitudes"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "An unexpected error occurred on the server.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Error del servidor"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Rastrear varias URL según las opciones configuradas",
+        "tags": [
+          "Crawling"
+        ]
+      }
+    },
+    "/crawl/cancel/{jobId}": {
+      "delete": {
+        "operationId": "cancelCrawlJob",
+        "parameters": [
+          {
+            "description": "ID de la tarea de rastreo",
+            "in": "path",
+            "name": "jobId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status": {
+                      "description": "Devoluciones canceladas.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Respuesta satisfactoria"
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "Payment required to access this resource.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Se requiere pago"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "Request rate limit exceeded. Please wait and try again later.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Demasiadas solicitudes"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "An unexpected error occurred on the server.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Error del servidor"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Cancelar un trabajo de rastreo",
+        "tags": [
+          "Crawl"
+        ]
+      }
+    },
+    "/crawl/status/{jobId}": {
+      "get": {
+        "operationId": "getCrawlStatus",
+        "parameters": [
+          {
+            "description": "ID de la tarea de rastreo",
+            "in": "path",
+            "name": "jobId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "current": {
+                      "description": "Número de página actual",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Datos devueltos por la tarea (null mientras está en ejecución)",
+                      "items": {
+                        "$ref": "#/components/schemas/CrawlStatusResponseObj"
+                      },
+                      "type": "array"
+                    },
+                    "partial_data": {
+                      "description": "Documentos parciales devueltos mientras se rastrea (en streaming). **Esta funcionalidad se encuentra actualmente en fase alfa: espera cambios incompatibles**. Cuando una página esté lista, se añadirá al array `partial_data`, por lo que no es necesario esperar a que se rastree todo el sitio web. Cuando el rastreo termine, `partial_data` quedará vacío y el resultado estará disponible en `data`. Hay un máximo de 50 elementos en el array de respuesta. El elemento más antiguo (parte superior del array) se eliminará cuando se añada un nuevo elemento al array.",
+                      "items": {
+                        "$ref": "#/components/schemas/CrawlStatusResponseObj"
+                      },
+                      "type": "array"
+                    },
+                    "status": {
+                      "description": "Estado del trabajo (completed, active, failed, paused)",
+                      "type": "string"
+                    },
+                    "total": {
+                      "description": "Número total de páginas",
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Respuesta satisfactoria"
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "Payment required to access this resource.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Se requiere pago"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "Request rate limit exceeded. Please wait and try again later.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Demasiadas solicitudes"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "An unexpected error occurred on the server.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Error del servidor"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Obtener el estado de una tarea de rastreo",
+        "tags": [
+          "Crawl"
+        ]
+      }
+    },
+    "/scrape": {
+      "post": {
+        "operationId": "scrapeAndExtractFromUrl",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "extractorOptions": {
+                    "default": {},
+                    "description": "Opciones para la extracción de información estructurada a partir del contenido de la página. Nota: la extracción basada en LLM no se realiza de manera predeterminada y solo se lleva a cabo cuando se configura explícitamente. El modo 'markdown' simplemente devuelve el markdown extraído y es el modo predeterminado para el scraping.",
+                    "properties": {
+                      "extractionPrompt": {
+                        "description": "Un prompt que describa qué información se debe extraer de la página, aplicable a los modos de extracción con LLM.",
+                        "type": "string"
+                      },
+                      "extractionSchema": {
+                        "additionalProperties": true,
+                        "description": "Esquema de los datos que se van a extraer, requerido únicamente para los modos de extracción con LLM.",
+                        "required": [
+                          "company_mission",
+                          "supports_sso",
+                          "is_open_source"
+                        ],
+                        "type": "object"
+                      },
+                      "mode": {
+                        "description": "El modo de extracción a utilizar. 'markdown': devuelve el contenido en formato Markdown obtenido por scraping, no realiza extracción mediante LLM. 'llm-extraction': extrae información del contenido limpiado y analizado utilizando un LLM. 'llm-extraction-from-raw-html': extrae información directamente del HTML sin procesar utilizando un LLM. 'llm-extraction-from-markdown': extrae información del contenido en Markdown utilizando un LLM.",
+                        "enum": [
+                          "markdown",
+                          "llm-extraction",
+                          "llm-extraction-from-raw-html",
+                          "llm-extraction-from-markdown"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "pageOptions": {
+                    "properties": {
+                      "fullPageScreenshot": {
+                        "default": false,
+                        "description": "Incluye una captura de pantalla de página completa de la página que estás rastreando.",
+                        "type": "boolean"
+                      },
+                      "headers": {
+                        "description": "Cabeceras que se envían con la solicitud. Pueden usarse para enviar cookies, el user-agent, etc.",
+                        "type": "object"
+                      },
+                      "includeHtml": {
+                        "default": false,
+                        "description": "Incluye la versión HTML del contenido de la página. Devolverá una clave html en la respuesta.",
+                        "type": "boolean"
+                      },
+                      "includeRawHtml": {
+                        "default": false,
+                        "description": "Incluye el contenido HTML sin procesar de la página. Esto devolverá una clave rawHtml en la respuesta.",
+                        "type": "boolean"
+                      },
+                      "onlyIncludeTags": {
+                        "description": "Incluye únicamente las etiquetas, clases e ID de la página en el resultado final. Usa valores separados por comas. Ejemplo: 'script, .ad, #footer'",
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "onlyMainContent": {
+                        "default": false,
+                        "description": "Devuelve únicamente el contenido principal de la página, excluyendo encabezados, barras de navegación, pies de página, etc.",
+                        "type": "boolean"
+                      },
+                      "removeTags": {
+                        "description": "Etiquetas, clases e ID que se eliminarán de la página. Usa valores separados por comas. Ejemplo: 'script, .ad, #footer'",
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "replaceAllPathsWithAbsolutePaths": {
+                        "default": false,
+                        "description": "Reemplaza todas las rutas relativas de imágenes y enlaces por rutas absolutas",
+                        "type": "boolean"
+                      },
+                      "screenshot": {
+                        "default": false,
+                        "description": "Incluye una captura de pantalla de la parte superior de la página que estás rastreando.",
+                        "type": "boolean"
+                      },
+                      "waitFor": {
+                        "default": 0,
+                        "description": "Espera x milisegundos a que cargue la página antes de obtener el contenido",
+                        "type": "integer"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "timeout": {
+                    "default": 30000,
+                    "description": "Tiempo de espera de la solicitud en milisegundos",
+                    "type": "integer"
+                  },
+                  "url": {
+                    "description": "La URL que se va a scrapear",
+                    "format": "uri",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScrapeResponse"
+                }
+              }
+            },
+            "description": "Respuesta exitosa"
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "Payment required to access this resource.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Se requiere pago"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "Request rate limit exceeded. Please wait and try again later.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Demasiadas solicitudes"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "An unexpected error occurred on the server.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Error del servidor"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Hacer scraping de una sola URL y, opcionalmente, extraer información con un LLM",
+        "tags": [
+          "Scraping"
+        ]
+      }
+    },
+    "/search": {
+      "post": {
+        "operationId": "searchGoogle",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "pageOptions": {
+                    "properties": {
+                      "fetchPageContent": {
+                        "default": true,
+                        "description": "Obtiene el contenido de cada página. Si es false, se usará por defecto una API SERP básica y rápida.",
+                        "type": "boolean"
+                      },
+                      "includeHtml": {
+                        "default": false,
+                        "description": "Incluye la versión HTML del contenido de la página. Devolverá una clave html en la respuesta.",
+                        "type": "boolean"
+                      },
+                      "includeRawHtml": {
+                        "default": false,
+                        "description": "Incluye el HTML sin procesar de la página. Generará una clave rawHtml en la respuesta.",
+                        "type": "boolean"
+                      },
+                      "onlyMainContent": {
+                        "default": false,
+                        "description": "Devuelve solo el contenido principal de la página, excluyendo encabezados, elementos de navegación, pies de página, etc.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "query": {
+                    "description": "La consulta de búsqueda",
+                    "format": "uri",
+                    "type": "string"
+                  },
+                  "searchOptions": {
+                    "properties": {
+                      "limit": {
+                        "description": "Número máximo de resultados. El límite máximo es 20 durante la beta.",
+                        "type": "integer"
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "query"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "description": "Respuesta satisfactoria"
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "Payment required to access this resource.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Se requiere pago"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "Request rate limit exceeded. Please wait and try again later.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Demasiadas solicitudes"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "example": "An unexpected error occurred on the server.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Error del servidor"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Busca una palabra clave en Google y devuelve las páginas mejor posicionadas, con el contenido de cada una en formato Markdown.",
+        "tags": [
+          "Search"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "servers": [
+    {
+      "url": "https://api.firecrawl.dev/v0"
+    }
+  ]
+}

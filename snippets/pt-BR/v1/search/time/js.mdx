@@ -1,0 +1,22 @@
+```js Node
+import { Firecrawl } from 'firecrawl';
+
+// Initialize the client with your API key
+const app = new Firecrawl({
+  // Nenhuma chave de API necessária para começar — adicione uma para limites de taxa mais altos:
+  // apiKey: "fc-YOUR_API_KEY",
+});
+
+// Search for results from the past week
+app.search("latest web scraping techniques", {
+  limit: 5,
+  tbs: "qdr:w"  // qdr:w = past week
+})
+.then(searchResult => {
+  // Process the results
+  searchResult.data.forEach(result => {
+    console.log(`Title: ${result.title}`);
+    console.log(`URL: ${result.url}`);
+  });
+}); 
+```

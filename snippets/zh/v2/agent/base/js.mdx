@@ -1,0 +1,12 @@
+```js Node
+import { Firecrawl } from 'firecrawl';
+
+const firecrawl = new Firecrawl({ apiKey: "fc-YOUR_API_KEY" });
+
+const result = await firecrawl.agent({
+  prompt: "提取 Firecrawl 的主要功能和优势",
+  model: "spark-1-mini"
+});
+
+console.log(result.data);
+```

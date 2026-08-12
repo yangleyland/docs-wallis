@@ -1,0 +1,74 @@
+---
+title: "Descripción general"
+description: "Notificaciones en tiempo real para tus operaciones de Firecrawl"
+og:title: "Webhooks | Firecrawl"
+og:description: "Notificaciones en tiempo real para tus operaciones de Firecrawl"
+icon: "link"
+---
+
+import CrawlWebhookCURL from "/snippets/es/v2/crawl-webhook/base/curl.mdx";
+import BatchScrapeWebhookCURL from "/snippets/es/v2/batch-scrape-webhook/base/curl.mdx";
+import WebhookConfigBasic from "/snippets/es/v2/webhook-config/basic/json.mdx";
+
+Recibe notificaciones en el momento en que un rastreo, una extracción por lotes, una extracción, un trabajo de agente o una comprobación de monitor comienza, avanza o finaliza. En lugar de consultar periódicamente el estado, proporcionas un endpoint HTTPS y Firecrawl te envía eventos en tiempo real.
+
+<div id="supported-operations">
+  ## Operaciones admitidas
+</div>
+
+| Operación            | Eventos                                                 |
+| -------------------- | ------------------------------------------------------- |
+| Rastreo              | `started`, `page`, `completed`                          |
+| extracción por lotes | `started`, `page`, `completed`                          |
+| Extract              | `started`, `completed`, `failed`                        |
+| Agent                | `started`, `action`, `completed`, `failed`, `cancelled` |
+| Monitor              | `check.completed`                                       |
+
+Consulta [Tipos de eventos](/es/webhooks/events) para obtener todos los detalles de la carga útil y ver ejemplos.
+
+<div id="configuration">
+  ## Configuración
+</div>
+
+Añade un objeto `webhook` a tu solicitud:
+
+<WebhookConfigBasic />
+
+| Campo      | Tipo   | Requerido | Descripción                                   |
+| ---------- | ------ | --------- | --------------------------------------------- |
+| `url`      | string | Sí        | La URL de tu endpoint (HTTPS)                |
+| `headers`  | object | No        | Encabezados personalizados para incluir en las solicitudes del webhook |
+| `metadata` | object | No        | Datos personalizados incluidos en las cargas del webhook      |
+| `events`   | array  | No        | Tipos de eventos a recibir (por defecto: todos los eventos) |
+
+<div id="usage">
+  ## Uso
+</div>
+
+<div id="crawl-with-webhook">
+  ### Rastreo con webhook
+</div>
+
+<CrawlWebhookCURL />
+
+<div id="batch-scrape-with-webhook">
+  ### Raspado en lote con webhook
+</div>
+
+<BatchScrapeWebhookCURL />
+
+<div id="timeouts-retries">
+  ## Tiempos de espera y reintentos
+</div>
+
+Tu endpoint debe responder con un estado `2xx` en un plazo de **10 segundos**.
+
+Si la entrega falla (se excede el tiempo de espera, el estado no es 2xx o hay un error de red), Firecrawl reintenta automáticamente:
+
+| Reintento | Retraso después del fallo |
+| --------- | ------------------------- |
+| 1.º       | 1 minuto                  |
+| 2.º       | 5 minutos                 |
+| 3.º       | 15 minutos                |
+
+Después de 3 reintentos fallidos, el webhook se marca como fallido y no se realizan más intentos.

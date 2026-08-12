@@ -1,0 +1,156 @@
+---
+title: "Rust"
+description: "Empieza a usar Firecrawl en Rust. Busca, haz scraping e interactúa con datos web con el SDK oficial."
+og:title: "Inicio rápido de Rust | Firecrawl"
+og:description: "Empieza a usar Firecrawl en Rust. Busca, haz scraping e interactúa con datos web con el SDK oficial."
+---
+
+<div id="prerequisites">
+  ## Requisitos previos
+</div>
+
+* Rust 1.70+ con Cargo
+* Una clave de API de Firecrawl: [consigue una gratis](https://www.firecrawl.dev/app/api-keys)
+
+<div id="install-the-crate">
+  ## Instala el crate
+</div>
+
+Añade `firecrawl` a tu `Cargo.toml`:
+
+```toml
+[dependencies]
+firecrawl = "2"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1"
+```
+
+<div id="search-the-web">
+  ## Buscar en la web
+</div>
+
+```rust
+use firecrawl::{Client, SearchOptions};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = Client::new("fc-YOUR-API-KEY")?;
+
+    let results = client.search(
+        "firecrawl web scraping",
+        SearchOptions { limit: Some(5), ..Default::default() },
+    ).await?;
+
+    if let Some(web) = results.data.web {
+        for item in web {
+            if let firecrawl::SearchResultOrDocument::WebResult(r) = item {
+                println!("{} - {}", r.url, r.title.unwrap_or_default());
+            }
+        }
+    }
+    Ok(())
+}
+```
+
+<div id="scrape-a-page">
+  ## Hacer scraping de una página
+</div>
+
+```rust
+let doc = client.scrape("https://example.com", None).await?;
+println!("{}", doc.markdown.unwrap_or_default());
+```
+
+<Accordion title="Respuesta de ejemplo">
+  ```json
+  {
+    "markdown": "# Example Domain\n\nThis domain is for use in illustrative examples...",
+    "metadata": {
+      "title": "Example Domain",
+      "sourceURL": "https://example.com"
+    }
+  }
+  ```
+</Accordion>
+
+<div id="interact-with-a-page">
+  ## Interactúa con una página
+</div>
+
+Haz scraping de una página para obtener un `scrapeId` y luego usa la API de interacción para controlar la sesión del navegador:
+
+```rust
+use firecrawl::{Client, ScrapeOptions, Format, ScrapeExecuteOptions};
+
+let doc = client.scrape(
+    "https://www.amazon.com",
+    ScrapeOptions {
+        formats: Some(vec![Format::Markdown]),
+        ..Default::default()
+    },
+).await?;
+
+let scrape_id = doc.metadata
+    .as_ref()
+    .and_then(|m| m.scrape_id.as_deref())
+    .expect("scrapeId not found");
+
+// Enviar un prompt para interactuar con la página
+let run = client.interact(
+    scrape_id,
+    ScrapeExecuteOptions {
+        prompt: Some("Search for iPhone 16 Pro Max".to_string()),
+        ..Default::default()
+    },
+).await?;
+
+let run = client.interact(
+    scrape_id,
+    ScrapeExecuteOptions {
+        prompt: Some("Click on the first result and tell me the price".to_string()),
+        ..Default::default()
+    },
+).await?;
+
+println!("{:?}", run.output);
+
+// Cerrar la sesión
+client.stop_interaction(scrape_id).await?;
+```
+
+<div id="environment-variable">
+  ## Variable de entorno
+</div>
+
+Configura `FIRECRAWL_API_KEY` en vez de pasar la clave directamente:
+
+```bash
+export FIRECRAWL_API_KEY=fc-YOUR-API-KEY
+```
+
+```rust
+let api_key = std::env::var("FIRECRAWL_API_KEY")?;
+let client = Client::new(api_key)?;
+```
+
+<div id="next-steps">
+  ## Próximos pasos
+</div>
+
+<CardGroup cols={2}>
+  <Card title="Documentación de búsqueda" icon="magnifying-glass" href="/es/features/search">
+    Busca en la web y obtén el contenido completo de la página
+  </Card>
+
+  <Card title="Documentación de scraping" icon="file-lines" href="/es/features/scrape">
+    Todas las opciones de scraping, incluidos formatos, acciones y proxies
+  </Card>
+
+  <Card title="Documentación de Interact" icon="hand-pointer" href="/es/features/interact">
+    Haz clic, completa formularios y extrae contenido dinámico
+  </Card>
+
+  <Card title="Referencia del SDK de Rust" icon="rust" href="/es/sdks/rust">
+    Referencia completa del SDK con rastreo, mapeo, extracción por lotes y más
+  </Card>
+</CardGroup>

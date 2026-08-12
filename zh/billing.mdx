@@ -1,0 +1,237 @@
+---
+title: "计费"
+description: "Firecrawl 的计费、额度和方案如何运作"
+og:title: "计费 | Firecrawl"
+og:description: "Firecrawl 的计费、额度和方案如何运作"
+---
+
+<div id="overview">
+  ## 概览
+</div>
+
+Firecrawl 使用**基于额度的计费系统**。你发起的每一次 API 调用都会消耗额度，具体消耗数量取决于你使用的端点和选项。你会根据自己的方案每月获得一定的额度配额，而 Smart Upgrade 会在你的使用量增长时持续为你提供保障。
+
+有关当前方案定价，请访问 [Firecrawl 定价页面](https://www.firecrawl.dev/pricing)。
+
+<Note>
+  所有 Firecrawl 发票均以**美元 (USD) **计费，无论你的账单地址或支付方式为何。
+</Note>
+
+<div id="credits">
+  ## Credits
+</div>
+
+Credits 是 Firecrawl 中的用量单位。每个方案都包含每月的 Credits 配额，并会在每个计费周期开始时重置。不同的 API 端点会消耗不同数量的 Credits。
+
+<div id="credit-costs-per-endpoint">
+  ### 每个端点的额度消耗
+</div>
+
+| 端点         | Credit Cost                | Notes                                                                                                                                           |
+| ---------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Scrape** | 1 额度 / page            | 将单个 URL 转换为干净的 Markdown、HTML 或结构化数据。使用抓取选项时会额外消耗额度 (见下文) 。                                                                                      |
+| **Crawl**  | 1 额度 / page            | 从起始 URL 跟踪链接以抓取整个网站。每个被爬取的页面都适用相同的每页抓取选项额度消耗。                                                                                                   |
+| **Map**    | 1 额度 / call            | 发现网站上的所有 URL，而不抓取其内容。                                                                                                                           |
+| **Search** | 2 额度 / 10 results     | 搜索全网，并可选地抓取搜索结果。每 10 个结果向上取整计费 (例如，11 个结果 = 4 额度) 。对每个被抓取的结果将按页面收取额外的抓取额度。企业版 ZDR 搜索定价请参见 [此处](/zh/features/search#zero-data-retention-zdr) 。 |
+| **交互**     | 2 额度 / browser minute | 交互式浏览器沙盒会话，按浏览器使用分钟计费。                                                                                                                          |
+| **Agent**  | Dynamic                    | 自主网页研究代理。每天前 5 次运行免费；超出部分按用量动态计费。                                                                                                               |
+
+<div id="additional-credit-costs-for-scrape-options">
+  ### 抓取选项的额外额度消耗
+</div>
+
+某些抓取选项会在每页基础消耗之外额外增加额度：
+
+| Option                       | Additional Cost      | Description                                                                    |
+| ---------------------------- | -------------------- | ------------------------------------------------------------------------------ |
+| PDF parsing                  | +1 credit / PDF page | 从 PDF 文档中提取内容                                                                  |
+| JSON format (LLM extraction) | +4 credits / page    | 使用 LLM 从页面中提取结构化 JSON 数据                                                       |
+| Enhanced Mode                | +4 credits / page    | 为难以访问的页面提供优化的抓取能力                                                              |
+| Zero Data Retention (ZDR)    | +1 credit / page     | 确保除本次请求外不会持久保存任何数据 (参见 [Scrape ZDR](/zh/features/scrape#zero-data-retention-zdr)) |
+
+这些费用加成可以叠加。例如，同时使用 JSON 格式 和 Enhanced Mode 抓取同一页面时，每页将消耗 **1 + 4 + 4 = 9 credits**。由于 Crawl 和 Search 端点在内部会对每个页面调用 scrape，这些端点同样适用上述费用加成。
+
+对 `x.com` 和其他 X/Twitter URL 的请求会使用 Grok API，并采用单独的定价。请参见本页底部的 [X (x.com) billing](#x-xcom-billing)。
+
+<div id="when-credits-are-charged">
+  ### 何时扣除额度
+</div>
+
+每当 Firecrawl 的基础设施处理一次请求时，都会扣除额度，即使目标站点返回 `403 Forbidden` 或 `404 Not Found` 这类 HTTP 错误状态码也是如此。这是因为无论目标站点的响应如何，抓取基础设施 (浏览器渲染、代理等) 都会被完全占用。你可以检查 API 响应中的 `metadata.statusCode` 字段来识别这些情况，并避免重试那些持续被封禁的 URL。
+
+对于 **batch scrape** 和 **crawl** 任务，额度是在每个页面完成处理后异步计费，而不是在提交作业时一次性计费。这意味着从提交作业到在你的账户中看到完整的额度消耗，中间可能会有一段延迟。如果一个批次包含大量 URL，或者在高流量时段页面被排队处理，额度可能会在提交后持续数分钟甚至数小时内才陆续显示。轮询或查看批次状态本身不会消耗额度。
+
+<Note>
+  **爬取预检额度检查：**在爬取任务开始之前，Firecrawl 会验证你的剩余额度是否足以覆盖你请求的完整 `limit` 参数。如果你的余额低于 `limit`，即使爬取实际发现的页面更少，请求也会返回 402。默认的 `limit` 为 **10,000**，因此如果省略该参数，则需要预先有 10,000 额度可用。为避免这种情况，请传入一个与你实际打算爬取的页面数量相匹配的显式 `limit` (例如 `limit: 100`) 。
+</Note>
+
+<div id="tracking-your-usage">
+  ### 跟踪额度使用情况
+</div>
+
+你可以通过两种方式监控你的额度使用情况：
+
+* **Dashboard**：在 [firecrawl.dev/app](https://www.firecrawl.dev/app) 查看当前和历史用量
+* **API**：使用 [Credit Usage](/zh/api-reference/endpoint/credit-usage) 和 [Credit Usage Historical](/zh/api-reference/endpoint/credit-usage-historical) 端点以编程方式检查用量
+
+<Note>
+  我们正在积极改进相关功能，使额度使用情况更易于理解。请持续关注后续更新。
+</Note>
+
+<div id="plans">
+  ## 方案
+</div>
+
+Firecrawl 提供订阅制的月度计费方案。目前不提供纯按量付费模式，但你可以通过 Smart Upgrade (见下文) 在基础方案之上灵活扩容。
+
+<div id="paid-plans">
+  ### 付费方案
+</div>
+
+| 方案           | 每月额度                        | 并发浏览器 |
+| ------------ | --------------------------- | ----: |
+| **Hobby (入门)&#x20;**&#x20;   | 5,000 / 6,500 / 8,000       |     5 |
+| **Standard** | 100,000 / 130,000 / 160,000 |    50 |
+| **Growth**   | 500,000 / 650,000           |   100 |
+| **Scale (扩展)&#x20;**&#x20;   | 1,000,000                   |   150 |
+
+<Note>
+  对于超出 Scale (扩展)  的需求，Firecrawl 提供 **Enterprise** 方案，包含自定义额度、专属支持、SLA、批量折扣、零数据留存以及 SSO。详情请访问 [Enterprise 页面](https://www.firecrawl.dev/enterprise)。
+</Note>
+
+所有付费方案均支持按**月**或**年**计费。年付费相比按月付享有折扣。各方案的最新价格请访问 [价格页面](https://www.firecrawl.dev/pricing)。
+
+<div id="billing-cycle">
+  ### 计费周期
+</div>
+
+* **月度方案**：额度会在每月续费日重置
+* **年度方案**：按年计费，但额度仍会在每月的虚拟月度续费日重置
+* **未使用的方案额度默认不会结转**——你的月度配额会在每个月重置。**年度 Scale (扩展) 方案会将未使用的方案额度结转 1 个月**，并且 **年度 Enterprise 方案会将其结转 2 个月**。
+
+<div id="concurrent-browsers">
+  ### 并发浏览器
+</div>
+
+并发浏览器表示 Firecrawl 可以同时为你处理多少个网页。你的套餐决定了这一上限。如果超出该限制，额外任务会在队列中等待，直到有空闲的并发位。有关并发和 API 速率限制的完整说明，请参阅 [Rate Limits](/zh/rate-limits)。
+
+<div id="smart-upgrade">
+  ## Smart Upgrade
+</div>
+
+<Note>
+  自 **2026 年 6 月 1 日**起，Smart Upgrade 将取代 Auto-Recharge。您无需再为超额使用付费，这些费用现在会计入升级费用，让您获得无缝、不中断的使用体验。
+</Note>
+
+当您的余额降至零时，Smart Upgrade 会自动将您升级到额度阶梯中的下一个档位，包括每个套餐中的中间档位，从而确保请求持续不中断。系统只会按比例收取您当前档位与下一档位之间的差价，并立即发放相应增加的额度。您可以随时在[计费设置](https://www.firecrawl.dev/app/settings?tab=billing)中禁用 Smart Upgrade。当您达到 Scale (扩展) 档位 (1,000,000 额度/月) 后，Smart Upgrade 将无法再升级到更高档位；如需自定义 Enterprise 方案，请[联系销售](https://www.firecrawl.dev/enterprise)。
+
+<div id="pro-ration-examples">
+  ### 按比例收费示例
+</div>
+
+假设你当前使用的是 **Hobby (入门)  6.5k** ($28/月或 $290/年) ，Smart Upgrade 将你升级到 **Hobby (入门)  8k** ($37/月或 $390/年) 。你会立即获得**额外 1,500 额度** (即补足到 8k 的差额) ，升级费用则取决于你的计费周期：
+
+* **月付计划：**你今天会被收取 $37 − $28 = **$9** 的月费差额。续订日期不变。
+* **年付计划，在 12 个月周期中还剩 5 个月：**你今天会被收取 `(5 ÷ 12) × 100 ≈ $41.67`，其中年费差价为 $390 − $290 = $100。这笔费用覆盖 Hobby (入门)  8k 剩余 4 个月的费用，续订日期不变。
+
+当你用尽 8k 档位后，下一个升级档位是 **Hobby (入门)  8k → Standard 100k**，按这两个档位之间的差额收费 ($62/月或 $600/年，同样按比例收费) ，并向你的余额中增加**额外 92,000 额度**。
+
+<div id="upgrading-and-downgrading">
+  ## 升级和降级
+</div>
+
+* **升级** 会立即生效。今天将按新套餐的全额收费 (不按比例计费) ，并且你的计费周期会重置——你的下一次续费时间将是升级之日起一个月或一年后。你之前套餐中任何未使用的额度都会结转，并且新的额度配额和并发限制会立即生效。
+* **降级** 将在下一个续费日生效。在此之前，你会继续保留当前套餐的额度和限制，且当前套餐未使用的时长不会折算或退款。你可以在生效日期之前的任何时间，从你的[计费设置](https://www.firecrawl.dev/app/settings?tab=billing)中撤销已安排的降级。
+
+<div id="switching-between-monthly-and-yearly-billing">
+  ### 在月度计费和年度计费之间切换
+</div>
+
+* **月度 → 年度**：如果切换到相同或更高的额度档位，将视为立即升级。
+* **年度 → 月度**：只有切换到严格更高的额度档位时，才会视为立即升级。
+
+<div id="running-out-of-credits">
+  ## 额度耗尽时
+</div>
+
+如果您的额度已用尽，且未启用 Smart Upgrade，任何会消耗额度的 API 请求都会返回 **HTTP 402 (Payment Required)&#x20;**&#x20;错误。
+
+启用 **Smart Upgrade** 后，您的订阅会自动升级到下一个额度档位，并立即获得新档位的额度，因此请求不会中断。达到 Scale (扩展) 档位后，Smart Upgrade 将停止生效。
+
+如需在被硬性停止后恢复使用，您可以：
+
+1. 启用 [Smart Upgrade](#smart-upgrade) 以自动升级
+2. 手动升级到更高的套餐
+3. 等待额度在下一个计费周期重置
+
+<div id="coupons">
+  ## 优惠券
+</div>
+
+Firecrawl 支持两种类型的优惠券：
+
+* **订阅优惠券**可用于你的方案订阅折扣 (例如按月费或年费的一定比例减免) 。这类优惠券**只能**在你首次订阅付费方案或更改方案时，于 Stripe 结账流程中使用。结账完成后，无法再使用订阅优惠券。
+* **额度优惠券**会为你的账户增加额外额度。你可以在 Dashboard 的 **计费** 部分，通过 [firecrawl.dev/app/billing](https://www.firecrawl.dev/app/billing) 进行兑换。前往计费页面，找到优惠券输入框并输入代码即可使用。额度优惠券提供的额外额度独立于你方案每月分配的额度，即使你升级或降级方案，这些额度也会保留。
+
+<div id="faqs">
+  ## 常见问题
+</div>
+
+<AccordionGroup>
+  <Accordion title="未使用的额度会结转到下个月吗？">
+    **方案额度**默认不会结转——你的每月额度会在每个月重置。**年度 Scale (扩展) 方案的未使用方案额度可结转 1 个月**，**年度 Enterprise 方案可结转 2 个月**。
+  </Accordion>
+
+  <Accordion title="Smart Upgrade 的费用是如何计算的？">
+    Smart Upgrade 会按比例收取你当前档位与下一档位之间的差价。对于**月付**方案，这就是每月价格差。对于**年付**方案，计算方式为 `(你的计费周期中剩余月份 ÷ 12) × 年度价格差`，并从你当前周期开始时起按完整日历月计算。你还会获得这两个档位之间的额度差值，因此你只需为新增部分付费。
+  </Accordion>
+
+  <Accordion title="我如何知道还剩多少额度？">
+    在 [firecrawl.dev/app](https://www.firecrawl.dev/app) 的Dashboard中查看，或者以编程方式调用 [Credit Usage API 端点](/zh/api-reference/endpoint/credit-usage)。
+  </Accordion>
+
+  <Accordion title="在哪里使用优惠码？">
+    这取决于优惠券类型。**额度优惠券**可在Dashboard的计费 部分中使用。**订阅优惠券** (即方案价格折扣) 只能在订阅或更改方案时于 Stripe 结账页面使用。
+  </Accordion>
+
+  <Accordion title="我需要更高的并发或定制方案，该联系谁？">
+    请联系 [help@firecrawl.dev](mailto:help@firecrawl.dev)，或访问 [Enterprise 页面](https://www.firecrawl.dev/enterprise) 了解更多定制方案信息。
+  </Accordion>
+
+  <Accordion title="发票以什么货币计费？">
+    所有 Firecrawl 发票均以 **美元 (USD)** 计费，无论你的账单地址或付款方式是什么。
+  </Accordion>
+
+  <Accordion title="如何在发票中添加 VAT 税号、公司名称或账单地址？">
+    前往你的 [计费设置](https://www.firecrawl.dev/app/settings?tab=billing)，点击 **Manage Subscriptions**，然后在 Stripe 门户中更新账单地址、公司名称和 VAT 税号。后续发票会自动包含更新后的信息。
+
+    如需使用新信息重新生成过往已支付的发票：
+
+    1. 先在 Stripe 门户中更新你的账单信息 (见上文) 。
+    2. 在 Stripe 门户中打开 **Invoice history** 标签页，并下载你需要的发票 PDF；Stripe 会根据你当前的账单信息重新生成该发票。
+    3. 如果某张发票没有带上更新后的信息，请将发票编号发送至 [help@firecrawl.dev](mailto:help@firecrawl.dev)，我们会为你重新生成。
+  </Accordion>
+</AccordionGroup>
+
+<div id="x-xcom-billing">
+  ## X (x.com) 计费
+</div>
+
+Firecrawl 使用来自 [xAI](https://x.ai/) 的官方 **Grok API**，提供 AI 驱动的摘要、结构化提取，以及对公开 X 内容的实时访问。对指向 `x.com`、`twitter.com` 和 `mobile.twitter.com` 上个人资料页和帖子 URL 的请求，会通过 Grok 获授权的内部工具 (`x_search`、线程获取，以及仅限 `x.com` 的网页搜索) 进行处理，而非传统的网页抓取。
+
+<div id="credit-costs">
+  ### 额度成本
+</div>
+
+| 项目               | 额度成本        | 描述                                          |
+| ---------------- | ----------- | ------------------------------------------- |
+| **基础成本**         | 1 额度 / 请求   | 标准抓取请求处理                                    |
+| **Grok X Query** | +29 额度 / 请求 | 用于 X 内容的 Grok API 使用量 (tokens + tool calls) |
+
+例如，处理一条典型的帖子或线程请求需要 **30 额度** (`1` 基础成本 + `29` Grok X Query) ，并会返回由 Grok 生成的结构化数据、线程上下文和摘要。如果同时启用了 JSON 格式 (LLM 提取) ，则每个请求的总成本为 **34 额度**。
+
+这种方式通过 xAI 的合作遵循 X 公开发布的接口，提供质量更高、具备推理能力的输出，而不是直接抓取原始页面内容。
+
+<Note>
+  **其能力与标准抓取不同。** Grok 返回的是经 AI 处理的结果，可能包括摘要、关键指标、线程上下文等。若要大规模获取原始结构化数据，请使用 [官方 X Enterprise API](https://developer.x.com/)。
+</Note>

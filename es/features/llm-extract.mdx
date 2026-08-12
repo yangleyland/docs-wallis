@@ -1,0 +1,189 @@
+---
+title: "Modo JSON - Resultado estructurado"
+description: "Extrae datos estructurados de páginas mediante LLM"
+og:title: "Modo JSON | Firecrawl"
+og:description: "Extrae datos estructurados de páginas mediante LLM"
+sidebarTitle: "Modo JSON"
+---
+
+import ExtractCURL from "/snippets/es/v2/scrape/json/base/curl.mdx";
+import ExtractPython from "/snippets/es/v2/scrape/json/base/python.mdx";
+import ExtractNode from "/snippets/es/v2/scrape/json/base/js.mdx";
+import ExtractOutput from "/snippets/es/v2/scrape/json/base/output.mdx";
+import ExtractNoSchemaPython from "/snippets/es/v2/scrape/json/no-schema/python.mdx";
+import ExtractNoSchemaNode from "/snippets/es/v2/scrape/json/no-schema/js.mdx";
+import ExtractNoSchemaCURL from "/snippets/es/v2/scrape/json/no-schema/curl.mdx";
+import ExtractNoSchemaOutput from "/snippets/es/v2/scrape/json/no-schema/output.mdx";
+import EventExampleCURL from "/snippets/es/v2/scrape/json/events-example/curl.mdx";
+import EventExamplePython from "/snippets/es/v2/scrape/json/events-example/python.mdx";
+import EventExampleNode from "/snippets/es/v2/scrape/json/events-example/js.mdx";
+import EventExampleOutput from "/snippets/es/v2/scrape/json/events-example/output.mdx";
+import ChooseDataExtractor from "/snippets/es/shared/choose-data-extractor/from-llm-extract.mdx";
+
+**Elegir la herramienta adecuada.** El modo JSON (esta página) es la opción adecuada cuando tienes **una URL** y quieres extraer campos de esa única página.
+
+<ChooseDataExtractor />
+
+<Note>
+  **Cambio en la API v2:** La extracción de esquemas JSON está totalmente soportada en v2, pero el formato de la API ha cambiado. En v2, el esquema se incorpora directamente dentro del objeto de formato como `formats: [{type: "json", schema: {...}}]`. El parámetro `jsonOptions` de v1 ya no existe en v2.
+</Note>
+
+<Note>Para errores de validación de esquemas y otros errores de extracción, consulta [Errors](/es/api-reference/errors) — los problemas específicos de extracción suelen mostrarse como respuestas `400` o `422`.</Note>
+
+<div id="scrape-and-extract-structured-data-with-firecrawl">
+  ## Rastrea y extrae datos estructurados con Firecrawl
+</div>
+
+Firecrawl usa IA para obtener datos estructurados de páginas web en 3 pasos:
+
+1. **Configura el esquema (opcional):**
+   Define un esquema JSON (usando el formato de OpenAI) para especificar los datos que necesitas, o simplemente proporciona un `prompt` si no requieres un esquema estricto, junto con la URL de la página.
+
+2. **Haz la solicitud:**
+   Envía tu URL y el esquema a nuestro punto de conexión /scrape usando el modo JSON. Mira cómo aquí:
+   [Scrape Endpoint Documentation](https://docs.firecrawl.dev/api-reference/endpoint/scrape)
+
+3. **Obtén tus datos:**
+   Recibe datos limpios y estructurados que coincidan con tu esquema y que puedas usar de inmediato.
+
+Esto hace que obtener datos web en el formato que necesitas sea rápido y sencillo.
+
+<div id="extract-structured-data">
+  ## Extrae datos estructurados
+</div>
+
+<div id="json-mode-via-scrape">
+  ### Modo JSON con /scrape
+</div>
+
+Se utiliza para extraer datos estructurados de páginas rastreadas.
+
+<CodeGroup>
+  <ExtractPython />
+
+  <ExtractNode />
+
+  <ExtractCURL />
+</CodeGroup>
+
+Salida:
+
+<ExtractOutput />
+
+<div id="structured-data-without-schema">
+  ### Datos estructurados sin esquema
+</div>
+
+También puedes extraer sin esquema pasando únicamente un `prompt` al punto de conexión. El LLM elige la estructura de los datos.
+
+<CodeGroup>
+  <ExtractNoSchemaPython />
+
+  <ExtractNoSchemaNode />
+
+  <ExtractNoSchemaCURL />
+</CodeGroup>
+
+Salida:
+
+<ExtractNoSchemaOutput />
+
+<div id="real-world-example-extracting-company-information">
+  ### Ejemplo real: extracción de información de empresas
+</div>
+
+A continuación, un ejemplo completo que extrae información estructurada de un sitio web sobre una empresa:
+
+<CodeGroup>
+  <EventExamplePython />
+
+  <EventExampleNode />
+
+  <EventExampleCURL />
+</CodeGroup>
+
+Salida:
+
+<EventExampleOutput />
+
+<div id="json-format-options">
+  ### Opciones del formato JSON
+</div>
+
+Al usar el modo JSON en v2, incluye un objeto en `formats` con el esquema incorporado directamente:
+
+`formats: [{ type: 'json', schema: { ... }, prompt: '...' }]`
+
+Parámetros:
+
+* `schema`: JSON Schema que describe la salida estructurada que deseas (obligatorio para la extracción basada en un esquema).
+* `prompt`: Indicaciones opcionales para guiar la extracción (también se usa para la extracción sin esquema).
+
+**Importante:** A diferencia de v1, en v2 no existe un parámetro independiente `jsonOptions`. El esquema debe incluirse directamente dentro del objeto de formato en el array `formats`.
+
+<Note>
+  **Los atributos HTML no están disponibles en la extracción JSON.** La extracción JSON funciona sobre la conversión de la página a markdown, que solo preserva el contenido de texto visible. Los atributos HTML (por ejemplo, `data-id`, atributos personalizados en elementos) se eliminan durante la conversión y el LLM no puede verlos. Si necesitas extraer valores de atributos HTML, usa el formato `rawHtml` y analiza los atributos en el lado del cliente, o usa una acción `executeJavascript` para inyectar los valores de los atributos en texto visible antes de la extracción.
+</Note>
+
+<div id="tips-for-consistent-extraction">
+  ## Consejos para una extracción consistente
+</div>
+
+Si obtienes resultados inconsistentes o incompletos al extraer JSON, estas prácticas pueden ayudar:
+
+* **Mantén los prompts cortos y enfocados.** Los prompts largos con muchas reglas aumentan la variabilidad. En su lugar, mueve las restricciones específicas (como los valores permitidos) al esquema.
+* **Usa nombres de propiedades concisos.** Evita incrustar instrucciones o listas de `enum` en los nombres de las propiedades. Usa una clave corta como `"installation_type"` y coloca los valores permitidos en un array `enum`.
+* **Agrega arrays `enum` para campos restringidos.** Cuando un campo tiene un conjunto fijo de valores, enuméralos en `enum` y asegúrate de que coincidan con el texto exacto que aparece en la página.
+* **Incluye manejo de valores null en las descripciones de los campos.** Agrega `"Return null if not found on the page."` a la `description` de cada campo para que el modelo no adivine valores faltantes.
+* **Agrega indicaciones de ubicación.** Indica al modelo dónde encontrar los datos en la página, por ejemplo: `"Flow rate in GPM from the Specifications table."`.
+* **Divide esquemas grandes en solicitudes más pequeñas.** Los esquemas con muchos campos (p. ej., 30 o más) producen resultados menos consistentes. Divídelos en 2–3 solicitudes de 10–15 campos cada una.
+* **Evita `minItems`/`maxItems` en arrays.** Las palabras clave de validación de JSON Schema, como `minItems` y `maxItems`, no controlan cuánto contenido recopila el scraper. Establecer `minItems: 20` no hará que el LLM devuelva más elementos; en su lugar, puede alucinar entradas para cumplir la restricción. Elimina estas palabras clave y usa un `prompt` en su lugar (p. ej., `"Extract ALL reviews from the page. Do not skip any."`) para guiar la exhaustividad.
+* **Usa `"type": "array"` para extraer listas de elementos.** Si necesitas extraer varios elementos (p. ej., una lista de personas, productos o reseñas), agrúpalos en una propiedad de tipo array con un bloque `items`. Usar `"type": "object"` para una lista devolverá solo un elemento. Consulta el ejemplo de esquema de array a continuación.
+
+**Ejemplo de un esquema bien estructurado:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "product_name": {
+      "type": ["string", "null"],
+      "description": "Full descriptive product name as shown on the page. Return null if not found."
+    },
+    "installation_type": {
+      "type": ["string", "null"],
+      "description": "Installation type from the Specifications section. Return null if not found.",
+      "enum": ["Deck-mount", "Wall-mount", "Countertop", "Drop-in", "Undermount"]
+    },
+    "flow_rate_gpm": {
+      "type": ["string", "null"],
+      "description": "Flow rate in GPM from the Specifications section. Return null if not found."
+    }
+  }
+}
+```
+
+**Ejemplo de cómo extraer una lista de elementos:**
+
+Cuando una página contiene varios elementos (p. ej., miembros del equipo, productos o reseñas), usa `"type": "array"` con `"items"` para obtener la lista completa:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "people": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "role": { "type": "string" },
+          "department": { "type": "string" }
+        }
+      }
+    }
+  }
+}
+```
+
+> ¿Eres un agente de IA que necesita una clave de API de Firecrawl? Consulta [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) para ver las instrucciones de incorporación automatizada.

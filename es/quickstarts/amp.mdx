@@ -1,0 +1,46 @@
+---
+title: "Búsqueda web y scraping con MCP en Amp"
+description: "Añade el scraping web y la búsqueda de Firecrawl a Sourcegraph Amp"
+sidebarTitle: "Amp"
+---
+
+Añade las herramientas sin clave Search, scraping y Parse de Firecrawl a [Sourcegraph Amp](https://ampcode.com) mediante el MCP Server alojado.
+
+<div id="quick-setup">
+  ## Configuración rápida
+</div>
+
+Abre la configuración de Amp y añade este MCP Server remoto:
+
+```json
+{
+  "amp.mcpServers": {
+    "firecrawl": {
+      "url": "https://mcp.firecrawl.dev/v2/mcp"
+    }
+  }
+}
+```
+
+Recarga Amp y confirma que `firecrawl_search`, `firecrawl_scrape` y `firecrawl_parse` están disponibles.
+
+El acceso sin clave tiene límites compartidos entre los usuarios con la misma IP pública. Inicia sesión desde un cliente interactivo con [For Humans](/es/mcp-server/oauth) o [añade una clave de API](/es/mcp-server/keyless#add-an-api-key) para uso desatendido.
+
+<div id="try-it">
+  ## Pruébalo
+</div>
+
+```text
+Busca en la web "Sourcegraph Cody vs Amp" y resume las fuentes.
+```
+
+```text
+Scrape https://docs.firecrawl.dev and list the core endpoints.
+```
+
+<div id="troubleshooting">
+  ## Solución de problemas
+</div>
+
+* **El servidor no se conecta:** confirma que la URL sea exactamente `https://mcp.firecrawl.dev/v2/mcp` y revisa los registros de MCP de Amp.
+* **No aparece Crawl u otra herramienta:** el acceso sin clave solo incluye Search, scraping y Parse. Conéctate con OAuth o una clave de API para acceder a más herramientas.

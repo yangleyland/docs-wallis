@@ -1,0 +1,16 @@
+---
+title: 'スクレイプ'
+openapi: '/ja/api-reference/v2-openapi.json POST /scrape'
+---
+
+<div id="interactions">
+  ## インタラクション
+</div>
+
+ブラウザ操作 (クリック、入力、ナビゲーション、動的コンテンツの抽出) には、[Interact endpoint](/ja/features/interact) を使用します。まずページをスクレイピングし、その後、自然言語の prompt または Playwright コードを使ってページ上でアクションを実行するために `POST /v2/scrape/{scrapeId}/interact` を呼び出します。
+
+詳細と例については、[Interact documentation](/ja/features/interact)を参照してください。
+
+任意で `actions` パラメータを使用することもできますが、複雑なインタラクションには推奨されません。
+
+> Firecrawl API キーが必要な AI agent ですか？自動オンボーディング手順については、[firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md)を参照してください。

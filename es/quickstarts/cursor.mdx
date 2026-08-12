@@ -1,0 +1,45 @@
+---
+title: "Búsqueda web y scraping con MCP en Cursor"
+description: "Añade scraping web y búsqueda a Cursor en 2 minutos"
+---
+
+Añade las herramientas Search, scraping y Parse sin clave de Firecrawl a Cursor mediante el MCP Server alojado.
+
+<div id="quick-setup">
+  ## Configuración rápida
+</div>
+
+Abre la configuración de Cursor, selecciona **MCP** y añade:
+
+```json
+{
+  "mcpServers": {
+    "firecrawl": {
+      "url": "https://mcp.firecrawl.dev/v2/mcp"
+    }
+  }
+}
+```
+
+Reinicia Cursor y confirma que `firecrawl_search`, `firecrawl_scrape` y `firecrawl_parse` estén disponibles.
+
+El acceso sin clave está sujeto a límites compartidos entre los usuarios de la misma IP pública. Inicia sesión desde un cliente interactivo con [For Humans](/es/mcp-server/oauth), o [añade una clave de API](/es/mcp-server/keyless#add-an-api-key) para uso no interactivo.
+
+<div id="try-it">
+  ## Pruébalo
+</div>
+
+```text
+Busca las notas de la última release de TypeScript y resume las fuentes.
+```
+
+```text
+Haz scraping de https://firecrawl.dev y explica qué hace.
+```
+
+<div id="troubleshooting">
+  ## Solución de problemas
+</div>
+
+* **El servidor no se conecta:** confirma que la URL sea exactamente `https://mcp.firecrawl.dev/v2/mcp` e inspecciona el estado de MCP en Cursor.
+* **Falta Crawl u otra herramienta:** sin clave expone únicamente Search, scraping y Parse. Conéctate con OAuth o una clave de API para acceder a un conjunto más amplio de herramientas.

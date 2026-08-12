@@ -1,0 +1,327 @@
+---
+title: "Crawl"
+description: "Crawler récursivement un site web et obtenir le contenu de chaque page"
+og:title: "Crawl | Firecrawl"
+og:description: "Crawler récursivement un site web et obtenir le contenu de chaque page"
+icon: "spider"
+---
+
+import InstallationPython from '/snippets/fr/v2/installation/python.mdx';
+import InstallationNode from '/snippets/fr/v2/installation/js.mdx';
+import InstallationCLI from '/snippets/fr/v2/installation/cli.mdx';
+import CrawlPython from '/snippets/fr/v2/crawl/base/python.mdx';
+import CrawlNode from '/snippets/fr/v2/crawl/base/js.mdx';
+import CrawlCURL from '/snippets/fr/v2/crawl/base/curl.mdx';
+import CrawlCLI from '/snippets/fr/v2/crawl/base/cli.mdx';
+import CheckCrawlJobPython from '/snippets/fr/v2/crawl-status/short/python.mdx';
+import CheckCrawlJobNode from '/snippets/fr/v2/crawl-status/short/js.mdx';
+import CheckCrawlJobCURL from '/snippets/fr/v2/crawl-status/short/curl.mdx';
+import CheckCrawlJobCLI from '/snippets/fr/v2/crawl-status/short/cli.mdx';
+import CheckCrawlJobOutputScraping from '/snippets/fr/v2/crawl-status/base/output-scraping.mdx';
+import CheckCrawlJobOutputCompleted from '/snippets/fr/v2/crawl-status/base/output-completed.mdx';
+import CrawlWebSocketPython from '/snippets/fr/v2/crawl-websocket/base/python.mdx';
+import CrawlWebSocketNode from '/snippets/fr/v2/crawl-websocket/base/js.mdx';
+import CrawlWebhookCURL from '/snippets/fr/v2/crawl-webhook/base/curl.mdx';
+import PythonCrawlExample from '/snippets/fr/v2/crawl/sdk-example/python.mdx';
+import NodeCrawlExample from '/snippets/fr/v2/crawl/sdk-example/js.mdx';
+import PythonCrawlExampleResponse from '/snippets/fr/v2/crawl/sdk-example/python-response.mdx';
+import NodeCrawlExampleResponse from '/snippets/fr/v2/crawl/sdk-example/js-response.mdx';
+import StartCrawlPython from '/snippets/fr/v2/start-crawl/base/python.mdx';
+import StartCrawlNode from '/snippets/fr/v2/start-crawl/base/js.mdx';
+import StartCrawlCURL from '/snippets/fr/v2/start-crawl/base/curl.mdx';
+import StartCrawlCLI from '/snippets/fr/v2/start-crawl/base/cli.mdx';
+import StartCrawlOutput from '/snippets/fr/v2/start-crawl/base/output.mdx';
+import PlaygroundCTA from "/snippets/fr/shared/playground-cta-crawl.mdx";
+
+Le crawl soumet une URL à Firecrawl, découvre récursivement chaque sous-page accessible et en extrait le contenu. Elle gère automatiquement les sitemaps, le rendu JavaScript et les limites de taux, en renvoyant du Markdown propre ou des données structurées pour chaque page.
+
+* Découvre les pages via le sitemap et le parcours récursif des liens
+* Prend en charge le filtrage des chemins, les limites de profondeur et le contrôle des sous-domaines et des liens externes
+* Renvoie les résultats via polling, WebSocket ou webhook
+
+<PlaygroundCTA />
+
+<div id="installation">
+  ## Installation
+</div>
+
+<CodeGroup>
+  <InstallationPython />
+
+  <InstallationNode />
+
+  <InstallationCLI />
+</CodeGroup>
+
+<div id="basic-usage">
+  ## Utilisation de base
+</div>
+
+Soumettez une tâche de crawl en appelant `POST /v2/crawl` avec une URL de départ. Le point de terminaison renvoie un ID de tâche que vous utilisez pour interroger les résultats.
+
+<CodeGroup>
+  <CrawlPython />
+
+  <CrawlNode />
+
+  <CrawlCURL />
+
+  <CrawlCLI />
+</CodeGroup>
+
+<Info>
+  Chaque page crawlée consomme 1 crédit. La valeur par défaut de `limit` pour le crawl est de 10 000
+  pages. Avant de démarrer, le point de terminaison de crawl vérifie que vos crédits restants
+  suffisent à couvrir la valeur de `limit` — sinon, il renvoie une erreur **402 (Paiement requis)**.
+  Définissez une valeur de `limit` plus basse pour correspondre à la taille de crawl prévue (par exemple `limit: 100`) afin
+  d’éviter ce problème. Des crédits supplémentaires s’appliquent pour certaines options : le mode JSON coûte 4
+  crédits supplémentaires par page, le proxy amélioré coûte 4 crédits supplémentaires par
+  page, et l’analyse des PDF coûte 1 crédit par page de PDF.
+</Info>
+
+<div id="scrape-options">
+  ### Options de scrape
+</div>
+
+Toutes les options de l’[point de terminaison Scrape](/fr/api-reference/endpoint/scrape) sont disponibles dans crawl via `scrapeOptions` (JS) / `scrape_options` (Python). Elles s’appliquent à chaque page que le crawler extrait, y compris les formats, le proxy, la mise en cache, les actions, la localisation et les tags.
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+
+  firecrawl = Firecrawl(api_key='fc-YOUR_API_KEY')
+
+  # Crawl avec des options de scrape
+  response = firecrawl.crawl('https://example.com',
+      limit=100,
+      scrape_options={
+          'formats': [
+              'markdown',
+              { 'type': 'json', 'schema': { 'type': 'object', 'properties': { 'title': { 'type': 'string' } } } }
+          ],
+          'proxy': 'auto',
+          'max_age': 600000,
+          'only_main_content': True
+      }
+  )
+  ```
+
+  ```js Node
+  import { Firecrawl } from 'firecrawl';
+
+  const firecrawl = new Firecrawl({ apiKey: 'fc-YOUR_API_KEY' });
+
+  // Crawl avec des options de scrape
+  const crawlResponse = await firecrawl.crawl('https://example.com', {
+    limit: 100,
+    scrapeOptions: {
+      formats: [
+        'markdown',
+        {
+          type: 'json',
+          schema: { type: 'object', properties: { title: { type: 'string' } } },
+        },
+      ],
+      proxy: 'auto',
+      maxAge: 600000,
+      onlyMainContent: true,
+    },
+  });
+  ```
+</CodeGroup>
+
+<div id="checking-crawl-status">
+  ## Vérification du statut du crawl
+</div>
+
+Utilisez l’ID du job pour interroger l’état du crawl et récupérer les résultats.
+
+<CodeGroup>
+  <CheckCrawlJobPython />
+
+  <CheckCrawlJobNode />
+
+  <CheckCrawlJobCURL />
+
+  <CheckCrawlJobCLI />
+</CodeGroup>
+
+<Note>
+  Les résultats des jobs de crawl sont disponibles via l’API pendant 24 heures après leur achèvement. Après cette période, vous pouvez toujours consulter l’historique de vos crawls et leurs résultats dans les [journaux d’activité](https://www.firecrawl.dev/app/logs).
+</Note>
+
+<Note>
+  Les pages dans le tableau `data` des résultats de crawl sont des pages que Firecrawl a extraites avec succès, même si le site cible a renvoyé une erreur HTTP comme 404. Le champ `metadata.statusCode` indique le code de statut HTTP renvoyé par le site cible. Pour récupérer les pages que Firecrawl lui‑même n’a pas réussi à extraire (par exemple en cas d’erreurs réseau, d’expirations de délai ou de blocages liés à robots.txt), utilisez l’endpoint dédié [Get Crawl Errors](/fr/api-reference/endpoint/crawl-get-errors) (`GET /crawl/{id}/errors`).
+</Note>
+
+<div id="response-handling">
+  ### Gestion des réponses
+</div>
+
+La réponse varie selon l’état du crawl.
+
+Pour les crawls non terminés ou les réponses volumineuses dépassant 10 Mo, un paramètre d’URL `next` est fourni. Vous devez appeler cette URL pour récupérer les 10 Mo de données suivants. Si le paramètre `next` est absent, cela indique la fin des données du crawl.
+
+<Info>
+  Les paramètres `skip` et `next` ne sont pertinents que lors d’appels directs à l’API.
+  Si vous utilisez le SDK, la pagination est gérée automatiquement et tous
+  les résultats sont renvoyés en une seule fois.
+</Info>
+
+<CodeGroup>
+  <CheckCrawlJobOutputScraping />
+
+  <CheckCrawlJobOutputCompleted />
+</CodeGroup>
+
+<div id="sdk-methods">
+  ## Méthodes du SDK
+</div>
+
+Deux approches sont possibles pour utiliser crawl avec le SDK.
+
+<div id="crawl-and-wait">
+  ### Crawler puis attendre
+</div>
+
+La méthode `crawl` attend la fin du crawl et renvoie la réponse complète. Elle gère automatiquement la pagination. Cela est recommandé pour la plupart des cas d’usage.
+
+<CodeGroup>
+  <PythonCrawlExample />
+
+  <NodeCrawlExample />
+</CodeGroup>
+
+La réponse inclut l’état du crawl et toutes les données extraites :
+
+<CodeGroup>
+  <PythonCrawlExampleResponse />
+
+  <NodeCrawlExampleResponse />
+</CodeGroup>
+
+<div id="start-and-check-later">
+  ### Démarrer et vérifier plus tard
+</div>
+
+La méthode `startCrawl` / `start_crawl` renvoie immédiatement un ID de crawl. Vous pouvez ensuite vérifier manuellement l’état. Utile pour les crawls de longue durée ou une logique de polling personnalisée.
+
+<CodeGroup>
+  <StartCrawlPython />
+
+  <StartCrawlNode />
+
+  <StartCrawlCURL />
+
+  <StartCrawlCLI />
+</CodeGroup>
+
+La réponse initiale renvoie l’ID du job :
+
+<StartCrawlOutput />
+
+<div id="real-time-results-with-websocket">
+  ## Résultats en temps réel avec WebSocket
+</div>
+
+La méthode watcher fournit des mises à jour en temps réel à mesure que les pages sont crawlées. Lancez un crawl, puis abonnez-vous aux événements pour traiter immédiatement les données.
+
+<CodeGroup>
+  <CrawlWebSocketPython />
+
+  <CrawlWebSocketNode />
+</CodeGroup>
+
+<div id="webhooks">
+  ## Webhooks
+</div>
+
+Vous pouvez configurer des webhooks pour recevoir des notifications en temps réel à mesure que votre crawl progresse. Cela vous permet de traiter les pages dès leur extraction, au lieu d’attendre la fin du crawl.
+
+<CrawlWebhookCURL />
+
+<div id="event-types">
+  ### Types d’événements
+</div>
+
+| Événement         | Description                                        |
+| ----------------- | -------------------------------------------------- |
+| `crawl.started`   | Se déclenche au démarrage du crawl                 |
+| `crawl.page`      | Se déclenche pour chaque page extraite avec succès |
+| `crawl.completed` | Se déclenche à la fin du crawl                     |
+| `crawl.failed`    | Se déclenche si le crawl rencontre une erreur      |
+
+<div id="payload">
+  ### Charge utile
+</div>
+
+```json
+{
+  "success": true,
+  "type": "crawl.page",
+  "id": "crawl-job-id",
+  "data": [...], // Données de page pour les événements 'page'
+  "metadata": {}, // Your custom metadata
+  "error": null
+}
+```
+
+<div id="verifying-webhook-signatures">
+  ### Vérification des signatures de webhook
+</div>
+
+Chaque requête de webhook provenant de Firecrawl inclut un en-tête `X-Firecrawl-Signature` contenant une signature HMAC-SHA256. Vérifiez toujours cette signature pour vous assurer que le webhook est authentique et n&#39;a pas été altéré.
+
+1. Récupérez votre secret de webhook dans l&#39;[onglet Advanced](https://www.firecrawl.dev/app/settings?tab=advanced) des paramètres de votre compte
+2. Extrayez la signature de l&#39;en-tête `X-Firecrawl-Signature`
+3. Calculez le HMAC-SHA256 du corps brut de la requête à l&#39;aide de votre secret
+4. Comparez-le avec l&#39;en-tête de signature en utilisant une fonction sécurisée contre les attaques par temporisation
+
+<Warning>
+  Ne traitez jamais un webhook sans vérifier d&#39;abord sa signature. L&#39;en-tête `X-Firecrawl-Signature` contient la signature au format : `sha256=abc123def456...`
+</Warning>
+
+Pour des exemples d&#39;implémentation complets en JavaScript et Python, consultez la [documentation sur la sécurité des webhooks](/fr/webhooks/security). Pour une documentation complète sur les webhooks, y compris les charges utiles d&#39;événements détaillées, la structure des charges utiles, la configuration avancée et le dépannage, consultez la [documentation sur les webhooks](/fr/webhooks/overview).
+
+<div id="configuration-reference">
+  ## Référence de configuration
+</div>
+
+Ensemble complet des paramètres disponibles lors de l’envoi d’une tâche de crawl :
+
+| Paramètre               | Type       | Par défaut    | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ----------------------- | ---------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`                   | `string`   | (obligatoire) | URL de départ du crawl                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `limit`                 | `integer`  | `10000`       | Nombre maximal de pages à crawler                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `maxDiscoveryDepth`     | `integer`  | (aucun)       | Profondeur maximale depuis l’URL racine en fonction des sauts de découverte de liens, et non du nombre de segments `/` dans l’URL. Chaque fois qu’une nouvelle URL est trouvée sur une page, une profondeur supérieure de 1 à celle de la page sur laquelle elle a été découverte lui est attribuée. Le site racine et les pages du sitemap ont une profondeur de découverte égale à 0. Les pages à la profondeur maximale sont tout de même extraites, mais les liens qu’elles contiennent ne sont pas suivis. |
+| `includePaths`          | `string[]` | (aucun)       | Expressions régulières sur le chemin de l’URL à inclure. Seuls les chemins correspondants sont crawlés.                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `excludePaths`          | `string[]` | (aucun)       | Expressions régulières sur le chemin de l’URL à exclure du crawl                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `regexOnFullURL`        | `boolean`  | `false`       | Applique `includePaths`/`excludePaths` à l’URL complète (y compris les paramètres de requête), et pas seulement au chemin                                                                                                                                                                                                                                                                                                                                                                                      |
+| `crawlEntireDomain`     | `boolean`  | `false`       | Suit les liens internes vers des URL sœurs ou parentes, et pas uniquement vers des chemins enfants                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `allowSubdomains`       | `boolean`  | `false`       | Suit les liens vers les sous-domaines du domaine principal                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `allowExternalLinks`    | `boolean`  | `false`       | Suit les liens vers des sites web externes                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `sitemap`               | `string`   | `"include"`   | Gestion du sitemap : `"include"` (par défaut), `"skip"` ou `"only"`                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `ignoreQueryParameters` | `boolean`  | `false`       | Évite d’extraire plusieurs fois le même chemin avec des paramètres de requête différents                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `ignoreRobotsTxt`       | `boolean`  | `false`       | Ignore les règles `robots.txt` du site web. **Enterprise uniquement** — contactez support@firecrawl.com pour l’activer.                                                                                                                                                                                                                                                                                                                                                                                        |
+| `robotsUserAgent`       | `string`   | (aucun)       | Chaîne User-Agent personnalisée pour l’évaluation de `robots.txt`. Lorsqu’elle est définie, `robots.txt` est récupéré avec ce User-Agent et les règles sont évaluées par rapport à celui-ci au lieu de l’agent utilisateur par défaut. **Enterprise uniquement** — contactez support@firecrawl.com pour l’activer.                                                                                                                                                                                             |
+| `delay`                 | `number`   | (aucun)       | Délai, en secondes, entre les extractions afin de respecter les limites de débit. Le définir force la simultanéité à 1.                                                                                                                                                                                                                                                                                                                                                                                            |
+| `maxConcurrency`        | `integer`  | (aucun)       | Nombre maximal d’extractions simultanées. Utilise par défaut la limite de simultanéité de votre équipe.                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `scrapeOptions`         | `object`   | (aucun)       | Options appliquées à chaque page lors de l’extraction (formats, proxy, mise en cache, actions, etc.)                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `webhook`               | `object`   | (aucun)       | Configuration du webhook pour les notifications en temps réel                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `prompt`                | `string`   | (aucun)       | Prompt en langage naturel permettant de générer les options de crawl. Les paramètres explicitement définis remplacent les équivalents générés.                                                                                                                                                                                                                                                                                                                                                                 |
+
+<div id="important-details">
+  ## Détails importants
+</div>
+
+<Warning>
+  Par défaut, le crawl ignore les sous-liens qui ne dépendent pas de l’URL fournie. Par exemple, `website.com/other-parent/blog-1` ne sera pas renvoyé si vous lancez un crawl sur `website.com/blogs/`. Utilisez le paramètre `crawlEntireDomain` pour inclure les chemins frères et parents. Pour inclure des sous-domaines comme `blog.website.com` lors du crawl de `website.com`, utilisez le paramètre `allowSubdomains`.
+</Warning>
+
+* **Découverte du sitemap** : Par défaut, le crawler inclut le sitemap du site pour découvrir les URL (`sitemap: "include"`). Si vous définissez `sitemap: "skip"`, seules les pages accessibles via des liens HTML depuis l’URL racine seront trouvées. Les ressources comme les PDF ou les pages profondément imbriquées listées dans le sitemap mais non directement liées en HTML ne seront pas découvertes. Pour une couverture maximale, conservez le paramètre par défaut.
+* **Utilisation des crédits** : Chaque page crawlée coûte 1 crédit. Le mode JSON ajoute 4 crédits par page, le proxy avancé ajoute 4 crédits par page, et l’analyse des PDF coûte 1 crédit par page de PDF.
+* **Expiration des résultats** : Les résultats des jobs restent disponibles via l’API pendant 24 heures après leur exécution. Passé ce délai, vous pouvez consulter les résultats dans les [journaux d’activité](https://www.firecrawl.dev/app/logs).
+* **Erreurs de crawl** : Le tableau `data` contient les pages que Firecrawl a réussi à extraire. Utilisez le point de terminaison [Get Crawl Errors](/fr/api-reference/endpoint/crawl-get-errors) pour récupérer les pages ayant échoué en raison d’erreurs réseau, de délais d’attente ou de blocages par robots.txt.
+* **Résultats non déterministes** : Les résultats du crawl peuvent varier d’une exécution à l’autre avec la même configuration. Les pages sont extraites de manière concurrente, donc l’ordre dans lequel les liens sont découverts dépend du timing réseau et des pages qui finissent de se charger en premier. Cela signifie que différentes branches d’un site peuvent être explorées à des degrés divers à l’approche de la limite de profondeur, en particulier avec des valeurs élevées de `maxDiscoveryDepth`. Pour obtenir des résultats plus déterministes, définissez `maxConcurrency` sur `1` ou utilisez `sitemap: "only"` si le site dispose d’un sitemap complet.
+
+> Êtes-vous un agent IA qui a besoin d’une clé API Firecrawl ? Consultez [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) pour obtenir des instructions d’intégration automatisée.

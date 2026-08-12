@@ -1,0 +1,413 @@
+---
+title: "Python"
+description: "Firecrawl Python SDK 是 Firecrawl API 的封装，帮助你轻松将网站转换为 Markdown。"
+icon: "python"
+og:title: "Python SDK | Firecrawl"
+og:description: "Firecrawl Python SDK 是 Firecrawl API 的封装，帮助你轻松将网站转换为 Markdown。"
+---
+
+import InstallationPython from '/snippets/zh/v2/installation/python.mdx'
+import ScrapePythonShort from '/snippets/zh/v2/scrape/short/python.mdx'
+import CrawlPythonShort from '/snippets/zh/v2/crawl/short/python.mdx'
+import CrawlSitemapOnlyPython from '/snippets/zh/v2/crawl/sitemap-only/python.mdx'
+import CheckCrawlStatusPythonShort from '/snippets/zh/v2/crawl-status/short/python.mdx'
+import StartCrawlPythonShort from '/snippets/zh/v2/start-crawl/short/python.mdx'
+import CancelCrawlPythonShort from '/snippets/zh/v2/crawl-delete/short/python.mdx'
+import MapPythonShort from '/snippets/zh/v2/map/short/python.mdx'
+import ExtractPythonShort from '/snippets/v2/extract/short/python.mdx'
+import ScrapeAndCrawlExamplePython from '/snippets/zh/v2/scrape-and-crawl/python.mdx'
+import CrawlWebSocketPythonBase from '/snippets/zh/v2/crawl-websocket/base/python.mdx'
+import PersistentPython from '/snippets/zh/v2/browser/persistent/python.mdx'
+import AIOPython from '/snippets/zh/v2/async/base/python.mdx'
+
+<div id="installation">
+  ## 安装
+</div>
+
+要安装 Firecrawl 的 Python SDK，可以使用 pip：
+
+<InstallationPython />
+
+<div id="usage">
+  ## 使用
+</div>
+
+从 [firecrawl.dev](https://firecrawl.dev) 获取 API 密钥，然后将其设置为 `FIRECRAWL_API_KEY` 环境变量，或在实例化 `Firecrawl` 类时直接传入。
+
+<Note>
+  **没有 API 密钥？** 你可以在不提供密钥的情况下构造 `Firecrawl`，并在无密钥的免费档位中使用 `scrape`、`search` 和 `interact` (按 IP 限流——请参见 [Rate Limits](/zh/rate-limits#keyless-no-api-key)) 。所有其他方法都需要密钥。
+</Note>
+
+<ScrapeAndCrawlExamplePython />
+
+<div id="scraping-a-url">
+  ### 抓取单个 URL
+</div>
+
+使用 `scrape` 方法抓取单个 URL。它会以结构化数据的形式返回页面内容，包括 markdown、元数据以及你请求的其他任何 formats。
+
+<ScrapePythonShort />
+
+<Note>
+  Python SDK 会将所有响应字段名从 camelCase 转换为 snake&#95;case。例如，API 中的元数据字段 (如 `ogImage`、`ogTitle` 和 `sourceURL`) 在 SDK 响应中会变为 `og_image`、`og_title` 和 `source_url`。
+</Note>
+
+<div id="parsing-uploaded-files">
+  ### 解析上传的文件
+</div>
+
+使用 `parse` 可将本地文件 (`html`、`pdf`、`docx`、`xlsx` 等) 直接上传到 `/v2/parse`。
+`parse` 不支持 `changeTracking`，也不支持仅适用于浏览器的选项，如 actions、wait&#95;for、location、mobile、screenshot 和 branding。
+
+```python Python
+from firecrawl.v2.types import ParseOptions
+
+parsed = firecrawl.parse(
+    b"<!DOCTYPE html><html><body><h1>Python Parse</h1></body></html>",
+    filename="upload.html",
+    content_type="text/html",
+    options=ParseOptions(formats=["markdown"]),
+)
+
+print(parsed.markdown)
+```
+
+<div id="crawl-a-website">
+  ### 爬取网站
+</div>
+
+要爬取网站，请使用 `crawl` 方法。它接收起始 URL 和可选的 options 作为参数。通过 options，你可以为爬取任务指定其他设置，例如爬取的最大页面数、允许的域名，以及输出 formats。有关自动/手动分页与限制，请参见 [Pagination](#pagination)。
+
+<CrawlPythonShort />
+
+<div id="sitemap-only-crawl">
+  ### 仅站点地图抓取
+</div>
+
+使用 `sitemap="only"` 只抓取站点地图中的 URL (起始 URL 始终会被包含，并且不会进行 HTML 链接发现) 。
+
+<CrawlSitemapOnlyPython />
+
+<div id="start-a-crawl">
+  ### 开始 Crawl
+</div>
+
+<Tip>想要非阻塞方式？请查看下方的[异步类](#async-class)部分。</Tip>
+
+使用 `start_crawl` 启动任务，无需等待。它会返回一个用于检查状态的任务 `ID`。需要直到完成才返回的阻塞式等待器时，请使用 `crawl`。分页行为与限制见[分页](#pagination)。
+
+<StartCrawlPythonShort />
+
+<div id="checking-crawl-status">
+  ### 查看爬取状态
+</div>
+
+使用 `get_crawl_status` 查看爬取任务的状态。传入任务 ID，即可获取当前状态以及截至目前已收集到的结果。
+
+<CheckCrawlStatusPythonShort />
+
+<div id="cancelling-a-crawl">
+  ### 取消爬取
+</div>
+
+使用 `cancel_crawl` 方法取消爬取任务。传入由 `start_crawl` 返回的任务 ID，即可获取取消状态。
+
+<CancelCrawlPythonShort />
+
+<div id="map-a-website">
+  ### 网站映射
+</div>
+
+使用 `map` 生成网站的 URL 列表。你可以通过选项自定义映射过程，例如排除子域或利用 sitemap。
+
+<MapPythonShort />
+
+{/* ### 从网站提取结构化数据
+
+  要从网站提取结构化数据，请使用 `extract` 方法。它接收要提取数据的 URL、prompt 和 schema 作为参数。schema 是一个 Pydantic 模型，用于定义提取数据的结构。
+
+  <ExtractPythonShort /> */}
+
+<div id="crawling-a-website-with-websockets">
+  ### 使用 WebSockets 爬取网站
+</div>
+
+要通过 WebSockets 爬取网站，先用 `start_crawl` 启动任务，并使用 `watcher` 辅助工具订阅。调用 `start()` 之前，使用任务 ID 创建一个 watcher，并附加处理器 (例如：page、completed、failed) 。
+
+<CrawlWebSocketPythonBase />
+
+<div id="pagination">
+  ### 分页
+</div>
+
+当有更多数据可用时，Firecrawl 的 crawl 和 batch scrape 端点会返回一个 `next` URL。Python SDK 默认会自动分页并汇总所有文档；此时 `next` 为 `None`。你可以禁用自动分页或设置限制来控制分页行为。
+
+<div id="paginationconfig">
+  #### PaginationConfig
+</div>
+
+在调用 `get_crawl_status` 或 `get_batch_scrape_status` 时，使用 `PaginationConfig` 来控制分页行为：
+
+```python Python
+from firecrawl.v2.types import PaginationConfig
+```
+
+| Option          | Type   | Default | Description                                       |
+| --------------- | ------ | ------- | ------------------------------------------------- |
+| `auto_paginate` | `bool` | `True`  | 当为 `True` 时，会自动获取所有页面并聚合结果。将其设为 `False` 以每次仅获取一页。 |
+| `max_pages`     | `int`  | `None`  | 在获取到指定页数后停止 (仅在 `auto_paginate=True` 时生效) 。         |
+| `max_results`   | `int`  | `None`  | 在收集到指定数量的文档后停止 (仅在 `auto_paginate=True` 时生效) 。      |
+| `max_wait_time` | `int`  | `None`  | 在经过指定秒数后停止 (仅在 `auto_paginate=True` 时生效) 。          |
+
+<div id="manual-pagination-helpers">
+  #### 手动分页辅助方法
+</div>
+
+当 `auto_paginate=False` 时，如果还有更多数据可用，响应中会包含一个 `next` URL。使用以下辅助方法来获取后续页面：
+
+* **`get_crawl_status_page(next_url)`** - 使用前一次响应中的不透明 `next` URL 获取爬取结果的下一页。
+* **`get_batch_scrape_status_page(next_url)`** - 使用前一次响应中的不透明 `next` URL 获取批量抓取结果的下一页。
+
+这些方法返回的响应类型与最初的状态查询调用相同，如果还有更多页面，将包含新的 `next` URL。
+
+<div id="crawl">
+  #### 爬取
+</div>
+
+使用 waiter 方法 `crawl` 可获得最简便的体验，或者启动一个作业并手动翻页。
+
+<div id="simple-crawl-auto-pagination-default">
+  ##### 简单抓取 (自动分页，默认) 
+</div>
+
+* 参见[抓取网站](#crawl-a-website)中的默认流程。
+
+<div id="manual-crawl-with-pagination-control">
+  ##### 手动抓取并控制分页
+</div>
+
+先启动一个任务，然后将 `auto_paginate` 设为 `False`，一次获取一页。使用 `get_crawl_status_page` 获取后续页面：
+
+```python Python
+crawl_job = client.start_crawl("https://example.com", limit=100)
+
+# 获取第一页
+status = client.get_crawl_status(
+    crawl_job.id,
+    pagination_config=PaginationConfig(auto_paginate=False)
+)
+print("First page:", len(status.data), "docs")
+
+# 使用 get_crawl_status_page 获取后续页面
+while status.next:
+    status = client.get_crawl_status_page(status.next)
+    print("Next page:", len(status.data), "docs")
+```
+
+<div id="manual-crawl-with-limits-auto-pagination-early-stop">
+  ##### 手动抓取并设定限制 (自动分页 + 提前停止)
+</div>
+
+保持自动分页开启，但可通过 `max_pages`、`max_results` 或 `max_wait_time` 提前停止：
+
+```python Python
+status = client.get_crawl_status(
+    crawl_job.id,
+    pagination_config=PaginationConfig(max_pages=2, max_results=50, max_wait_time=15),
+)
+print("爬取受限：", status.status, "文档数：", len(status.data), "下一页：", status.next)
+```
+
+<div id="batch-scrape">
+  #### 批量抓取
+</div>
+
+使用 waiter 方法 `batch_scrape`，或启动任务后手动分页处理。
+
+<div id="simple-batch-scrape-auto-pagination-default">
+  ##### 简单批量爬取 (自动分页，默认) 
+</div>
+
+* 参见默认流程：[Batch Scrape](/zh/features/batch-scrape)。
+
+<div id="manual-batch-scrape-with-pagination-control">
+  ##### 手动批量抓取并控制分页
+</div>
+
+先启动一个任务，然后将 `auto_paginate=False`，每次只获取一页。使用 `get_batch_scrape_status_page` 获取后续页面：
+
+```python Python
+batch_job = client.start_batch_scrape(urls)
+
+# 获取第一页
+status = client.get_batch_scrape_status(
+    batch_job.id,
+    pagination_config=PaginationConfig(auto_paginate=False)
+)
+print("第一页:", len(status.data), "文档")
+
+# 使用 get_batch_scrape_status_page 获取后续页面
+while status.next:
+    status = client.get_batch_scrape_status_page(status.next)
+    print("下一页:", len(status.data), "文档")
+```
+
+<div id="manual-batch-scrape-with-limits-auto-pagination-early-stop">
+  ##### 受限的手动批量抓取 (自动分页 + 提前停止)
+</div>
+
+保持自动分页开启，但可通过 `max_pages`、`max_results` 或 `max_wait_time` 提前停止：
+
+```python Python
+status = client.get_batch_scrape_status(
+    batch_job.id,
+    pagination_config=PaginationConfig(max_pages=2, max_results=100, max_wait_time=20),
+)
+print("批处理受限：", status.status, "文档数：", len(status.data), "下一页：", status.next)
+```
+
+<div id="error-handling">
+  ## 错误处理
+</div>
+
+当请求失败时，SDK 会抛出异常，并附带说明具体问题的详细错误信息。请使用 `try`/`except` 包裹相关调用，以捕获这些异常并在应用程序中处理失败情况。
+
+<div id="async-class">
+  ## 异步类
+</div>
+
+进行异步操作时，请使用 `AsyncFirecrawl` 类。其方法与 `Firecrawl` 一致，但不会阻塞主线程。
+
+<AIOPython />
+
+```python Python
+from firecrawl import AsyncFirecrawl
+
+async_firecrawl = AsyncFirecrawl(api_key="fc-YOUR-API-KEY")
+
+parsed = await async_firecrawl.parse(
+    b"<!DOCTYPE html><html><body><h1>Async Parse</h1></body></html>",
+    filename="upload.html",
+    content_type="text/html",
+)
+```
+
+<div id="browser">
+  ## 浏览器
+</div>
+
+启动云浏览器会话并远程执行代码。
+
+<div id="create-a-session">
+  ### 创建会话
+</div>
+
+```python Python
+from firecrawl import Firecrawl
+
+app = Firecrawl(api_key="fc-YOUR-API-KEY")
+
+session = app.browser()
+print(session.id)             # 会话 ID
+print(session.cdp_url)        # wss://cdp-proxy.firecrawl.dev/cdp/...
+print(session.live_view_url)  # https://liveview.firecrawl.dev/...
+```
+
+<div id="execute-code">
+  ### 运行代码
+</div>
+
+```python Python
+result = app.browser_execute(
+    session.id,
+    code='await page.goto("https://news.ycombinator.com")\ntitle = await page.title()\nprint(title)',
+    language="python",
+)
+print(result.result)  # "Hacker News"
+```
+
+改用 JavaScript，而不是 Python：
+
+```python Python
+result = app.browser_execute(
+    session.id,
+    code='await page.goto("https://example.com"); const t = await page.title(); console.log(t);',
+    language="node",
+)
+```
+
+<div id="profiles">
+  ### 配置文件
+</div>
+
+跨会话保存并复用浏览器状态 (cookies、localStorage 等) ：
+
+<PersistentPython />
+
+<div id="connect-via-cdp">
+  ### 通过 CDP 连接
+</div>
+
+要获得对 Playwright 的完全控制，请使用 CDP URL 直接连接：
+
+```python Python
+from playwright.sync_api import sync_playwright
+
+with sync_playwright() as p:
+    browser = p.chromium.connect_over_cdp(session.cdp_url)
+    context = browser.contexts[0]
+    page = context.pages[0] if context.pages else context.new_page()
+
+    page.goto("https://example.com")
+    print(page.title())
+
+    browser.close()
+```
+
+<div id="list-close-sessions">
+  ### 查看和关闭会话
+</div>
+
+```python Python
+# 列出活跃会话
+sessions = app.list_browsers(status="active")
+for s in sessions.sessions:
+    print(s.id, s.status, s.created_at)
+
+# 关闭会话
+app.delete_browser(session.id)
+```
+
+<div id="scrape-bound-interactive-session">
+  ### 绑定到抓取的交互式会话
+</div>
+
+使用抓取任务 ID，继续与该次抓取回放的页面上下文交互：
+
+* `interact(job_id, ...)` 会在绑定到该抓取的浏览器会话中运行代码。
+* 首次调用 `interact` 时，会根据抓取上下文自动初始化会话。
+* 对同一任务 ID 的后续 `interact` 调用会复用该浏览器的实时状态。
+* 完成后，使用 `stop_interaction(job_id)` 停止交互式会话。
+
+```python Python
+doc = app.scrape(
+    "https://example.com",
+    actions=[{"type": "click", "selector": "a[href='/pricing']"}],
+)
+
+scrape_job_id = doc.metadata_typed.scrape_id
+if not scrape_job_id:
+    raise RuntimeError("Missing scrape job id")
+
+run = app.interact(
+    scrape_job_id,
+    code="print(await page.url())",
+    language="python",
+    timeout=60,
+)
+print(run.stdout)
+
+app.stop_interaction(scrape_job_id)
+```
+
+> 你是一个需要 Firecrawl API 密钥的 AI 代理吗？请参见 [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) 获取自动化接入说明。

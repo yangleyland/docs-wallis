@@ -1,0 +1,233 @@
+---
+title: "Limites de taxa"
+description: "Limites de taxa para diferentes planos e solicitações à API"
+og:title: "Limites de taxa | Firecrawl"
+og:description: "Limites de taxa para diferentes planos e solicitações à API"
+---
+
+Os limites de taxa definem quantas solicitações sua equipe pode fazer por minuto, enquanto os limites de concorrência determinam quantos jobs podem ser executados em paralelo. Ambos são definidos pelo seu plano; exceder qualquer um deles retorna uma resposta `429`. Consulte [Erros](/pt-BR/api-reference/errors) para ver o catálogo completo de erros e um snippet de repetição com backoff.
+
+<div id="concurrent-browser-limits">
+  ## Limites de navegadores concorrentes
+</div>
+
+“Navegadores concorrentes” controlam quantas páginas o Firecrawl pode processar para você em paralelo. Seu plano define o limite; quaisquer jobs além dele aguardam em uma fila até que um navegador fique disponível.
+
+O tempo gasto na fila é contabilizado no parâmetro [`timeout`](/pt-BR/advanced-scraping-guide#timing-and-cache) da requisição, portanto você pode definir um timeout menor para falhar mais rápido em vez de esperar. Para ver a disponibilidade atual antes de enviar trabalho, chame o endpoint [Queue Status](/pt-BR/api-reference/endpoint/queue-status). Jobs que estiverem aguardando na sua fila de concorrência expirarão em no máximo 48 horas.
+
+<div id="current-plans">
+  ### Planos atuais
+</div>
+
+<div style={{ overflowX: 'auto', maxWidth: '100%' }}>
+  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <thead>
+      <tr>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>Plano</th>
+        <th style={{ padding: '8px 12px' }}>Concurrent Browsers</th>
+        <th style={{ padding: '8px 12px' }}>Máximo de jobs na fila</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Free</td>
+        <td style={{ padding: '8px 12px' }}>2</td>
+        <td style={{ padding: '8px 12px' }}>50,000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Hobby</td>
+        <td style={{ padding: '8px 12px' }}>5</td>
+        <td style={{ padding: '8px 12px' }}>50,000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Standard</td>
+        <td style={{ padding: '8px 12px' }}>50</td>
+        <td style={{ padding: '8px 12px' }}>100,000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Growth</td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+        <td style={{ padding: '8px 12px' }}>200,000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Scale / Enterprise</td>
+        <td style={{ padding: '8px 12px' }}>150+</td>
+        <td style={{ padding: '8px 12px' }}>300,000+</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+Cada equipe tem um número máximo de jobs que podem ficar aguardando na fila de concorrência. Se você exceder esse limite, novos jobs serão rejeitados com o código de status `429` até que os jobs existentes sejam concluídos. Para planos maiores com limites de concorrência personalizados, o máximo de jobs na fila é 2.000 vezes o seu limite de concorrência, com teto de 2.000.000.
+
+Se você precisar de limites de concorrência mais altos, [entre em contato conosco sobre os planos Enterprise](https://firecrawl.dev/enterprise).
+
+<div id="api-rate-limits">
+  ## Limites de Taxa da API
+</div>
+
+Os limites de taxa são medidos em solicitações por minuto e existem principalmente para prevenir abusos. Quando tudo estiver configurado corretamente, o seu verdadeiro gargalo será o número de navegadores concorrentes. Os limites de taxa são aplicados por equipe, então todas as chaves de API da mesma equipe compartilham os mesmos contadores de limite de taxa.
+
+<div id="keyless-no-api-key">
+  ### Sem chave (sem chave de API)
+</div>
+
+O endpoint sem chave do MCP hospedado do Firecrawl disponibiliza apenas **Busca, Scraping e Parse** sem uma chave de API. Outras ferramentas do MCP hospedado exigem uma conexão de conta ou uma chave de API.
+
+Para clientes oficiais do Firecrawl, a CLI, os SDKs e a API REST, o acesso sem chave também inclui **Interagir**. No Firecrawl Cloud, endpoints de research e de busca para desenvolvedores também podem ser usados sem uma chave de API. Nenhum outro endpoint (crawl, extract, map, batch scrape etc.) está disponível sem uma chave.
+
+O uso sem chave é gratuito e tem **dois limites** diários por endereço IP; se qualquer um deles for excedido, a API retorna `429`:
+
+* Um número máximo de **requisições** por dia.
+* Um número máximo de **créditos** por dia. As operações consomem quantidades diferentes de créditos (por exemplo, interação e extração JSON custam mais do que um scraping básico), então usos mais intensos atingem o limite de créditos mais rápido.
+
+[Cadastre-se para obter uma chave de API gratuita](https://firecrawl.dev) para receber 1.000 créditos e limites de taxa mais altos sem custo — os clientes oficiais usam sua chave automaticamente assim que ela for configurada.
+
+<div id="current-plans">
+  ### Planos atuais
+</div>
+
+<div style={{ overflowX: 'auto', maxWidth: '100%' }}>
+  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <thead>
+      <tr>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>Plano</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/scrape</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/map</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/crawl</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/search</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/agent</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/crawl/status</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/agent/status</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Free</td>
+        <td style={{ padding: '8px 12px' }}>10</td>
+        <td style={{ padding: '8px 12px' }}>10</td>
+        <td style={{ padding: '8px 12px' }}>2</td>
+        <td style={{ padding: '8px 12px' }}>10</td>
+        <td style={{ padding: '8px 12px' }}>2</td>
+        <td style={{ padding: '8px 12px' }}>500</td>
+        <td style={{ padding: '8px 12px' }}>500</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Hobby</td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+        <td style={{ padding: '8px 12px' }}>20</td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+        <td style={{ padding: '8px 12px' }}>20</td>
+        <td style={{ padding: '8px 12px' }}>5000</td>
+        <td style={{ padding: '8px 12px' }}>5000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Standard</td>
+        <td style={{ padding: '8px 12px' }}>500</td>
+        <td style={{ padding: '8px 12px' }}>500</td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+        <td style={{ padding: '8px 12px' }}>500</td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+        <td style={{ padding: '8px 12px' }}>25000</td>
+        <td style={{ padding: '8px 12px' }}>25000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Growth</td>
+        <td style={{ padding: '8px 12px' }}>5000</td>
+        <td style={{ padding: '8px 12px' }}>5000</td>
+        <td style={{ padding: '8px 12px' }}>1000</td>
+        <td style={{ padding: '8px 12px' }}>5000</td>
+        <td style={{ padding: '8px 12px' }}>1000</td>
+        <td style={{ padding: '8px 12px' }}>250000</td>
+        <td style={{ padding: '8px 12px' }}>250000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Scale</td>
+        <td style={{ padding: '8px 12px' }}>10000</td>
+        <td style={{ padding: '8px 12px' }}>10000</td>
+        <td style={{ padding: '8px 12px' }}>2000</td>
+        <td style={{ padding: '8px 12px' }}>10000</td>
+        <td style={{ padding: '8px 12px' }}>2000</td>
+        <td style={{ padding: '8px 12px' }}>500000</td>
+        <td style={{ padding: '8px 12px' }}>500000</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+Esses limites de taxa são aplicados para garantir o uso justo e a disponibilidade da API para todos os usuários. Se você precisar de limites mais altos, entre em contato conosco pelo e-mail [help@firecrawl.com](mailto:help@firecrawl.com) para discutir planos personalizados.
+
+<div id="extract-endpoints">
+  ### Endpoints de extração
+</div>
+
+Os endpoints de extração compartilham os mesmos rate limits dos endpoints /agent correspondentes.
+
+<div id="batch-scrape-endpoints">
+  ### Endpoints de Batch Scrape
+</div>
+
+Os endpoints de batch scrape compartilham os mesmos limites de taxa dos endpoints /crawl correspondentes.
+
+<div id="browser-sandbox">
+  ### Sandbox do navegador
+</div>
+
+Os endpoints do sandbox do navegador têm limites de taxa por plano, que variam de acordo com a sua assinatura:
+
+<div style={{ overflowX: 'auto', maxWidth: '100%' }}>
+  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <thead>
+      <tr>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>Plano</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/interact</th>
+        <th style={{ padding: '8px 12px', textAlign: 'left' }}>/interact/&#123;id&#125;/execute</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Free</td>
+        <td style={{ padding: '8px 12px' }}>2</td>
+        <td style={{ padding: '8px 12px' }}>10</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Hobby</td>
+        <td style={{ padding: '8px 12px' }}>20</td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Standard</td>
+        <td style={{ padding: '8px 12px' }}>100</td>
+        <td style={{ padding: '8px 12px' }}>500</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Growth</td>
+        <td style={{ padding: '8px 12px' }}>1,000</td>
+        <td style={{ padding: '8px 12px' }}>5,000</td>
+      </tr>
+
+      <tr>
+        <td style={{ padding: '8px 12px' }}>Scale</td>
+        <td style={{ padding: '8px 12px' }}>1,500</td>
+        <td style={{ padding: '8px 12px' }}>7,500</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+Além disso, o plano de cada equipe determina quantas sessões de navegador podem permanecer ativas ao mesmo tempo (consulte o limite de navegador concorrente acima). Se você exceder esse limite, novas solicitações de sessão retornarão um código de status `429` até que as sessões existentes sejam encerradas.

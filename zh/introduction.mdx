@@ -1,0 +1,257 @@
+---
+title: 介绍
+description: "通过一个 API 即可进行网页搜索、抓取任意页面并与之交互。"
+og:title: "介绍 | Firecrawl"
+og:description: "通过一个 API 即可进行网页搜索、抓取任意页面并与之交互。"
+---
+
+import SearchPython from "/snippets/zh/v2/search/base/python.mdx";
+import SearchNode from "/snippets/zh/v2/search/base/js.mdx";
+import SearchCURL from "/snippets/zh/v2/search/base/curl.mdx";
+import SearchCLI from "/snippets/zh/v2/search/base/cli.mdx";
+import SearchResponse from "/snippets/zh/v2/search/base/output.mdx";
+import ScrapePython from "/snippets/zh/v2/scrape/base/python.mdx";
+import ScrapeNode from "/snippets/zh/v2/scrape/base/js.mdx";
+import ScrapeCURL from "/snippets/zh/v2/scrape/base/curl.mdx";
+import ScrapeCLI from "/snippets/zh/v2/scrape/base/cli.mdx";
+import ScrapeResponse from "/snippets/zh/v2/scrape/base/output.mdx";
+import InteractPython from "/snippets/zh/v2/interact/quickstart/python.mdx";
+import InteractNode from "/snippets/zh/v2/interact/quickstart/js.mdx";
+import InteractCURL from "/snippets/zh/v2/interact/quickstart/curl.mdx";
+import InteractCLI from "/snippets/zh/v2/interact/quickstart/cli.mdx";
+import InteractResponse from "/snippets/zh/v2/interact/response/output.mdx";
+import {
+  AgentSetupButton,
+  McpClientSelector,
+} from "/snippets/shared/agent-first-onboarding.jsx";
+import GeneralFeedbackCTA from "/snippets/zh/general-feedback-cta.mdx";
+
+<div id="get-started">
+  ## 快速开始
+</div>
+
+<Visibility for="humans">
+  <McpClientSelector variant="human" />
+</Visibility>
+
+<Visibility for="agents">
+  通过 Streamable HTTP 连接。免密钥服务器 URL (支持 搜索、抓取 和 解析，无需凭证) 为 `https://mcp.firecrawl.dev/v2/mcp`。
+
+  * Codex：`codex mcp add firecrawl --url https://mcp.firecrawl.dev/v2/mcp`
+  * Claude Code：`claude mcp add --transport http firecrawl https://mcp.firecrawl.dev/v2/mcp`
+  * Cursor 或任何支持 JSON 配置的客户端：`{"mcpServers": {"firecrawl": {"url": "https://mcp.firecrawl.dev/v2/mcp"}}}`
+  * OpenCode (`opencode.json`)：`{"mcp": {"firecrawl": {"type": "remote", "url": "https://mcp.firecrawl.dev/v2/mcp", "enabled": true}}}`
+  * ChatGPT 或 Claude.ai：使用原生 Firecrawl 连接器 — [ChatGPT](https://chatgpt.com/plugins?q=firecrawl) 或 [Claude](https://claude.ai/directory/connectors/firecrawl)。
+
+  两种设置方式及 API 密钥设置：[MCP 快速开始](/zh/mcp-server.md)、[面向代理](/zh/mcp-server/keyless.md) 和 [面向人类](/zh/mcp-server/oauth.md)。
+</Visibility>
+
+<div id="build-directly-with-the-api">
+  ### 直接使用 API 构建
+</div>
+
+立即抓取你的第一个页面。此请求无需账户或 API 密钥。
+
+<ScrapeCURL />
+
+需要更高限额时，请添加 [API 密钥](https://www.firecrawl.dev/app/api-keys)。请参见 [Python SDK](/zh/sdks/python)、[Node SDK](/zh/sdks/node) 或 [API Reference](/zh/api-reference/endpoint/scrape)，了解如何将其集成到你的应用中。
+
+<div id="other-ways-to-get-started">
+  ## 其他开始使用方式
+</div>
+
+<div id="install-the-firecrawl-cli">
+  ### 安装 Firecrawl CLI
+</div>
+
+只需一条命令，即可安装 Firecrawl CLI、在浏览器中完成身份验证，并为检测到的每个编码代理添加技能。
+
+```bash
+npx -y firecrawl-cli@latest init --all --browser
+```
+
+<Note>
+  完成设置后请重启你的编码代理，以便其发现这些新技能。完整的配置流程请参见
+  [CLI](/zh/sdks/cli)。
+</Note>
+
+<div id="set-up-with-an-agent">
+  ### 使用代理设置
+</div>
+
+将此 Firecrawl 设置 prompt 提供给你的代理，或请参见[所有 MCP 设置选项](/zh/mcp-server)。
+
+<AgentSetupButton />
+
+<Note>
+  **对于 AI 代理：**使用 [llms.txt](https://docs.firecrawl.dev/llms.txt) 获取文档索引，或使用 [llms-full.txt](https://docs.firecrawl.dev/llms-full.txt) 获取完整文本。
+</Note>
+
+<div id="build-and-test-directly">
+  ### 直接构建和测试
+</div>
+
+<CardGroup cols={2}>
+  <Card title="获取你的 API 密钥" icon="key" href="https://www.firecrawl.dev/app/api-keys">
+    创建一个免费账户，以直接访问 API 并享有更高的限制额度
+  </Card>
+
+  <Card title="在 Playground 中试用" icon="play" href="https://www.firecrawl.dev/playground">
+    无需编写代码即可在浏览器中测试 Firecrawl
+  </Card>
+</CardGroup>
+
+***
+
+<div id="what-can-firecrawl-do">
+  ## Firecrawl 可以做什么？
+</div>
+
+<CardGroup cols={3}>
+  <Card title="搜索" icon="magnifying-glass" href="#search">
+    进行网页搜索并从结果中获取完整页面内容
+  </Card>
+
+  <Card title="抓取" icon="file-lines" href="#scrape">
+    从任意 URL 提取内容，支持 markdown、HTML 或结构化 JSON 格式
+  </Card>
+
+  <Card title="交互" icon="hand-pointer" href="#interact">
+    继续处理任何已抓取的页面：点击、填写表单、提取动态
+    内容
+  </Card>
+</CardGroup>
+
+<div id="why-firecrawl">
+  ### 为什么选择 Firecrawl？
+</div>
+
+* **适用于 LLM 的输出**：干净的 markdown、结构化 JSON、截图等。
+* **应对复杂场景**：代理、反机器人机制、JavaScript 渲染以及动态内容。
+* **可靠**：专为生产环境打造，具备高可用性和稳定一致的结果。
+* **快速**：数秒内返回结果，并针对高吞吐量进行了优化。
+* **MCP Server**：通过 [模型上下文协议](/zh/mcp-server) 将 Firecrawl 连接到任何 AI 工具。
+
+<GeneralFeedbackCTA src="docs-introduction" />
+
+***
+
+<div id="search">
+  ## 搜索
+</div>
+
+进行网页搜索，并在一次调用中获取搜索结果的完整页面内容。请参见 [Search 功能文档](/zh/features/search) 了解所有选项。
+
+<CodeGroup>
+  <SearchPython />
+
+  <SearchNode />
+
+  <SearchCURL />
+
+  <SearchCLI />
+</CodeGroup>
+
+<Accordion title="响应">
+  SDK 会直接返回数据对象。cURL 会返回完整的 payload。
+
+  <SearchResponse />
+</Accordion>
+
+<div id="scrape">
+  ## 抓取
+</div>
+
+抓取任意 URL，并以 markdown、HTML 或其他格式获取其内容。请参见 [Scrape 功能文档](/zh/features/scrape) 了解所有选项。
+
+<CodeGroup>
+  <ScrapePython />
+
+  <ScrapeNode />
+
+  <ScrapeCURL />
+
+  <ScrapeCLI />
+</CodeGroup>
+
+<Accordion title="响应">
+  各 SDK 将直接返回数据对象。cURL 将按下方所示原样返回有效载荷。
+
+  <ScrapeResponse />
+</Accordion>
+
+<div id="interact">
+  ## 交互
+</div>
+
+抓取页面后，继续与其交互：点击按钮、填写表单、提取动态内容，或继续深入导航。你可以用简单的英文描述你的需求，或编写代码以实现完全控制。请参见 [Interact 功能文档](/zh/features/interact) 了解所有选项。
+
+<CodeGroup>
+  <InteractPython />
+
+  <InteractNode />
+
+  <InteractCURL />
+
+  <InteractCLI />
+</CodeGroup>
+
+<Accordion title="响应">
+  <InteractResponse />
+</Accordion>
+
+***
+
+<div id="more-capabilities">
+  ## 更多功能
+</div>
+
+<CardGroup cols={2}>
+  <Card title="交互" icon="hand-pointer" href="/zh/features/interact">
+    点击、填写表单、提取动态内容
+  </Card>
+
+  <Card title="Webhooks" icon="webhook" href="/zh/webhooks">
+    异步事件交付
+  </Card>
+
+  <Card title="浏览器沙箱" icon="browser" href="/zh/features/browser">
+    适用于交互式工作流的托管浏览器会话
+  </Card>
+
+  <Card title="解析" icon="file-magnifying-glass" href="/zh/features/parse">
+    将本地 PDF、DOCX、XLSX、HTML 等转换为 Markdown 或结构化 JSON
+  </Card>
+
+  <Card title="Map" icon="map" href="/zh/features/map">
+    发现网站上的所有 URL
+  </Card>
+
+  <Card title="Crawl" icon="spider-web" href="/zh/features/crawl">
+    递归采集整个站点的内容
+  </Card>
+</CardGroup>
+
+***
+
+<div id="resources">
+  ## 资源
+</div>
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/zh/api-reference/v2-introduction">
+    完整的 API 参考文档，包含交互式示例
+  </Card>
+
+  <Card title="SDKs" icon="boxes-stacked" href="/zh/sdks/overview">
+    Python、Node.js、CLI 以及社区 SDK
+  </Card>
+
+  <Card title="Open Source" icon="github" href="/zh/contributing/open-source-or-cloud">
+    自行托管 Firecrawl 或为项目做出贡献
+  </Card>
+
+  <Card title="Integrations" icon="puzzle-piece" href="/zh/developer-guides/llm-sdks-and-frameworks/openai">
+    LangChain、LlamaIndex、OpenAI 等
+  </Card>
+</CardGroup>

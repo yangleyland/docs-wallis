@@ -1,0 +1,17 @@
+```python Python
+from firecrawl import Firecrawl
+
+firecrawl = Firecrawl(
+  # No se necesita API key para comenzar — agrega una para obtener límites de tasa más altos:
+  # api_key='fc-YOUR_API_KEY',
+)
+
+result = firecrawl.scrape(
+    url='https://firecrawl.dev',
+    formats=['markdown', 'branding', 'screenshot']
+)
+
+print(result['markdown'])
+print(result['branding'])
+print(result['screenshot'])
+```

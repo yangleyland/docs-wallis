@@ -1,0 +1,112 @@
+---
+title: "使用 API 生成 LLMs.txt"
+description: "从任意网站生成用于 LLM 训练和分析的 LLMs.txt 文件"
+og:title: "LLMs.txt 生成器 | Firecrawl"
+og:description: "将网站转换为干净、可直接用于 LLM 的文本文件"
+icon: "file-text"
+sidebarTitle: "使用 API 生成"
+---
+
+import GenerateLLMsTxtCURL from "/snippets/zh/v1/generatellmstxt/base/curl.mdx";
+import GenerateLLMsTxtPython from "/snippets/zh/v1/generatellmstxt/base/python.mdx";
+import GenerateLLMsTxtNode from "/snippets/zh/v1/generatellmstxt/base/js.mdx";
+import CheckStatusCURL from "/snippets/zh/v1/generatellmstxt/status/curl.mdx";
+import CheckStatusPython from "/snippets/zh/v1/generatellmstxt/status/python.mdx";
+import CheckStatusNode from "/snippets/zh/v1/generatellmstxt/status/js.mdx";
+import StatusPending from "/snippets/zh/v1/generatellmstxt/status/pending.mdx";
+import StatusCompleted from "/snippets/zh/v1/generatellmstxt/status/completed.mdx";
+
+<Warning>
+  此 API 将被弃用，建议改用我们的主端点。这里有一个用于生成 LLMs.txt 文件的示例仓库：[https://github.com/firecrawl/create-llmstxt-py](https://github.com/firecrawl/create-llmstxt-py)。该 API 端点将继续可用，但我们将在 2025 年 6 月 30 日后不再维护。
+</Warning>
+
+
+<div id="introducing-llmstxt-generator-endpoint-alpha">
+  ## 介绍 LLMs.txt 生成器端点（Alpha）📃
+</div>
+
+`/llmstxt` 端点可将任意网站转换为干净、[适配 LLM 的文本文件](https://www.firecrawl.dev/blog/How-to-Create-an-llms-txt-File-for-Any-Website)。只需提供一个 URL，Firecrawl 就会爬取站点并生成 `llms.txt` 和 `llms-full.txt` 文件，可用于任意 LLM 的训练或分析。
+
+<div id="how-it-works">
+  ## 工作原理
+</div>
+
+LLMs.txt 生成器：
+
+1. 爬取提供的网站 URL 及其链接页面
+2. 提取干净、有效的文本内容
+3. 生成两种 formats：
+   * `llms.txt`：精简摘要与关键信息
+   * `llms-full.txt`：完整文本内容，细节更丰富
+
+<div id="example-usage">
+  ### 使用示例
+</div>
+
+<CodeGroup>
+  <GenerateLLMsTxtPython />
+
+  <GenerateLLMsTxtNode />
+
+  <GenerateLLMsTxtCURL />
+</CodeGroup>
+
+**关键参数：**
+
+* **url**：用于生成 LLMs.txt 文件的网站地址
+* **maxUrls**（可选）：爬取的最大页面数（1–100，默认 10）
+* **showFullText**（可选）：在生成 llms.txt 的同时生成 llms-full.txt（默认 false）
+
+详见 [API 参考](/zh/api-reference/endpoint/llmstxt)。
+
+<div id="checking-generation-status">
+  ## 检查生成状态
+</div>
+
+LLMs.txt 的生成是异步进行的。发起异步调用，并通过以下方式监控其状态：
+
+<CodeGroup>
+  <CheckStatusPython />
+
+  <CheckStatusNode />
+
+  <CheckStatusCURL />
+</CodeGroup>
+
+<div id="status-examples">
+  ### 状态示例
+</div>
+
+<div id="in-progress">
+  #### 进行中
+</div>
+
+<StatusPending />
+
+<div id="completed">
+  #### 完成
+</div>
+
+<StatusCompleted />
+
+<div id="known-limitations-alpha">
+  ## 已知限制（Alpha）
+</div>
+
+1. **访问限制**\
+   仅支持处理公开可访问的页面。不支持需登录或处于付费墙后的内容。
+
+2. **站点规模**\
+   在 Alpha 阶段，我们仅允许处理最多 5000 个 URL。
+
+3. **Alpha 状态**\
+   作为 Alpha 功能，输出格式和处理流程可能会根据反馈迭代调整。
+
+<div id="billing-and-usage">
+  ## 计费与用量
+</div>
+
+计费基于处理的 URL 数量：
+
+- 基础费用：每处理 1 个 URL 消耗 1 点额度
+- 可通过 `maxUrls` 参数控制处理的 URL 数量和成本

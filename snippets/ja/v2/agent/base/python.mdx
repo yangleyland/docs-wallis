@@ -1,0 +1,12 @@
+```python Python
+from firecrawl import Firecrawl
+
+app = Firecrawl(api_key="fc-YOUR_API_KEY")
+
+result = app.agent(
+    prompt="Extract the main features and benefits of Firecrawl",
+    model="spark-1-mini"
+)
+
+print(result.data)
+```

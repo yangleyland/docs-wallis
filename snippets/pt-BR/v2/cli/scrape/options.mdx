@@ -1,0 +1,38 @@
+```bash CLI
+# Extrai apenas o conteúdo principal (remove navegação e rodapés)
+firecrawl https://example.com --only-main-content
+
+# Wait for JavaScript rendering
+firecrawl https://example.com --wait-for 3000
+
+# Take a screenshot
+firecrawl https://example.com --screenshot
+
+# Extrai JSON estruturado com um schema
+firecrawl https://example.com --format json --schema '{"type":"object","properties":{"title":{"type":"string"}}}'
+
+# Executa ações de scraping leves antes da extração
+firecrawl https://example.com --actions '[{"type":"wait","milliseconds":1000}]'
+
+# Seleciona o modo de proxy
+firecrawl https://example.com --proxy basic
+
+# Oculta informações de identificação pessoal
+firecrawl https://example.com --redact-pii
+
+# Include/exclude specific HTML tags
+firecrawl https://example.com --include-tags article,main
+firecrawl https://example.com --exclude-tags nav,footer
+
+# Save output to file
+firecrawl https://example.com -o output.md
+
+# Pretty print JSON output
+firecrawl https://example.com --format markdown,links --pretty
+
+# Force JSON output even with single format
+firecrawl https://example.com --json
+
+# Show request timing information
+firecrawl https://example.com --timing
+```

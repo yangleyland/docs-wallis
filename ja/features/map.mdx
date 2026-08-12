@@ -1,0 +1,163 @@
+---
+title: 'Map'
+description: 'ウェブサイトを入力すると、サイト内のすべてのURLを超高速で取得'
+og:title: "Map | Firecrawl"
+og:description: "単一のURLからウェブサイト全体のマップへ"
+icon: "map"
+version: "v2"
+sidebarTitle: "Map"
+---
+
+import InstallationPython from "/snippets/ja/v2/installation/python.mdx";
+import InstallationJavaScript from "/snippets/ja/v2/installation/js.mdx";
+import InstallationCLI from "/snippets/ja/v2/installation/cli.mdx";
+import MapPython from "/snippets/ja/v2/map/base/python.mdx";
+import MapJavaScript from "/snippets/ja/v2/map/base/js.mdx";
+import MapCURL from "/snippets/ja/v2/map/base/curl.mdx";
+import MapCLI from "/snippets/ja/v2/map/base/cli.mdx";
+import MapResponse from "/snippets/ja/v2/map/base/output.mdx";
+import MapLocationPython from "/snippets/ja/v2/map/location/python.mdx";
+import MapLocationNode from "/snippets/ja/v2/map/location/js.mdx";
+import MapLocationCURL from "/snippets/ja/v2/map/location/curl.mdx";
+import PlaygroundCTA from "/snippets/ja/shared/playground-cta-map.mdx";
+
+<div id="introducing-map">
+  ## /map の紹介
+</div>
+
+単一のURLからウェブサイト全体のマップを素早く取得する最も簡単な方法です。次の用途に非常に有用です:
+
+* エンドユーザーに、どのリンクをスクレイプするか選んでもらう必要があるとき
+* サイト上のリンクをすぐに把握したいとき
+* 特定のトピックに関連するページだけをスクレイプしたいとき (`search` パラメータを使用) 
+* サイトの特定ページだけをスクレイプすればよいとき
+
+<PlaygroundCTA />
+
+<div id="mapping">
+  ## マッピング
+</div>
+
+<div id="map-endpoint">
+  ### /map エンドポイント
+</div>
+
+URL をマッピングし、サイト内の URL を取得するために使用します。サイト上に存在するリンクの大部分を返します。
+
+URL は主にウェブサイトのサイトマップから検出され、カバレッジを向上させるために SERP (検索エンジン) の結果および以前にクロールされたページによって補完されます。`sitemap` パラメータでサイトマップの動作を制御できます。
+
+<div id="installation">
+  ### インストール
+</div>
+
+<CodeGroup>
+  <InstallationPython />
+
+  <InstallationJavaScript />
+
+  <InstallationCLI />
+</CodeGroup>
+
+### 使い方
+
+<CodeGroup>
+  <MapPython />
+
+  <MapJavaScript />
+
+  <MapCURL />
+
+  <MapCLI />
+</CodeGroup>
+
+<Info>
+  各 map リクエストは、返される URL の数に関係なく、1 コールあたり 1 クレジットを消費します。例えば、`limit` を 100,000 に設定しても、使用するクレジットは 1 つだけです。
+</Info>
+
+<div id="response">
+  ### レスポンス
+</div>
+
+SDKはデータオブジェクトを直接返します。cURLは下記のとおり、ペイロードをそのまま返します。
+
+<MapResponse />
+
+<Warning>
+  タイトルや説明はサイトによって異なるため、常に含まれるとは限りません。
+</Warning>
+
+<div id="map-with-search">
+  #### 検索付きのマップ
+</div>
+
+`search` パラメータを使うと、サイト内の特定のURLを検索できます。
+
+```bash cURL
+curl -X POST https://api.firecrawl.dev/v2/map \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -d '{
+    "url": "https://firecrawl.dev",
+    "search": "docs"
+  }'
+```
+
+返答は、関連性の高い順に並べた番号付きリストで提供されます。
+
+```json
+{
+  "status": "success",
+  "links": [
+    {
+      "url": "https://docs.firecrawl.dev",
+      "title": "Firecrawl ドキュメント",
+      "description": "Firecrawl ドキュメント",
+    },
+    {
+      "url": "https://docs.firecrawl.dev/sdks/python",
+      "title": "Firecrawl Python SDK",
+      "description": "Firecrawl Python SDK ドキュメント"
+    },
+    ...
+  ]
+}
+```
+
+<div id="location-and-language">
+  ## 位置と言語
+</div>
+
+対象の地域と言語の優先度に基づいて関連コンテンツを取得するため、国と言語の優先設定を指定します。/scrape エンドポイントと同様です。
+
+<div id="how-it-works">
+  ### 仕組み
+</div>
+
+ロケーション設定を指定すると、Firecrawl は (利用可能であれば) 適切なプロキシを使用し、対応する言語とタイムゾーン設定をエミュレートします。指定がない場合、ロケーションは既定で「US」になります。
+
+<div id="usage">
+  ### 使用方法
+</div>
+
+位置情報と言語設定を利用するには、リクエストボディに `location` オブジェクトを含め、次のプロパティを指定してください。
+
+* `country`: ISO 3166-1 alpha-2 の国コード (例: &#39;US&#39;、&#39;AU&#39;、&#39;DE&#39;、&#39;JP&#39;) 。デフォルトは &#39;US&#39; です。
+* `languages`: リクエストで優先する言語・ロケールの配列 (優先順) 。デフォルトは指定した国・地域の言語です。
+
+<CodeGroup>
+  <MapLocationPython />
+
+  <MapLocationNode />
+
+  <MapLocationCURL />
+</CodeGroup>
+
+対応している国・地域の詳細は、[プロキシのドキュメント](/ja/features/proxies)を参照してください。
+
+<div id="considerations">
+  ## 留意事項
+</div>
+
+このエンドポイントは速度を優先しているため、Web サイト上のリンクをすべて取得できない場合があります。主に Web サイトのサイトマップを使用し、キャッシュ済みのクロールデータや検索エンジンの結果で補完しています。より網羅的かつ最新の URL リストが必要な場合は、代わりに [/crawl](/ja/features/crawl) エンドポイントを使用することをご検討ください。
+
+> Firecrawl API キーが必要な AI エージェントですか？自動オンボーディング手順については、[firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) をご覧ください。

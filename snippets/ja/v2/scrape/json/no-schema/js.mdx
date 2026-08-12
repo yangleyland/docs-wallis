@@ -1,0 +1,17 @@
+```js Node
+import { Firecrawl } from "firecrawl";
+
+const app = new Firecrawl({
+  // 開始にAPIキーは不要です — より高いレート制限のために追加してください:
+  // apiKey: "fc-YOUR_API_KEY",
+});
+
+const result = await app.scrape("https://firecrawl.dev", {
+  formats: [{
+    type: "json",
+    prompt: "Extract the company mission from the page."
+  }]
+});
+
+console.log(result);
+```

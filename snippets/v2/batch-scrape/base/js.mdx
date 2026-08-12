@@ -1,0 +1,23 @@
+```js Node
+import { Firecrawl } from 'firecrawl';
+
+const firecrawl = new Firecrawl({ apiKey: "fc-YOUR-API-KEY" });
+
+// Asynchronous: starts the batch and returns a job ID immediately
+const { id } = await firecrawl.startBatchScrape([
+  'https://firecrawl.dev',
+  'https://docs.firecrawl.dev'
+], {
+  options: { formats: ['markdown'] },
+});
+
+const status = await firecrawl.getBatchScrapeStatus(id);
+
+// Or synchronous: starts the batch and waits for completion
+const job = await firecrawl.batchScrape([
+  'https://firecrawl.dev',
+  'https://docs.firecrawl.dev'
+], { options: { formats: ['markdown'] }, pollInterval: 2, timeout: 120 });
+
+console.log(job.status, job.completed, job.total);
+```

@@ -1,0 +1,10 @@
+```bash cURL
+# No se necesita API key para comenzar — agrega -H "Authorization: Bearer fc-YOUR_API_KEY" para límites de tasa más altos:
+curl -X POST https://api.firecrawl.dev/v2/scrape \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "url": "https://firecrawl.dev",
+    "formats": ["markdown"],
+    "maxAge": 3600000
+  }'
+```

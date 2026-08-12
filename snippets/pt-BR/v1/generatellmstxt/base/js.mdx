@@ -1,0 +1,23 @@
+```js Node
+import { Firecrawl } from "firecrawl";
+
+// Inicialize o cliente
+const firecrawl = new Firecrawl({ apiKey: "your_api_key" });
+
+// Defina os parâmetros de geração
+const params = {
+  maxUrls: 2, // Número máximo de URLs a analisar
+  showFullText: true, // Incluir o texto completo nos resultados
+};
+
+// Gere LLMs.txt com polling
+const results = await firecrawl.generateLLMsText("https://example.com", params);
+
+// Acesse os resultados da geração
+if (results.success) {
+  console.log(`Status: ${results.status}`);
+  console.log(`Generated Data:`, results.data);
+} else {
+  console.error(`Error: ${results.error || "Unknown error"}`);
+}
+```

@@ -1,0 +1,20 @@
+```python Python
+from firecrawl import FirecrawlApp
+
+app = FirecrawlApp(
+  # 開始にAPI keyは不要です — より高いrate limitsには追加してください:
+  # api_key="fc-YOUR_API_KEY",
+)
+
+# キャッシュされたデータが1時間以内（3600000ミリ秒）の場合に使用
+# 新規スクレイピングより最大500%高速化できます！
+scrape_result = app.scrape_url(
+    'https://firecrawl.dev', 
+    params={
+        'formats': ['markdown'],
+        'max_age': 3600000  # 1時間（ミリ秒）
+    }
+)
+
+print(scrape_result['markdown'])
+```

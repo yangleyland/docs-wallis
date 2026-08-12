@@ -1,0 +1,25 @@
+```bash cURL (Bash / agent-browser)
+# Accéder à une page
+curl -X POST "https://api.firecrawl.dev/v2/interact/YOUR_SESSION_ID/execute" \
+  -H "Authorization: Bearer $FIRECRAWL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "code": "agent-browser open https://example.com", "language": "bash" }'
+
+# Obtenir un instantané d'accessibilité avec les identifiants @ref
+curl -X POST "https://api.firecrawl.dev/v2/interact/YOUR_SESSION_ID/execute" \
+  -H "Authorization: Bearer $FIRECRAWL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "code": "agent-browser snapshot", "language": "bash" }'
+
+# Interagir en utilisant les identifiants @ref du snapshot
+curl -X POST "https://api.firecrawl.dev/v2/interact/YOUR_SESSION_ID/execute" \
+  -H "Authorization: Bearer $FIRECRAWL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "code": "agent-browser click @e5", "language": "bash" }'
+
+# Extraire le contenu de la page au format Markdown
+curl -X POST "https://api.firecrawl.dev/v2/interact/YOUR_SESSION_ID/execute" \
+  -H "Authorization: Bearer $FIRECRAWL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "code": "agent-browser scrape", "language": "bash" }'
+```

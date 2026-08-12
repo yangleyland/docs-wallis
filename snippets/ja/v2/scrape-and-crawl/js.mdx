@@ -1,0 +1,22 @@
+```js Node
+import { Firecrawl } from 'firecrawl';
+
+const firecrawl = new Firecrawl({apiKey: "fc-YOUR_API_KEY"});
+
+// ウェブサイトをスクレイピングする
+const scrapeResponse = await firecrawl.scrape('https://firecrawl.dev', {
+  formats: ['markdown', 'html'],
+});
+
+console.log(scrapeResponse)
+
+// ウェブサイトをクロールする
+const crawlResponse = await firecrawl.crawl('https://firecrawl.dev', {
+  limit: 100,
+  scrapeOptions: {
+    formats: ['markdown', 'html'],
+  }
+});
+
+console.log(crawlResponse)
+```

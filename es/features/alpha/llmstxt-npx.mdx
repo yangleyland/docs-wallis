@@ -1,0 +1,96 @@
+---
+title: "Generar LLMs.txt con NPX"
+description: "Genera archivos LLMs.txt desde cualquier sitio web en la CLI usando nuestro paquete de NPX"
+og:title: "Generador de LLMs.txt con NPX | Firecrawl"
+og:description: "Convierte sitios web en archivos de texto limpios y listos para LLM usando NPX en la CLI"
+icon: "file-text"
+sidebarTitle: "Generar con NPX"
+---
+
+<div id="generate-llmstxt">
+  ## generate-llmstxt
+</div>
+
+Un paquete de NPX sencillo que genera archivos llms.txt desde la CLI usando la API de Firecrawl. Este paquete crea dos archivos en el directorio de salida que especifiques (por defecto, en la carpeta 'public'):
+
+- `llms.txt`: Contiene un resumen del contenido relacionado con los LLM
+- `llms-full.txt`: Contiene el texto completo
+
+<div id="usage">
+  ## Uso
+</div>
+
+Puedes ejecutar este paquete con NPX sin instalarlo. Hay dos maneras de proporcionar tu clave de la API de Firecrawl:
+
+<div id="1-using-command-line-arguments">
+  ### 1. Uso de argumentos en la línea de comandos
+</div>
+
+```bash
+npx generate-llmstxt --api-key TU_API_KEY_DE_FIRECRAWL
+```
+
+<div id="2-using-environment-variables">
+  ### 2. Uso de variables de entorno
+</div>
+
+Crea un archivo `.env` en la raíz de tu proyecto y añade tu clave de API:
+
+```env
+FIRECRAWL_API_KEY=your_api_key_here
+```
+
+A continuación, ejecuta el comando sin la opción --api-key:
+
+```bash
+npx generate-llmstxt
+```
+
+<div id="options">
+  ### Opciones
+</div>
+
+- `-k, --api-key &lt;key&gt;` (opcional si se configura en .env): Tu clave de la API de Firecrawl
+- `-u, --url &lt;url&gt;` (opcional): URL a analizar (por defecto: https://example.com)
+- `-m, --max-urls &lt;number&gt;` (opcional): Número máximo de URL a analizar (por defecto: 50)
+- `-o, --output-dir &lt;path&gt;` (opcional): Ruta del directorio de salida (por defecto: 'public')
+
+<div id="examples">
+  ### Ejemplos
+</div>
+
+```bash
+# Uso de argumento de línea de comandos con el directorio de salida predeterminado
+npx generate-llmstxt -k your_api_key -u https://your-website.com -m 20
+
+# Uso de archivo .env con el directorio de salida predeterminado
+npx generate-llmstxt -u https://your-website.com -m 20
+
+# Especificar un directorio de salida personalizado
+npx generate-llmstxt -k your_api_key -u https://your-website.com -o custom/path/to/output
+
+# Uso de archivo .env y directorio de salida personalizado
+npx generate-llmstxt -u https://your-website.com -o content/llms
+```
+
+<div id="requirements">
+  ## Requisitos
+</div>
+
+- Node.js 14 o superior
+- Una clave de API válida de Firecrawl (a través de la línea de comandos o de un archivo .env)
+
+<div id="output">
+  ## Salida
+</div>
+
+El paquete creará dos archivos en el directorio de salida que especifiques (por defecto, "public"):
+
+1. `llms.txt`: Contiene un resumen del contenido relacionado con los LLM
+2. `llms-full.txt`: Contiene el texto completo
+
+<div id="license">
+  ## Licencia
+</div>
+
+MIT 

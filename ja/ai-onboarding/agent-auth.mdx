@@ -1,0 +1,49 @@
+---
+title: エージェント認証 (WorkOS ID-JAG)
+sidebarTitle: エージェント認証
+description: "WorkOS ID-JAG のエージェント認証を使って Firecrawl APIキーを登録します。ディスカバリーと auth.md へのリンク。"
+og:title: "エージェント認証 (WorkOS ID-JAG) | Firecrawl"
+og:description: "アイデンティティ対応エージェント: Firecrawl のエージェント認証メタデータをディスカバリーし、POST /agent/auth で登録します。"
+---
+
+ブラウザでのサインインやダッシュボードの APIキーが必要な場合は、[`SKILL.md`](https://www.firecrawl.dev/agent-onboarding/SKILL.md) の human-in-the-loop オンボーディングを使用してください。[Get credentials](/ja/ai-onboarding#get-credentials) を参照してください。
+
+このページでは、Firecrawl の WorkOS ID-JAG 登録について概要を説明します。登録の完全な手順、クレーム要件、エラーハンドリングについては [`auth.md`](https://www.firecrawl.dev/auth.md) を参照してください。
+
+<Card title="Get credentials に戻る" icon="arrow-left" href="/ja/ai-onboarding#get-credentials">
+  Build with AI のオンボーディングページで、ダッシュボード、CLI、WorkOS ID-JAG の各オプションを比較できます。
+</Card>
+
+<div id="need-a-human-sign-in-or-dashboard-key">
+  ## 人間によるサインインまたはダッシュボードのキーが必要ですか？
+</div>
+
+Firecrawl 用の WorkOS ID-JAG を発行できない場合、または判断に迷う場合は、これを使用してください。
+
+<Card title="SKILL.md のオンボーディングを使用" icon="user" href="https://www.firecrawl.dev/agent-onboarding/SKILL.md">
+  ブラウザでのサインイン、CLI のインストール、スキル、MCP の接続、ダッシュボードの APIキー。
+</Card>
+
+<div id="using-workos-id-jag">
+  ## WorkOS ID-JAG を使用する
+</div>
+
+エージェントプラットフォームで Firecrawl 用の WorkOS ID-JAG を発行できる場合は、この方法を使用します。
+
+<Card title="auth.md を開く" icon="file-lines" href="https://www.firecrawl.dev/auth.md">
+  アイデンティティ対応エージェント向けの登録手順です。手順を順に進めてください。
+</Card>
+
+クレーム要件、ディスカバリー、登録、制限、Errors については、[`auth.md`](https://www.firecrawl.dev/auth.md) を参照してください。
+
+<div id="discovery">
+  ## ディスカバリー
+</div>
+
+ディスカバリー の手順は [`auth.md`](https://www.firecrawl.dev/auth.md) のステップ 1 を参照してください。すでに [`auth.md`](https://www.firecrawl.dev/auth.md) への直接リンクがある場合は、それを取得してください。このページは不要です。
+
+<div id="what-happens-next">
+  ## 次のステップ
+</div>
+
+[`auth.md`](https://www.firecrawl.dev/auth.md) のステップ 1〜4 に従ってください：登録フローを確認 → `POST /agent/auth` で登録 → 返された API キーを Firecrawl API で使用

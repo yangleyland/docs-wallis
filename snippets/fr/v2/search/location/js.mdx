@@ -1,0 +1,17 @@
+```js Node
+import { Firecrawl } from 'firecrawl';
+
+const firecrawl = new Firecrawl({
+  // Aucune clé API requise pour démarrer — ajoutez-en une pour des limites de débit plus élevées :
+  // apiKey: "fc-YOUR-API-KEY",
+});
+
+// Recherche avec paramètres de localisation (Allemagne)
+const results = await firecrawl.search('web scraping tools', {
+  limit: 5,
+  location: "Germany"
+});
+
+// Traitement des résultats
+console.log(results);
+```

@@ -1,0 +1,31 @@
+```python Python
+# pip install firecrawl-py
+
+from firecrawl import FirecrawlApp
+
+app = FirecrawlApp(
+  # No API key needed to get started — add one for higher rate limits:
+  # api_key="YOUR_API_KEY",
+)
+
+# First try with basic proxy
+try:
+    content = app.scrape_url("https://example.com")
+    
+    # Check if we got an error status code
+    status_code = content.get("metadata", {}).get("statusCode")
+    if status_code in [401, 403, 500]:
+        print(f"Got status code {status_code}, retrying with enhanced proxy")
+        # Retry with enhanced proxy
+        content = app.scrape_url("https://example.com", proxy="enhanced")
+    
+    print(content["markdown"])
+except Exception as e:
+    print(f"Error: {e}")
+    # Retry with enhanced proxy on exception
+    try:
+        content = app.scrape_url("https://example.com", proxy="enhanced")
+        print(content["markdown"])
+    except Exception as e:
+        print(f"Enhanced proxy also failed: {e}")
+```

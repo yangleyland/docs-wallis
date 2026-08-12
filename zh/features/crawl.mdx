@@ -1,0 +1,318 @@
+---
+title: "爬取"
+description: "递归爬取网站并获取每个页面的内容"
+og:title: "爬取 | Firecrawl"
+og:description: "递归爬取网站并获取每个页面的内容"
+icon: "spider"
+---
+
+import InstallationPython from '/snippets/zh/v2/installation/python.mdx';
+import InstallationNode from '/snippets/zh/v2/installation/js.mdx';
+import InstallationCLI from '/snippets/zh/v2/installation/cli.mdx';
+import CrawlPython from '/snippets/zh/v2/crawl/base/python.mdx';
+import CrawlNode from '/snippets/zh/v2/crawl/base/js.mdx';
+import CrawlCURL from '/snippets/zh/v2/crawl/base/curl.mdx';
+import CrawlCLI from '/snippets/zh/v2/crawl/base/cli.mdx';
+import CheckCrawlJobPython from '/snippets/zh/v2/crawl-status/short/python.mdx';
+import CheckCrawlJobNode from '/snippets/zh/v2/crawl-status/short/js.mdx';
+import CheckCrawlJobCURL from '/snippets/zh/v2/crawl-status/short/curl.mdx';
+import CheckCrawlJobCLI from '/snippets/zh/v2/crawl-status/short/cli.mdx';
+import CheckCrawlJobOutputScraping from '/snippets/zh/v2/crawl-status/base/output-scraping.mdx';
+import CheckCrawlJobOutputCompleted from '/snippets/zh/v2/crawl-status/base/output-completed.mdx';
+import CrawlWebSocketPython from '/snippets/zh/v2/crawl-websocket/base/python.mdx';
+import CrawlWebSocketNode from '/snippets/zh/v2/crawl-websocket/base/js.mdx';
+import CrawlWebhookCURL from '/snippets/zh/v2/crawl-webhook/base/curl.mdx';
+import PythonCrawlExample from '/snippets/zh/v2/crawl/sdk-example/python.mdx';
+import NodeCrawlExample from '/snippets/zh/v2/crawl/sdk-example/js.mdx';
+import PythonCrawlExampleResponse from '/snippets/zh/v2/crawl/sdk-example/python-response.mdx';
+import NodeCrawlExampleResponse from '/snippets/zh/v2/crawl/sdk-example/js-response.mdx';
+import StartCrawlPython from '/snippets/zh/v2/start-crawl/base/python.mdx';
+import StartCrawlNode from '/snippets/zh/v2/start-crawl/base/js.mdx';
+import StartCrawlCURL from '/snippets/zh/v2/start-crawl/base/curl.mdx';
+import StartCrawlCLI from '/snippets/zh/v2/start-crawl/base/cli.mdx';
+import StartCrawlOutput from '/snippets/zh/v2/start-crawl/base/output.mdx';
+import PlaygroundCTA from "/snippets/zh/shared/playground-cta-crawl.mdx";
+
+爬取会将一个 URL 提交给 Firecrawl，并递归发现和抓取所有可到达的子页面。它会自动处理 sitemap、JavaScript 渲染和速率限制，并为每个页面返回干净的 Markdown 或结构化数据。
+
+* 通过 sitemap 和递归链接遍历发现页面
+* 支持路径过滤、深度限制以及对子域名/外部链接的控制
+* 通过轮询、WebSocket 或 webhook 返回结果
+
+<PlaygroundCTA />
+
+<div id="installation">
+  ## 安装
+</div>
+
+<CodeGroup>
+  <InstallationPython />
+
+  <InstallationNode />
+
+  <InstallationCLI />
+</CodeGroup>
+
+<div id="basic-usage">
+  ## 基本用法
+</div>
+
+调用 `POST /v2/crawl` 并提供起始 URL，即可提交爬取任务。该端点会返回一个任务 ID，你可以用它轮询结果。
+
+<CodeGroup>
+  <CrawlPython />
+
+  <CrawlNode />
+
+  <CrawlCURL />
+
+  <CrawlCLI />
+</CodeGroup>
+
+<Info>
+  每爬取 1 个页面会消耗 1 个额度。爬取的默认 `limit` 为 10,000 个页面。在开始之前，爬取端点会检查你的剩余额度是否足以覆盖 `limit`；如果不足，则会返回 **402 (需要付款)&#x20;**&#x20;错误。你可以设置更低的 `limit` 来匹配计划的爬取规模 (例如将 `limit` 设为 100) ，以避免这种情况。某些选项会额外消耗额度：JSON 模式每个页面额外消耗 4 个额度，增强代理每个页面额外消耗 4 个额度，PDF 解析每个 PDF 页面额外消耗 1 个额度。
+</Info>
+
+<div id="scrape-options">
+  ### Scrape 选项
+</div>
+
+[Scrape 端点](/zh/api-reference/endpoint/scrape)的所有选项都可通过 `scrapeOptions` (JS) / `scrape_options` (Python) 在 crawl 中使用。它们将应用于爬虫抓取的每个页面，包括 formats、代理、缓存、actions、location 和 tags。
+
+<CodeGroup>
+  ```python Python
+  from firecrawl import Firecrawl
+
+  firecrawl = Firecrawl(api_key='fc-YOUR_API_KEY')
+
+  # 使用 scrape 选项进行爬取
+  response = firecrawl.crawl('https://example.com',
+      limit=100,
+      scrape_options={
+          'formats': [
+              'markdown',
+              { 'type': 'json', 'schema': { 'type': 'object', 'properties': { 'title': { 'type': 'string' } } } }
+          ],
+          'proxy': 'auto',
+          'max_age': 600000,
+          'only_main_content': True
+      }
+  )
+  ```
+
+  ```js Node
+  import { Firecrawl } from 'firecrawl';
+
+  const firecrawl = new Firecrawl({ apiKey: 'fc-YOUR_API_KEY' });
+
+  // 使用 scrape 选项进行爬取
+  const crawlResponse = await firecrawl.crawl('https://example.com', {
+    limit: 100,
+    scrapeOptions: {
+      formats: [
+        'markdown',
+        {
+          type: 'json',
+          schema: { type: 'object', properties: { title: { type: 'string' } } },
+        },
+      ],
+      proxy: 'auto',
+      maxAge: 600000,
+      onlyMainContent: true,
+    },
+  });
+  ```
+</CodeGroup>
+
+<div id="checking-crawl-status">
+  ## 检查爬取状态
+</div>
+
+使用任务 ID 轮询爬取状态并获取结果。
+
+<CodeGroup>
+  <CheckCrawlJobPython />
+
+  <CheckCrawlJobNode />
+
+  <CheckCrawlJobCURL />
+
+  <CheckCrawlJobCLI />
+</CodeGroup>
+
+<Note>
+  任务结果在完成后 24 小时内可通过 API 获取。此后，你仍可以在[活动日志](https://www.firecrawl.dev/app/logs)中查看你的爬取历史和结果。
+</Note>
+
+<Note>
+  爬取结果中的 `data` 数组里包含的是 Firecrawl 成功抓取的页面，即使目标站点返回了 404 等 HTTP 错误。`metadata.statusCode` 字段显示的是目标站点返回的 HTTP 状态码。若要获取 Firecrawl 本身未能成功抓取的页面 (例如网络错误、超时或被 robots.txt 拦截) ，请使用专门的 [Get Crawl Errors](/zh/api-reference/endpoint/crawl-get-errors) 端点 (`GET /crawl/{id}/errors`) 。
+</Note>
+
+<div id="response-handling">
+  ### 响应处理
+</div>
+
+响应会根据爬取任务的状态而有所不同。对于未完成的任务或超过 10MB 的大型响应，会返回一个 `next` URL 参数。你需要请求该 URL 以获取后续的每 10MB 数据。如果没有 `next` 参数，则表示爬取数据已结束。
+
+<Info>
+  仅在直接调用 API 时，`skip` 和 `next` 参数才生效。
+  如果你使用 SDK，我们会代为处理，并一次性返回全部结果。
+</Info>
+
+<CodeGroup>
+  <CheckCrawlJobOutputScraping />
+
+  <CheckCrawlJobOutputCompleted />
+</CodeGroup>
+
+<div id="sdk-methods">
+  ## SDK 方法
+</div>
+
+通过 SDK 使用 crawl 有两种方式。
+
+<div id="crawl-and-wait">
+  ### 抓取并等待
+</div>
+
+`crawl` 方法会等待爬取完成并返回完整响应。自动处理分页。适用于大多数场景，推荐使用。
+
+<CodeGroup>
+  <PythonCrawlExample />
+
+  <NodeCrawlExample />
+</CodeGroup>
+
+响应包括爬取状态及所有抓取到的数据：
+
+<CodeGroup>
+  <PythonCrawlExampleResponse />
+
+  <NodeCrawlExampleResponse />
+</CodeGroup>
+
+<div id="start-and-check-later">
+  ### 启动后稍后检查
+</div>
+
+`startCrawl` / `start_crawl` 方法会立即返回一个爬取 ID。随后你需要手动轮询状态。这适合长时间运行的爬取任务或自定义轮询逻辑。
+
+<CodeGroup>
+  <StartCrawlPython />
+
+  <StartCrawlNode />
+
+  <StartCrawlCURL />
+
+  <StartCrawlCLI />
+</CodeGroup>
+
+初始响应会返回任务 ID：
+
+<StartCrawlOutput />
+
+<div id="real-time-results-with-websocket">
+  ## 使用 WebSocket 获取实时结果
+</div>
+
+watcher 方法会在页面爬取过程中提供实时更新。启动爬取后，订阅事件即可进行即时数据处理。
+
+<CodeGroup>
+  <CrawlWebSocketPython />
+
+  <CrawlWebSocketNode />
+</CodeGroup>
+
+<div id="webhooks">
+  ## Webhooks
+</div>
+
+你可以配置 webhook，在爬取过程中实时接收通知，从而在页面被抓取后立即进行处理，而无需等待整个爬取任务完成。
+
+<CrawlWebhookCURL />
+
+<div id="event-types">
+  ### 事件类型
+</div>
+
+| 事件                | 描述           |
+| ----------------- | ------------ |
+| `crawl.started`   | 在爬取开始时触发     |
+| `crawl.page`      | 每个页面成功抓取后触发  |
+| `crawl.completed` | 在爬取结束时触发     |
+| `crawl.failed`    | 爬取过程中发生错误时触发 |
+
+<div id="payload">
+  ### 负载
+</div>
+
+```json
+{
+  "success": true,
+  "type": "crawl.page",
+  "id": "crawl-job-id",
+  "data": [...], // 'page' 事件的页面数据
+  "metadata": {}, // Your custom metadata
+  "error": null
+}
+```
+
+<div id="verifying-webhook-signatures">
+  ### 验证 webhook 签名
+</div>
+
+来自 Firecrawl 的每个 webhook 请求都会包含一个 `X-Firecrawl-Signature` 请求头，其中含有一个 HMAC-SHA256 签名。务必验证此签名，以确保 webhook 为真实请求且未被篡改。
+
+1. 在账户设置中的 [Advanced (高级) 选项卡](https://www.firecrawl.dev/app/settings?tab=advanced) 获取你的 webhook 密钥 (secret)
+2. 从 `X-Firecrawl-Signature` 请求头中提取签名
+3. 使用该密钥对原始请求体计算 HMAC-SHA256
+4. 使用时间安全函数 (timing-safe function) 将计算结果与签名请求头中的值进行比较
+
+<Warning>
+  在验证签名之前，切勿处理任何 webhook。`X-Firecrawl-Signature` 请求头中的签名格式为：`sha256=abc123def456...`
+</Warning>
+
+有关 JavaScript 和 Python 的完整实现示例，请参阅 [Webhook 安全文档](/zh/webhooks/security)。如需查看更全面的 webhook 文档，包括详细的事件负载、负载结构、高级配置和故障排查，请参阅 [Webhooks 文档](/zh/webhooks/overview)。
+
+<div id="configuration-reference">
+  ## 配置参考
+</div>
+
+提交爬取任务时可用的完整参数集：
+
+| 参数                      | 类型         | 默认值         | 说明                                                                                                                                       |
+| ----------------------- | ---------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`                   | `string`   | (必填)        | 开始爬取的起始 URL                                                                                                                              |
+| `limit`                 | `integer`  | `10000`     | 最大爬取页面数                                                                                                                                  |
+| `maxDiscoveryDepth`     | `integer`  | (无)         | 基于链接发现跳数、相对于根 URL 的最大深度，而不是 URL 中 `/` 分段的数量。每当在某个页面上发现一个新 URL 时，其深度都会被设为比发现它的页面高 1。根站点和通过站点地图发现的页面，其发现深度为 0。处于最大深度的页面仍会被抓取，但不会继续跟踪其上的链接。 |
+| `includePaths`          | `string[]` | (无)         | 要包含的 URL 路径正则表达式模式。仅爬取匹配的路径。                                                                                                             |
+| `excludePaths`          | `string[]` | (无)         | 要从爬取中排除的 URL 路径正则表达式模式                                                                                                                   |
+| `regexOnFullURL`        | `boolean`  | `false`     | 让 `includePaths`/`excludePaths` 针对完整 URL (包括查询参数) 进行匹配，而不只是路径部分                                                                          |
+| `crawlEntireDomain`     | `boolean`  | `false`     | 跟踪指向同级或上级 URL 的站内链接，而不只是子路径                                                                                                              |
+| `allowSubdomains`       | `boolean`  | `false`     | 跟踪指向主域名下子域名的链接                                                                                                                           |
+| `allowExternalLinks`    | `boolean`  | `false`     | 跟踪指向外部网站的链接                                                                                                                              |
+| `sitemap`               | `string`   | `"include"` | 站点地图处理方式：`"include"` (默认) 、`"skip"` 或 `"only"`                                                                                           |
+| `ignoreQueryParameters` | `boolean`  | `false`     | 避免因查询参数不同而对同一路径重复抓取                                                                                                                      |
+| `ignoreRobotsTxt`       | `boolean`  | `false`     | 忽略网站的 robots.txt 规则。**仅限 Enterprise** — 请联系 support@firecrawl.com 启用。                                                                    |
+| `robotsUserAgent`       | `string`   | (无)         | 用于评估 robots.txt 的自定义 User-Agent 字符串。设置后，将使用此 User-Agent 获取 robots.txt，并根据它而不是默认值来匹配规则。**仅限 Enterprise** — 请联系 support@firecrawl.com 启用。  |
+| `delay`                 | `number`   | (无)         | 每次抓取之间的延迟时间 (秒) ，以遵守速率限制。设置此项会强制并发数为 1。                                                                                                  |
+| `maxConcurrency`        | `integer`  | (无)         | 最大并发抓取数。默认使用你团队的并发限制。                                                                                                                    |
+| `scrapeOptions`         | `object`   | (无)         | 应用于每个抓取页面的选项 (formats、代理、缓存、actions 等)                                                                                                   |
+| `webhook`               | `object`   | (无)         | 用于实时通知的 webhook 配置                                                                                                                       |
+| `prompt`                | `string`   | (无)         | 用于生成爬取选项的自然语言提示。显式设置的参数会覆盖自动生成的对应参数。                                                                                                     |
+
+<div id="important-details">
+  ## 重要说明
+</div>
+
+<Warning>
+  默认情况下，crawl 会忽略不属于你提供的 URL 子路径的链接。例如，如果你抓取 `website.com/blogs/`，则不会返回 `website.com/other-parent/blog-1`。使用 `crawlEntireDomain` 参数可包含同级路径和父级路径。要在抓取 `website.com` 时一并抓取 `blog.website.com` 这类子域名，请使用 `allowSubdomains` 参数。
+</Warning>
+
+* **站点地图发现**：默认情况下，爬虫会包含网站的站点地图来发现 URL (`sitemap: "include"`) 。如果设置 `sitemap: "skip"`，则只会发现可通过根 URL 的 HTML 链接访问到的页面。像 PDF 这类资源，或列在站点地图中但未在 HTML 中直接链接的深层页面，都会被遗漏。为了获得最大覆盖率，建议保留默认设置。
+* **Credit 消耗**：每抓取一个页面消耗 1 个 credit。JSON 模式每页额外消耗 4 个 credit，增强代理每页额外消耗 4 个 credit，PDF 解析则每个 PDF 页面消耗 1 个 credit。
+* **结果过期时间**：任务结果在完成后的 24 小时内可通过 API 获取。此后，请在[活动日志](https://www.firecrawl.dev/app/logs)中查看结果。
+* **抓取错误**：`data` 数组包含 Firecrawl 成功抓取的页面。使用 [Get Crawl Errors](/zh/api-reference/endpoint/crawl-get-errors) 端点可获取因网络错误、超时或被 robots.txt 阻止而失败的页面。
+* **非确定性结果**：同一配置在多次运行之间的抓取结果可能会有所不同。页面会并发抓取，因此链接被发现的顺序取决于网络时序以及哪些页面先完成加载。这意味着在接近深度边界时，站点的不同分支可能会被探索到不同程度，尤其是在 `maxDiscoveryDepth` 值较高时。要获得更稳定的结果，请将 `maxConcurrency` 设置为 `1`，或者在站点拥有完整站点地图时使用 `sitemap: "only"`。
+
+> 你是需要 Firecrawl API 密钥的 AI 代理吗？请参阅 [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) 了解自动化接入说明。

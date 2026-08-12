@@ -1,0 +1,103 @@
+---
+title: 'LangChain'
+description: '在 LangChain 中将 Firecrawl 用作文档加载器或代理工具。'
+og:title: "LangChain | Firecrawl"
+og:description: "在 LangChain 中将 Firecrawl 用作文档加载器或代理工具。"
+---
+
+<Note>
+  **官方包：** [`langchain-firecrawl`](https://pypi.org/project/langchain-firecrawl/) · [源代码](https://github.com/firecrawl/langchain-firecrawl)
+
+  在 LangChain 中使用 Firecrawl 进行抓取、爬取、映射、提取和搜索，既可用作文档加载器，也可作为代理工具
+</Note>
+
+<div id="install">
+  ## 安装
+</div>
+
+```bash
+pip install langchain-firecrawl
+```
+
+从 [firecrawl.dev](https://www.firecrawl.dev/app/api-keys) 获取 API 密钥，并将其设置为环境变量 (或传入 `api_key=...`) ：
+
+```bash
+export FIRECRAWL_API_KEY="fc-your-api-key"
+```
+
+<div id="document-loader">
+  ## 文档加载器
+</div>
+
+`FirecrawlLoader` 返回 LangChain `Document`。选择 `mode`：
+
+| 模式        | 加载内容    |
+| --------- | ------- |
+| `scrape`  | 单个页面    |
+| `crawl`   | 整个网站    |
+| `map`     | 发现的 URL |
+| `extract` | 结构化数据   |
+| `search`  | 网页搜索结果  |
+
+```python
+from langchain_firecrawl import FirecrawlLoader
+
+loader = FirecrawlLoader(url="https://www.firecrawl.dev", mode="scrape")
+docs = loader.load()
+
+print(docs[0].page_content[:200])
+print(docs[0].metadata)
+```
+
+<div id="agent-tools">
+  ## 代理工具
+</div>
+
+每项功能也都可作为 `BaseTool` 绑定到代理：
+
+```python
+from langchain_firecrawl import (
+    FirecrawlScrape,
+    FirecrawlCrawl,
+    FirecrawlMap,
+    FirecrawlExtract,
+    FirecrawlSearch,
+)
+
+scrape = FirecrawlScrape()
+result = scrape.invoke({"url": "https://www.firecrawl.dev"})
+print(result["markdown"])
+
+search = FirecrawlSearch()
+print(search.invoke({"query": "best web scraping libraries", "limit": 5}))
+```
+
+<div id="langchain-js">
+  ## LangChain JS
+</div>
+
+JavaScript 加载器随 `@langchain/community` 一同提供，并将 Firecrawl JS SDK 作为对等依赖：
+
+```bash
+npm install @langchain/community @mendable/firecrawl-js
+```
+
+```typescript
+import { FireCrawlLoader } from "@langchain/community/document_loaders/web/firecrawl";
+
+const loader = new FireCrawlLoader({
+  url: "https://firecrawl.dev",
+  apiKey: process.env.FIRECRAWL_API_KEY, // 默认读取 FIRECRAWL_API_KEY
+  mode: "scrape", // "scrape" 用于抓取单个页面，"crawl" 用于爬取子页面
+});
+
+const docs = await loader.load();
+```
+
+<div id="resources">
+  ## 资源
+</div>
+
+* [PyPI 上的 `langchain-firecrawl`](https://pypi.org/project/langchain-firecrawl/)
+* [Firecrawl scrape](/zh/features/scrape) 和 [crawl](/zh/features/crawl) 文档
+* [Firecrawl Python SDK](/zh/sdks/python) 和 [Node SDK](/zh/sdks/node)

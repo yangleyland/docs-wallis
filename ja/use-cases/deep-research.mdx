@@ -1,0 +1,154 @@
+---
+title: "Deep Research"
+sidebarTitle: "Deep Research"
+description: "深いウェブ検索機能でエージェント型のリサーチツールを構築する"
+icon: "microscope"
+---
+
+ウェブを検索し、ページ全体のコンテンツをスクレイピングし、LLM を使って知見を統合する自動化リサーチエージェントを構築できます。Firecrawl が情報源の発見とコンテンツの抽出を担うため、HTML の解析ではなく分析に集中できます。
+
+<Note>
+  これは現在推奨されている Deep Research のワークフローです。Firecrawl Search と スクレイピング をもとに構築されています。従来の v1 Deep Research API を保守している場合は、[v1 Deep Research endpoint](/ja/api-reference/v1-endpoint/deep-research) を使用し、Search ベースのワークフローへの移行を計画してください。
+</Note>
+
+<div id="start-with-a-template">
+  ## テンプレートから始める
+</div>
+
+<CardGroup>
+  <Card title="Fireplexity" icon="github" href="https://github.com/firecrawl/fireplexity">
+    リアルタイムの引用付き、超高速AI検索
+  </Card>
+
+  <Card title="Firesearch" icon="github" href="https://github.com/firecrawl/firesearch">
+    LangGraph搭載、回答検証付きのリサーチエージェント
+  </Card>
+
+  <Card title="Open Researcher" icon="github" href="https://github.com/firecrawl/open-researcher">
+    包括的な分析に対応するビジュアルAIリサーチアシスタント
+  </Card>
+</CardGroup>
+
+<Note>
+  **複数のリサーチ用テンプレートから選べます。** リポジトリをクローンし、APIキーを設定してリサーチを開始してください。
+</Note>
+
+<div id="how-it-works">
+  ## 仕組み
+</div>
+
+散在するWebデータを包括的なインサイトへと変換する、強力なリサーチツールを構築できます。基本となるパターンは、**search → scrape → analyze → repeat** のループです。Firecrawl の search API を使って関連するソースを見つけ、各ソースをスクレイピングして完全なコンテンツを取得し、その結果を LLM に渡して知見を統合し、次に追うべきクエリを特定します。
+
+<Steps>
+  <Step title="ソースを検索">
+    リサーチトピックに関連するページを見つけるには、`/search` エンドポイントを使用します。
+
+    <CodeGroup>
+      ```python Python
+      from firecrawl import Firecrawl
+
+      firecrawl = Firecrawl(api_key="fc-YOUR-API-KEY")
+
+      results = firecrawl.search(
+          "recent advances in quantum computing",
+          limit=5,
+          scrape_options={"formats": ["markdown", "links"]}
+      )
+      ```
+
+      ```js Node.js
+      import { Firecrawl } from 'firecrawl';
+
+      const firecrawl = new Firecrawl({ apiKey: "fc-YOUR-API-KEY" });
+
+      const results = await firecrawl.search(
+        'recent advances in quantum computing',
+        { limit: 5, scrapeOptions: { formats: ['markdown', 'links'] } }
+      );
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="見つかったページをスクレイピング">
+    引用付きの詳細情報を得るために、各結果から完全なコンテンツを抽出します。
+
+    <CodeGroup>
+      ```python Python
+      for result in results:
+          doc = firecrawl.scrape(result["url"], formats=["markdown"])
+          # 分析のために doc のコンテンツを LLM に渡します
+      ```
+
+      ```js Node.js
+      for (const result of results) {
+        const doc = await firecrawl.scrape(result.url, { formats: ['markdown'] });
+        // 分析のために doc のコンテンツを LLM に渡します
+      }
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="分析して繰り返す">
+    LLM を使って知見を統合し、抜け漏れを特定し、次のクエリを生成します。リサーチの問いに完全に答えられるまで、このループを繰り返します。
+  </Step>
+</Steps>
+
+<div id="why-researchers-choose-firecrawl">
+  ## 研究者が Firecrawl を選ぶ理由
+</div>
+
+<div id="accelerate-research-from-weeks-to-hours">
+  ### リサーチを数週間から数時間へ
+</div>
+
+ウェブ全体から情報を発見・読解・統合する自動化リサーチシステムを構築しましょう。数百の情報源を手作業であたる必要をなくし、完全な引用付きの包括的なレポートを提供するツールを作成できます。
+
+<div id="ensure-research-completeness">
+  ### リサーチの網羅性を確保する
+</div>
+
+重要情報の見落としリスクを抑えます。引用関係を追跡し、関連ソースを発見し、従来の検索手法では拾いにくい洞察を浮かび上がらせるシステムを構築します。
+
+<div id="research-tool-capabilities">
+  ## 研究ツールの機能
+</div>
+
+* **反復的な探索**: 関連トピックや情報源を自動で発見するツールを構築
+* **マルチソース統合**: 数百のウェブサイトから情報を統合
+* **出典の保持**: 研究アウトプットで完全な出典情報を維持
+* **インテリジェント要約**: 分析に必要な主要な発見や洞察を抽出
+* **トレンド検出**: 複数の情報源にまたがる傾向を特定
+
+<div id="faqs">
+  ## よくある質問
+</div>
+
+<AccordionGroup>
+  <Accordion title="Firecrawlでリサーチツールを構築するには？">
+    Firecrawlの /crawl エンドポイントと /search エンドポイントを使って、反復的に深掘りするリサーチシステムを構築できます。検索結果から開始し、関連ページのコンテンツを抽出して、引用リンクをたどり、知見を集約します。LLMと組み合わせて、包括的なリサーチレポートを作成・要約しましょう。
+  </Accordion>
+
+  <Accordion title="Firecrawlは学術・科学系サイトに対応していますか？">
+    はい。Firecrawlはオープンアクセスの研究論文、学術サイト、一般公開されている科学出版物からデータを抽出できます。研究に不可欠な書式、引用、技術的内容を保持します。
+  </Accordion>
+
+  <Accordion title="リサーチデータの正確性はどう担保されますか？">
+    Firecrawlは出典情報を保持し、ウェブサイトに表示されたとおりにコンテンツを抽出します。すべてのデータにソースURLとタイムスタンプが付与され、研究用途での完全な追跡可能性を確保します。
+  </Accordion>
+
+  <Accordion title="Firecrawlを縦断的研究（長期追跡）に使えますか？">
+    はい。スケジュール実行のクロールを設定して、時間経過に伴う情報の変化を追跡できます。トレンドや政策変更の監視、時系列分析を要するあらゆる研究に最適です。
+  </Accordion>
+
+  <Accordion title="Firecrawlは大規模なリサーチプロジェクトにどのように対応しますか？">
+    当社のクロール基盤は同時に数千のソースを処理するようスケールします。業界全体の分析やグローバルなトレンド追跡など、Firecrawlは必要なデータパイプラインを提供します。
+  </Accordion>
+</AccordionGroup>
+
+<div id="related-use-cases">
+  ## 関連ユースケース
+</div>
+
+* [AIプラットフォーム](/ja/use-cases/ai-platforms) - AIリサーチアシスタントの構築
+* [コンテンツ生成](/ja/use-cases/content-generation) - 調査に基づくコンテンツ
+* [競合インテリジェンス](/ja/use-cases/competitive-intelligence) - 市場調査

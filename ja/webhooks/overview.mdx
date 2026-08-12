@@ -1,0 +1,74 @@
+---
+title: "概要"
+description: "Firecrawl のオペレーションに対するリアルタイム通知"
+og:title: "Webhooks | Firecrawl"
+og:description: "Firecrawl のオペレーションに対するリアルタイム通知"
+icon: "link"
+---
+
+import CrawlWebhookCURL from "/snippets/ja/v2/crawl-webhook/base/curl.mdx";
+import BatchScrapeWebhookCURL from "/snippets/ja/v2/batch-scrape-webhook/base/curl.mdx";
+import WebhookConfigBasic from "/snippets/ja/v2/webhook-config/basic/json.mdx";
+
+クロール、バッチスクレイプ、抽出、エージェントジョブ、またはモニターチェックが開始、進行、完了した瞬間に通知を受け取れます。ステータスをポーリングする代わりに、HTTPS エンドポイントを指定すると、Firecrawl がそこにイベントをリアルタイムで配信します。
+
+<div id="supported-operations">
+  ## サポートされているオペレーション
+</div>
+
+| Operation    | イベント                                                    |
+| ------------ | ------------------------------------------------------- |
+| Crawl        | `started`, `page`, `completed`                          |
+| Batch Scrape | `started`, `page`, `completed`                          |
+| Extract      | `started`, `completed`, `failed`                        |
+| Agent        | `started`, `action`, `completed`, `failed`, `cancelled` |
+| Monitor      | `check.completed`                                       |
+
+完全なペイロードの詳細と例については、[Event Types](/ja/webhooks/events)を参照してください。
+
+<div id="configuration">
+  ## 設定
+</div>
+
+リクエストに `webhook` オブジェクトを追加します:
+
+<WebhookConfigBasic />
+
+| フィールド | 型     | 必須 | 説明                                         |
+| ---------- | ------ | ---- | -------------------------------------------- |
+| `url`      | string | Yes  | Webhook エンドポイントの URL (HTTPS)         |
+| `headers`  | object | No   | Webhook リクエストに含めるカスタムヘッダー   |
+| `metadata` | object | No   | ペイロードに含めるカスタムデータ            |
+| `events`   | array  | No   | 受信するイベントタイプ (既定: すべて)        |
+
+<div id="usage">
+  ## 使い方
+</div>
+
+<div id="crawl-with-webhook">
+  ### Webhookでのクロール
+</div>
+
+<CrawlWebhookCURL />
+
+<div id="batch-scrape-with-webhook">
+  ### Webhook を用いたバッチスクレイプ
+</div>
+
+<BatchScrapeWebhookCURL />
+
+<div id="timeouts-retries">
+  ## タイムアウトとリトライ
+</div>
+
+エンドポイントは **10秒以内** に `2xx` ステータスで応答する必要があります。
+
+配信に失敗した場合 (タイムアウト、非2xx、またはネットワークエラー) 、Firecrawl は自動的にリトライします:
+
+| リトライ回数 | 失敗後の遅延時間 |
+| ----------- | ---------------- |
+| 1回目       | 1分              |
+| 2回目       | 5分              |
+| 3回目       | 15分             |
+
+3回のリトライがすべて失敗すると、Webhook は失敗としてマークされ、それ以上のリトライは行われません。

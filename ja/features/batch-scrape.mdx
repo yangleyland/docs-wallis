@@ -1,0 +1,162 @@
+---
+title: 'バッチスクレイピング'
+description: '単一のバッチジョブで複数のURLをスクレイピングする'
+og:title: 'バッチスクレイピング | Firecrawl'
+og:description: '単一のバッチジョブで複数のURLをスクレイピングする'
+---
+
+import BatchScrapePython from '/snippets/ja/v2/batch-scrape/base/python.mdx';
+import BatchScrapeNode from '/snippets/ja/v2/batch-scrape/base/js.mdx';
+import BatchScrapeCURL from '/snippets/ja/v2/batch-scrape/base/curl.mdx';
+import BatchScrapeOutput from '/snippets/ja/v2/batch-scrape/base/output.mdx';
+import BatchScrapeAsyncOutput from '/snippets/ja/v2/batch-scrape/base/async-output.mdx';
+import BatchScrapeExtractPython from '/snippets/ja/v2/batch-scrape/json/python.mdx';
+import BatchScrapeExtractNode from '/snippets/ja/v2/batch-scrape/json/js.mdx';
+import BatchScrapeExtractCURL from '/snippets/ja/v2/batch-scrape/json/curl.mdx';
+import BatchScrapeExtractOutput from '/snippets/ja/v2/batch-scrape/json/output.mdx';
+import BatchScrapeExtractAsyncOutput from '/snippets/ja/v2/batch-scrape/json/async-output.mdx';
+import BatchScrapeWebhookCURL from '/snippets/ja/v1/batch-scrape-webhook/base/curl.mdx';
+
+バッチスクレイピングでは、1つのジョブで複数のURLをスクレイピングできます。URLのリストと任意のパラメータを渡すと、Firecrawl がそれらを並行して処理し、すべての結果をまとめて返します。
+
+* 明示的に指定したURLのリストを対象とする点を除き、`/crawl` と同様に動作します
+* 同期モードと非同期モードに対応
+* 構造化抽出を含む、すべてのスクレイピングオプションをサポート
+* ジョブごとに同時実行数を設定可能
+
+<div id="operations">
+  ## オペレーション
+</div>
+
+| タスク           | APIリファレンス                                                                    | SDKでの呼び方                                                                  |
+| ------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| バッチを開始        | [`batch-scrape`](/ja/api-reference/endpoint/batch-scrape)                       | `batchScrape` / `batch_scrape`, `startBatchScrape` / `start_batch_scrape` |
+| ステータスと結果を確認   | [`batch-scrape-get`](/ja/api-reference/endpoint/batch-scrape-get)               | `getBatchScrapeStatus` / `get_batch_scrape_status`                        |
+| 実行中のバッチをキャンセル | [`batch-scrape-delete`](/ja/api-reference/endpoint/batch-scrape-delete)         | IDを指定してバッチジョブをキャンセルまたは削除                                                  |
+| Errorsを確認     | [`batch-scrape-get-errors`](/ja/api-reference/endpoint/batch-scrape-get-errors) | 失敗したURL向けのエラー／ステータス確認ヘルパー                                                 |
+
+<div id="how-it-works">
+  ## 仕組み
+</div>
+
+バッチスクレイプは、次の2つの方法で実行できます。
+
+| モード | SDK メソッド (JS / Python)                    | 動作                                      |
+| --- | ----------------------------------------- | --------------------------------------- |
+| 同期  | `batchScrape` / `batch_scrape`            | バッチを開始し、完了まで待機して、すべての結果を返します            |
+| 非同期 | `startBatchScrape` / `start_batch_scrape` | バッチを開始し、ポーリングまたは Webhook 用のジョブ ID を返します |
+
+<div id="basic-usage">
+  ## 基本的な使い方
+</div>
+
+<CodeGroup>
+  <BatchScrapePython />
+
+  <BatchScrapeNode />
+
+  <BatchScrapeCURL />
+</CodeGroup>
+
+<div id="response">
+  ### レスポンス
+</div>
+
+`batchScrape` / `batch_scrape` を呼び出すと、バッチ完了時に完全な結果が返されます。
+
+<BatchScrapeOutput />
+
+`startBatchScrape` / `start_batch_scrape` を呼び出すと、`getBatchScrapeStatus` / `get_batch_scrape_status`、API エンドポイント `/batch/scrape/{id}`、または Webhook を使って追跡できるジョブ ID が返されます。ジョブの結果は、完了後 24 時間まで API 経由で取得できます。この期間を過ぎても、[activity logs](https://www.firecrawl.dev/app/logs) からバッチスクレイプの履歴と結果を確認できます。
+
+<BatchScrapeAsyncOutput />
+
+<div id="concurrency">
+  ## 並行実行数
+</div>
+
+デフォルトでは、バッチスクレイプジョブはチームのブラウザ同時実行数の上限をフルに使用します ([Rate Limits](/ja/rate-limits) を参照) 。`maxConcurrency` パラメータでジョブごとにこの上限を下げることができます。
+
+たとえば、`maxConcurrency: 50` とすると、そのジョブは同時に 50 件までしかスクレイプを実行しません。大規模なバッチでこの値を低くしすぎると処理が大幅に遅くなるため、他のジョブ用に同時実行枠を残す必要がある場合にのみ減らしてください。
+
+<div id="structured-extraction">
+  ## 構造化抽出
+</div>
+
+バッチスクレイプを使用して、バッチ内のすべてのページから構造化データを抽出できます。これは、URLのリストに同じスキーマを適用したい場合に便利です。
+
+<CodeGroup>
+  <BatchScrapeExtractPython />
+
+  <BatchScrapeExtractNode />
+
+  <BatchScrapeExtractCURL />
+</CodeGroup>
+
+<div id="response">
+  ### レスポンス
+</div>
+
+`batchScrape` / `batch_scrape` は完全な結果を返します：
+
+<BatchScrapeExtractOutput />
+
+`startBatchScrape` / `start_batch_scrape` はジョブ ID を返します：
+
+<BatchScrapeExtractAsyncOutput />
+
+<div id="webhooks">
+  ## Webhooks
+</div>
+
+バッチ内の各 URL がスクレイプされるたびにリアルタイムで通知を受け取れるよう、webhook を設定できます。これにより、バッチ全体の完了を待たずに結果を即時に処理できます。
+
+<BatchScrapeWebhookCURL />
+
+<div id="event-types">
+  ### イベントの種類
+</div>
+
+| イベント                     | 説明                     |
+| ------------------------ | ---------------------- |
+| `batch_scrape.started`   | バッチスクレイプジョブが開始されました    |
+| `batch_scrape.page`      | 1件のURLのスクレイプに成功しました    |
+| `batch_scrape.completed` | すべてのURLの処理が完了しました      |
+| `batch_scrape.failed`    | バッチスクレイプジョブでエラーが発生しました |
+
+<div id="payload">
+  ### ペイロード
+</div>
+
+各Webhook配信には、次の構造のJSONボディが含まれます:
+
+```json
+{
+  "success": true,
+  "type": "batch_scrape.page",
+  "id": "batch-job-id",
+  "data": [...],
+  "metadata": {},
+  "error": null
+}
+```
+
+<div id="verifying-webhook-signatures">
+  ### Webhook シグネチャの検証
+</div>
+
+Firecrawl から送信されるすべての webhook リクエストには、HMAC-SHA256 シグネチャを含む `X-Firecrawl-Signature` ヘッダーが含まれます。Webhook が正当なものであり、改ざんされていないことを確認するために、必ずこのシグネチャを検証してください。
+
+1. アカウント設定の [Advanced タブ](https://www.firecrawl.dev/app/settings?tab=advanced) から webhook secret を取得する
+2. `X-Firecrawl-Signature` ヘッダーからシグネチャを取り出す
+3. secret を使って、生のリクエストボディに対して HMAC-SHA256 を計算する
+4. タイミング攻撃耐性のある (タイミングセーフな) 関数を用いて、計算結果とシグネチャヘッダーを比較する
+
+<Warning>
+  シグネチャを事前に検証せずに webhook を処理しないでください。`X-Firecrawl-Signature` ヘッダーには、`sha256=abc123def456...` という形式でシグネチャが含まれています。
+</Warning>
+
+JavaScript と Python による実装の完全な例については、[Webhook セキュリティのドキュメント](/ja/webhooks/security) を参照してください。
+
+詳細なイベントペイロード、高度な設定、トラブルシューティングなどを含む webhook の包括的なドキュメントについては、[Webhooks ドキュメント](/ja/webhooks/overview) を参照してください。
+
+> Firecrawl API key が必要な AI agent の方は、自動オンボーディング手順について [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) を参照してください。

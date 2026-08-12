@@ -1,0 +1,20 @@
+```python Python
+from firecrawl import Firecrawl
+
+firecrawl = Firecrawl(
+  # Aucune clé API requise pour démarrer — ajoutez-en une pour des limites de débit plus élevées :
+  # api_key="fc-YOUR_API_KEY",
+)
+
+# Recherche avec paramètres de localisation (Allemagne)
+search_result = firecrawl.search(
+    "web scraping tools",
+    limit=5,
+    location="Germany"
+)
+
+# Traitement des résultats
+for result in search_result.data:
+    print(f"Titre : {result['title']}")
+    print(f"URL : {result['url']}")
+```

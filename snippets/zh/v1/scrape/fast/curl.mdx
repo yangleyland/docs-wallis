@@ -1,0 +1,10 @@
+```bash cURL
+# 无需 API 密钥即可开始使用 — 添加 -H "Authorization: Bearer fc-YOUR_API_KEY" 以获得更高的限流配额：
+curl -X POST https://api.firecrawl.dev/v1/scrape \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "url": "https://firecrawl.dev",
+    "formats": ["markdown"],
+    "maxAge": 3600000
+  }'
+```

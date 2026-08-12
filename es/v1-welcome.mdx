@@ -1,0 +1,300 @@
+---
+hidden: true
+noindex: true
+title: Bienvenido a V1
+description: "Firecrawl te permite convertir sitios web completos en markdown listo para LLM"
+og:title: "Bienvenido a V1 | Firecrawl"
+og:description: "Firecrawl te permite convertir sitios web completos en markdown listo para LLM"
+---
+
+import InstallationPython from "/snippets/es/v1/installation/python.mdx";
+import InstallationNode from "/snippets/es/v1/installation/js.mdx";
+import InstallationGo from "/snippets/es/v1/installation/go.mdx";
+import InstallationRust from "/snippets/es/v1/installation/rust.mdx";
+import ScrapePython from "/snippets/es/v1/scrape/base/python.mdx";
+import ScrapeNode from "/snippets/es/v1/scrape/base/js.mdx";
+import ScrapeGo from "/snippets/es/v1/scrape/base/go.mdx";
+import ScrapeRust from "/snippets/es/v1/scrape/base/rust.mdx";
+import ScrapeCURL from "/snippets/es/v1/scrape/base/curl.mdx";
+import ScrapeResponse from "/snippets/es/v1/scrape/base/output.mdx";
+import MapPython from "/snippets/es/v1/map/base/python.mdx";
+import MapJavaScript from "/snippets/es/v1/map/base/js.mdx";
+import MapGo from "/snippets/es/v1/map/base/go.mdx";
+import MapRust from "/snippets/es/v1/map/base/rust.mdx";
+import MapCURL from "/snippets/es/v1/map/base/curl.mdx";
+import MapResponse from "/snippets/es/v1/map/base/output.mdx";
+import CrawlWebSocketPythonBase from "/snippets/es/v1/crawl-websocket/base/python.mdx";
+import CrawlWebSocketNodeBase from "/snippets/es/v1/crawl-websocket/base/js.mdx";
+import ExtractCURL from "/snippets/es/v1/llm-extract/base/curl.mdx";
+import ExtractPython from "/snippets/es/v1/llm-extract/base/python.mdx";
+import ExtractNode from "/snippets/es/v1/llm-extract/base/js.mdx";
+import ExtractOutput from "/snippets/es/v1/llm-extract/base/output.mdx";
+import ExtractNoSchemaCURL from "/snippets/es/v1/llm-extract/no-schema/curl.mdx";
+import ExtractNoSchemaOutput from "/snippets/es/v1/llm-extract/no-schema/output.mdx";
+import CrawlWebhookCURL from "/snippets/es/v1/crawl-webhook/base/curl.mdx";
+
+¡Firecrawl V1 ya está aquí! Con ello presentamos una API más confiable y fácil para desarrolladores.
+
+Esto es lo nuevo:
+
+* Formatos de salida para `/scrape`. Elige en qué formatos quieres el resultado.
+* Nuevo [punto de conexión `/map`](/es/features/map) para obtener la mayoría de las URL de un sitio web.
+* API más amigable para consultar el estado de `/crawl/{id}`.
+* Límites de tasa 2x para todos los planes.
+* [SDK de Go](/es/sdks/go) y [SDK de Rust](/es/sdks/rust)
+* Compatibilidad con equipos
+* Gestión de claves de API en el panel.
+* `onlyMainContent` ahora tiene como valor predeterminado `true`.
+* Webhooks y soporte de WebSocket para `/crawl`.
+
+<div id="scrape-formats">
+  ## Formatos de scrape
+</div>
+
+Ahora puedes elegir en qué formatos quieres el resultado. Puedes especificar varios formatos de salida. Los formatos admitidos son:
+
+* Markdown (markdown)
+* HTML (html)
+* HTML sin procesar (rawHtml) (sin modificaciones)
+* Captura de pantalla (screenshot o screenshot@fullPage)
+* Enlaces (links)
+* JSON (json) - salida estructurada
+
+Las claves del resultado coincidirán con el formato que elijas.
+
+<CodeGroup>
+  <ScrapePython />
+
+  <ScrapeNode />
+
+  <ScrapeGo />
+
+  <ScrapeRust />
+
+  <ScrapeCURL />
+</CodeGroup>
+
+<div id="response">
+  ### Respuesta
+</div>
+
+Los SDK devolverán el objeto de datos directamente. cURL devolverá el payload exactamente como se muestra a continuación.
+
+<ScrapeResponse />
+
+<div id="introducing-map-alpha">
+  ## Presentamos /map (Alpha)
+</div>
+
+La manera más sencilla de convertir una sola URL en un mapa de todo el sitio web.
+
+<div id="usage">
+  ### Uso
+</div>
+
+<CodeGroup>
+  <MapPython />
+
+  <MapJavaScript />
+
+  <MapGo />
+
+  <MapRust />
+
+  <MapCURL />
+</CodeGroup>
+
+<div id="response">
+  ### Respuesta
+</div>
+
+Los SDK devolverán directamente el objeto de datos. cURL devolverá el payload exactamente como se muestra a continuación.
+
+<MapResponse />
+
+<div id="websockets">
+  ## WebSockets
+</div>
+
+Para rastrear un sitio web con WebSockets, utiliza el método `Crawl URL and Watch`.
+
+<CodeGroup>
+  <CrawlWebSocketPythonBase />
+
+  <CrawlWebSocketNodeBase />
+</CodeGroup>
+
+<div id="json-format">
+  ## Formato JSON
+</div>
+
+La extracción con LLM ahora está disponible en v1 dentro del formato `json`. Para extraer datos estructurados de una página, puedes pasar un esquema al punto de conexión o simplemente proporcionar un prompt.
+
+<CodeGroup>
+  <ExtractPython />
+
+  <ExtractNode />
+
+  <ExtractCURL />
+</CodeGroup>
+
+Salida:
+
+<ExtractOutput />
+
+<div id="extracting-without-schema-new">
+  ### Extracción sin esquema (Nuevo)
+</div>
+
+Ahora puedes extraer sin esquema simplemente pasando un `prompt` al punto de conexión. El LLM elige la estructura de los datos.
+
+<CodeGroup>
+  <ExtractNoSchemaCURL />
+</CodeGroup>
+
+Resultado:
+
+<ExtractNoSchemaOutput />
+
+<div id="new-crawl-webhook">
+  ## Nuevo webhook de rastreo
+</div>
+
+Ahora puedes pasar el parámetro `webhook` al punto de conexión `/crawl`. Esto enviará una solicitud POST a la URL que especifiques cuando el rastreo se inicie, se actualice y se complete.
+
+El webhook ahora se activará por cada página rastreada y no solo al final con el resultado completo.
+
+<CrawlWebhookCURL />
+
+<div id="webhook-events">
+  ### Eventos de webhook
+</div>
+
+Ahora hay 4 tipos de eventos:
+
+* `crawl.started` - Se activa cuando se inicia el rastreo.
+* `crawl.page` - Se activa por cada página rastreada.
+* `crawl.completed` - Se activa cuando finaliza el rastreo para avisarte que ha terminado.
+* `crawl.failed` - Se activa cuando el rastreo falla.
+
+<div id="webhook-response">
+  ### Respuesta del webhook
+</div>
+
+* `success` - Indica si el webhook logró rastrear la página correctamente.
+* `type` - El tipo de evento que ocurrió.
+* `id` - El ID del rastreo.
+* `data` - Los datos extraídos (matriz/array). Solo estará no vacío en `crawl.page` y contendrá 1 elemento si la página se extrajo correctamente. La respuesta es la misma que la del punto de conexión `/scrape`.
+* `error` - Si el webhook falló, contendrá el mensaje de error.
+
+<div id="migrating-from-v0">
+  ## Migración desde V0
+</div>
+
+> ⚠️ **Aviso de desaprobación**: Los puntos de conexión V0 quedarán obsoletos el 1 de abril de 2025. Migra a los puntos de conexión V1 antes de esa fecha para garantizar un servicio ininterrumpido.
+
+<div id="scrape-endpoint">
+  ## punto de conexión /scrape
+</div>
+
+El punto de conexión `/scrape` se ha rediseñado para mejorar la fiabilidad y facilitar su uso. La estructura del nuevo cuerpo de la solicitud de `/scrape` es la siguiente:
+
+```json
+{
+  "url": "<string>",
+  "formatos": ["markdown", "html", "rawHtml", "links", "screenshot", "json"],
+  "includeTags": ["<string>"],
+  "excludeTags": ["<string>"],
+  "headers": { "<key>": "<value>" },
+  "waitFor": 123,
+  "timeout": 123
+}
+```
+
+<div id="formats">
+  ### Formatos
+</div>
+
+Ahora puedes elegir en qué formatos quieres el resultado. Puedes especificar varios formatos de salida. Los formatos admitidos son:
+
+* Markdown (markdown)
+* HTML (html)
+* HTML sin procesar (rawHtml) (sin modificaciones)
+* Captura de pantalla (screenshot o screenshot@fullPage)
+* Enlaces (links)
+* JSON (json)
+
+De forma predeterminada, la salida incluirá solo el formato markdown.
+
+<div id="details-on-the-new-request-body">
+  ### Detalles del nuevo cuerpo de la solicitud
+</div>
+
+La siguiente tabla describe los cambios en los parámetros del cuerpo de la solicitud para el punto de conexión `/scrape` en V1.
+
+| Parameter | Change | Description |
+| --------- | ------ | ----------- |
+| `onlyIncludeTags` | Movido y renombrado | Movido al nivel raíz y renombrado a `includeTags`. |
+| `removeTags` | Movido y renombrado | Movido al nivel raíz y renombrado a `excludeTags`. |
+| `onlyMainContent`| Movido | Movido al nivel raíz. `true` por defecto. |
+| `waitFor`| Movido | Movido al nivel raíz. |
+| `headers`| Movido | Movido al nivel raíz. |
+| `parsePDF`| Movido | Movido al nivel raíz. |
+| `extractorOptions`| Sin cambios ||
+| `timeout`| Sin cambios ||
+| `pageOptions` | Eliminado | No se necesita el parámetro `pageOptions`. Las opciones de scraping se movieron al nivel raíz. |
+| `replaceAllPathsWithAbsolutePaths` | Eliminado | `replaceAllPathsWithAbsolutePaths` ya no es necesario. Ahora cada ruta es absoluta por defecto. |
+| `includeHtml`| Eliminado | Agrega &quot;html&quot; a `formats` en su lugar. |
+| `includeRawHtml`| Eliminado | Agrega &quot;rawHtml&quot; a `formats` en su lugar. |
+| `screenshot`| Eliminado | Agrega &quot;screenshot&quot; a `formats` en su lugar. |
+| `fullPageScreenshot`| Eliminado | Agrega &quot;screenshot@fullPage&quot; a `formats` en su lugar. |
+| `extractorOptions` | Eliminado | Usa el formato &quot;json&quot; en su lugar con el objeto `jsonOptions`. |
+
+El nuevo formato `json` se describe en la sección [llm-extract](/es/features/extract).
+
+<div id="crawl-endpoint">
+  ## punto de conexión /crawl
+</div>
+
+También actualizamos el punto de conexión `/crawl` en `v1`. Consulta a continuación el cuerpo de la solicitud mejorado:
+
+```json
+{
+  "url": "<string>",
+  "excludePaths": ["<string>"],
+  "includePaths": ["<string>"],
+  "maxDepth": 2,
+  "ignoreSitemap": true,
+  "limit": 10,
+  "allowBackwardLinks": true,
+  "allowExternalLinks": true,
+  "scrapeOptions": {
+    // mismas opciones que en el punto de conexión /scrape
+    "formatos": ["markdown", "html", "rawHtml", "screenshot", "links"],
+    "headers": { "<key>": "<value>" },
+    "includeTags": ["<string>"],
+    "excludeTags": ["<string>"],
+    "onlyMainContent": true,
+    "waitFor": 123
+  }
+}
+```
+
+<div id="details-on-the-new-request-body">
+  ### Detalles del nuevo cuerpo de la solicitud
+</div>
+
+La siguiente tabla describe los cambios en los parámetros del cuerpo de la solicitud para el punto de conexión `/crawl` en V1.
+
+| Parámetro | Cambio | Descripción |
+| --------- | ------ | ----------- |
+| `pageOptions` | Renombrado | Cambia a `scrapeOptions`. |
+| `includes` | Movido y renombrado | Se movió al nivel raíz. Pasa a `includePaths`. |
+| `excludes` | Movido y renombrado | Se movió al nivel raíz. Pasa a `excludePaths`. |
+| `allowBackwardCrawling` | Movido y renombrado | Se movió al nivel raíz. Pasa a `allowBackwardLinks`. |
+| `allowExternalLinks` | Movido | Se movió al nivel raíz. |
+| `maxDepth` | Movido | Se movió al nivel raíz. |
+| `ignoreSitemap` | Movido | Se movió al nivel raíz. |
+| `limit` | Movido | Se movió al nivel raíz. |
+| `crawlerOptions` | Eliminado | Ya no se requiere el parámetro `crawlerOptions`. Las opciones de rastreo se movieron al nivel raíz. |
+| `timeout` | Eliminado | Usa `timeout` dentro de `scrapeOptions`. |

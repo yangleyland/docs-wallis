@@ -1,0 +1,512 @@
+---
+title: "Source de référence Rust"
+description: "Référence canonique Rust de Firecrawl pour les agents utilisant des points de terminaison clés comme la recherche, le scrape et Interact."
+---
+
+Source de référence canonique Rust de Firecrawl pour les agents. Généré à partir du code source du SDK et de la spécification OpenAPI v2.
+
+<div id="install">
+  ## Installation
+</div>
+
+```bash
+cargo add firecrawl
+```
+
+Crate : **`firecrawl`** sur crates.io. La version actuelle du SDK est **2.0.0** (vérifiez la dernière version sur crates.io avant de la figer).
+
+<div id="authenticate">
+  ## S’authentifier
+</div>
+
+```rust
+use firecrawl::Client;
+
+let client = Client::new("fc-your-api-key")?;
+// Exemple auto-hébergé :
+// let client = Client::new_selfhosted("http://localhost:3002", Some("fc-your-api-key"))?;
+```
+
+<div id="when-to-use-what">
+  ## Quand utiliser chaque option
+</div>
+
+* `search` : à utiliser si vous partez d&#39;une requête et devez découvrir des résultats.
+* `scrape` : à utiliser si vous avez déjà une URL et voulez le contenu de la page.
+* `interact` : à utiliser si la page nécessite des clics, des formulaires ou des actions du navigateur après le scraping.
+* `support/ask` : à utiliser lorsqu&#39;un appel à l&#39;API Firecrawl échoue ou renvoie des résultats inattendus et que vous avez besoin d&#39;un diagnostic.
+* `support/docs-search` : à utiliser lorsque vous devez consulter la documentation de Firecrawl.
+
+<div id="search">
+  ## Recherche
+</div>
+
+<div id="why-use-it">
+  ### Pourquoi l’utiliser
+</div>
+
+Utilisez la recherche pour découvrir des pages pertinentes à partir d’une requête, puis sélectionnez des URL à extraire ou avec lesquelles interagir. Vous pouvez limiter les résultats à un domaine avec l’opérateur standard `site:`, par exemple `site:docs.firecrawl.dev crawl webhooks`.
+
+<div id="preferred-sdk-method">
+  ### Méthode recommandée du SDK
+</div>
+
+`client.search(query, options)` → `Result<SearchResponse, FirecrawlError>`
+
+<div id="simple-example">
+  ### Exemple simple
+</div>
+
+```rust
+use firecrawl::Client;
+
+let results = client
+    .search("site:docs.firecrawl.dev webhook retries", None)
+    .await?;
+```
+
+<div id="complex-example">
+  ### Exemple complexe
+</div>
+
+```rust
+use firecrawl::{
+    Client, SearchOptions, SearchSource, SearchCategory, ScrapeOptions, Format, JsonOptions,
+};
+
+let options = SearchOptions {
+    sources: Some(vec![SearchSource::Web, SearchSource::News]),
+    categories: Some(vec![SearchCategory::Research]),
+    limit: Some(10),
+    tbs: Some("qdr:m".to_string()),
+    location: Some("San Francisco,California,United States".to_string()),
+    ignore_invalid_urls: Some(true),
+    timeout: Some(60000),
+    scrape_options: Some(ScrapeOptions {
+        formats: Some(vec![Format::Markdown, Format::Links, Format::Json]),
+        json_options: Some(JsonOptions {
+            prompt: Some("Extract title and key endpoints.".to_string()),
+            ..Default::default()
+        }),
+        only_main_content: Some(true),
+        ..Default::default()
+    }),
+    ..Default::default()
+};
+
+let results = client
+    .search("site:docs.firecrawl.dev crawl webhooks", options)
+    .await?;
+```
+
+<div id="return-type">
+  ### Type de retour
+</div>
+
+`client.search(...)` renvoie `Result<SearchResponse, FirecrawlError>`.
+
+* `SearchResponse`
+  * `success: bool`
+  * `data: SearchData`
+  * `warning: Option<String>`
+* `SearchData`
+  * `web: Option<Vec<SearchResultOrDocument>>` — chaque élément est soit `SearchResultOrDocument::WebResult(SearchResultWeb)` (url, titre, description, …), soit `SearchResultOrDocument::Document(Document)` lorsque l’API a renvoyé le contenu scrapé pour cette entrée (détecté lorsque `markdown`, `html`, `rawHtml` ou `metadata` est présent).
+  * `news: Option<Vec<SearchResultNews>>`
+  * `images: Option<Vec<SearchResultImage>>`
+
+<div id="parameters">
+  ### Paramètres
+</div>
+
+* `query`
+  * Type : `impl AsRef<str>`
+  * À utiliser lorsque : vous devez fournir une requête de recherche.
+  * Remarques : utilisez `site:example.com` pour limiter les résultats à un domaine.
+
+* `options.sources`
+  * Type : `Vec<SearchSource>`
+  * À utiliser lorsque : vous souhaitez définir les sources à interroger.
+  * Valeurs confirmées : `Web`, `News`, `Images`
+
+* `options.categories`
+  * Type : `Vec<SearchCategory>`
+  * À utiliser lorsque : vous souhaitez filtrer les résultats par catégorie.
+  * Valeurs confirmées : `Github`, `Research`, `Pdf`
+
+* `options.limit`
+  * Type : u32
+  * À utiliser lorsque : vous souhaitez limiter le nombre de résultats.
+
+* `options.tbs`
+  * Type : String
+  * À utiliser lorsque : vous avez besoin d’un filtre temporel (par exemple `qdr:d`, `qdr:w`, `sbd:1,qdr:m`).
+
+* `options.location`
+  * Type : String
+  * À utiliser lorsque : vous souhaitez obtenir des résultats localisés.
+
+* `options.ignore_invalid_urls`
+  * Type : bool
+  * À utiliser lorsque : vous souhaitez ignorer les URL qui ne peuvent pas être scrapées par d’autres points de terminaison.
+
+* `options.timeout`
+  * Type : u32
+  * À utiliser lorsque : vous avez besoin d’un délai d’expiration de requête en millisecondes.
+
+* `options.scrape_options`
+  * Type : `ScrapeOptions`
+  * À utiliser lorsque : vous souhaitez scraper chaque résultat de recherche (voir les paramètres de Scrape pour les champs).
+
+* `options.integration`
+  * Type : `Option<String>`
+  * À utiliser lorsque : vous avez besoin d’un identifiant d’intégration pour le suivi côté serveur.
+  * Remarques : omettez-le dans les exemples orientés agent, sauf si votre produit le définit intentionnellement.
+
+<div id="scrape">
+  ## Scrape
+</div>
+
+<div id="why-use-it">
+  ### Pourquoi l’utiliser
+</div>
+
+Utilisez scrape lorsque vous avez déjà une URL et que vous souhaitez obtenir un contenu structuré dans un ou plusieurs formats.
+
+<div id="preferred-sdk-method">
+  ### Méthode recommandée du SDK
+</div>
+
+`client.scrape(url, options)` → `Result<Document, FirecrawlError>` (dans le SDK, le champ `data` de la réponse HTTP est extrait automatiquement).
+
+<div id="simple-example">
+  ### Exemple simple
+</div>
+
+```rust
+use firecrawl::{Client, ScrapeOptions, Format};
+
+let doc = client
+    .scrape("https://docs.firecrawl.dev", ScrapeOptions {
+        formats: Some(vec![Format::Markdown]),
+        ..Default::default()
+    })
+    .await?;
+```
+
+<div id="complex-example">
+  ### Exemple complexe
+</div>
+
+```rust
+use firecrawl::{
+    Client, ScrapeOptions, Format, JsonOptions, ScreenshotOptions, ChangeTrackingOptions,
+    ChangeTrackingMode, AttributeSelector, Action, ParserConfig, ProxyType,
+};
+
+let doc = client
+    .scrape("https://example.com/pricing", ScrapeOptions {
+        formats: Some(vec![
+            Format::Markdown,
+            Format::Links,
+            Format::Json,
+            Format::Screenshot,
+            Format::ChangeTracking,
+            Format::Attributes,
+        ]),
+        json_options: Some(JsonOptions {
+            prompt: Some("Extract plan names and prices.".to_string()),
+            ..Default::default()
+        }),
+        screenshot_options: Some(ScreenshotOptions {
+            full_page: Some(true),
+            quality: Some(80),
+            ..Default::default()
+        }),
+        change_tracking_options: Some(ChangeTrackingOptions {
+            modes: Some(vec![ChangeTrackingMode::GitDiff]),
+            tag: Some("pricing".to_string()),
+            ..Default::default()
+        }),
+        attribute_selectors: Some(vec![AttributeSelector {
+            selector: "a".to_string(),
+            attribute: "href".to_string(),
+        }]),
+        parsers: Some(vec![ParserConfig::Pdf {
+            parser_type: "pdf".to_string(),
+            max_pages: Some(5),
+        }]),
+        actions: Some(vec![
+            Action::Click { selector: "#accept".to_string() },
+            Action::Wait { milliseconds: Some(750), selector: None },
+            Action::Scrape,
+        ]),
+        proxy: Some(ProxyType::Auto),
+        ..Default::default()
+    })
+    .await?;
+```
+
+<div id="parameters">
+  ### Paramètres
+</div>
+
+* `url`
+  * Type : `impl AsRef<str>`
+  * À utiliser si vous souhaitez extraire les données d’une page spécifique.
+
+* `options.formats`
+  * Type : `Vec<Format>`
+  * À utiliser si : vous souhaitez plusieurs formats de sortie.
+  * Valeurs acceptées : `Markdown`, `Html`, `RawHtml`, `Links`, `Images`, `Screenshot`, `Summary`, `ChangeTracking`, `Json`, `Attributes`, `Branding`, `Audio`, `Video`
+
+* `options.headers`
+  * Type : `HashMap<String, String>`
+  * À utiliser si : vous avez besoin d’en-têtes de requête personnalisés.
+
+* `options.include_tags`
+  * Type : `Vec<String>`
+  * À utiliser si : vous souhaitez inclure uniquement certaines balises HTML.
+
+* `options.exclude_tags`
+  * Type : `Vec<String>`
+  * À utiliser si vous souhaitez exclure certaines balises HTML.
+
+* `options.only_main_content`
+  * Type : bool
+  * À utiliser si vous souhaitez supprimer la navigation, le pied de page et les autres éléments répétitifs.
+
+* `options.timeout`
+  * Type : u32
+  * À utiliser lorsque : un délai d’expiration en millisecondes est nécessaire.
+
+* `options.wait_for`
+  * Type : u32
+  * À utiliser lorsque vous devez attendre le rendu de la page (en millisecondes).
+
+* `options.mobile`
+  * Type : bool
+  * À utiliser si : vous voulez un viewport mobile.
+
+* `options.parsers`
+  * Type : `Vec<ParserConfig>`
+  * À utiliser si : vous avez besoin d’options d’analyse des fichiers.
+  * Valeurs confirmées :
+    * `ParserConfig::Simple("pdf".to_string())`
+    * `ParserConfig::Pdf { parser_type: "pdf", max_pages: Some(n) }`
+
+* `options.actions`
+  * Type : `Vec<Action>`
+  * À utiliser lorsque : vous avez besoin d&#39;actions légères de pré-scraping.
+  * Types d&#39;actions pris en charge :
+    * `Wait` : `milliseconds` ou `selector` requis
+    * `Screenshot` : `full_page`, `quality`, `viewport` facultatifs
+    * `Click` : `selector` requis
+    * `Write` : `text` requis (cliquez d&#39;abord pour placer le curseur dans le champ)
+    * `Press` : `key` requis
+    * `Scroll` : `direction` (`Up` ou `Down`) requis, `selector` facultatif
+    * `Scrape` : aucun champ supplémentaire
+    * `ExecuteJavascript` : `script` requis
+    * `Pdf` : `format` (A0, A1, A2, A3, A4, A5, A6, Letter, Legal, Tabloid, Ledger), `landscape`, `scale` facultatifs
+
+* `options.location`
+  * Type : `LocationConfig`
+  * À utiliser si vous avez besoin d’un scraping adapté à la zone géographique ou à la langue.
+  * Champs confirmés : `country`, `languages`
+
+* `options.skip_tls_verification`
+  * Type : bool
+  * À utiliser si : vous devez ignorer la vérification TLS.
+
+* `options.remove_base64_images`
+  * Type : bool
+  * À utiliser si : vous souhaitez exclure les images en base64 de la sortie Markdown.
+
+* `options.fast_mode`
+  * Type : bool
+  * À utiliser lorsque : vous souhaitez des extractions plus rapides, avec une précision moindre.
+
+* `options.block_ads`
+  * Type : bool
+  * À utiliser si vous voulez bloquer les publicités et les fenêtres contextuelles de cookies.
+
+* `options.proxy`
+  * Type : `ProxyType`
+  * À utiliser si : vous avez besoin de contrôler le proxy.
+  * Valeurs acceptées : `Basic`, `Stealth`, `Enhanced`, `Auto`
+
+* `options.max_age`
+  * Type : u32
+  * À utiliser lorsque : vous souhaitez des données mises en cache jusqu’à une ancienneté maximale (en millisecondes).
+
+* `options.min_age`
+  * Type : u32
+  * À utiliser lorsque : vous voulez des données mises en cache uniquement si elles datent d’au moins ce délai (en millisecondes).
+
+* `options.store_in_cache`
+  * Type : bool
+  * À utiliser si : vous souhaitez que Firecrawl mette le résultat en cache.
+
+* `options.profile`
+  * Type : `ProfileConfig`
+  * À utiliser si vous souhaitez un profil de navigateur persistant partagé entre les opérations de scrape et d’interaction.
+  * Champs confirmés : `name`, `save_changes`
+
+* `options.integration`
+  * Type : `Option<String>`
+  * À utiliser si : vous avez besoin d’un identifiant d’intégration pour le suivi côté serveur.
+  * Remarques : omettez ce paramètre dans les exemples orientés agents, sauf si votre produit le renseigne explicitement.
+
+* `options.json_options`
+  * Type : `JsonOptions`
+  * À utiliser lorsque : vous souhaitez configurer l’extraction JSON.
+  * Champs pris en charge : `schema`, `system_prompt`, `prompt`
+
+* `options.screenshot_options`
+  * Type : `ScreenshotOptions`
+  * À utiliser lorsque : vous souhaitez configurer la sortie de la capture d’écran.
+  * Champs confirmés : `full_page`, `quality`, `viewport`
+
+* `options.change_tracking_options`
+  * Type : `ChangeTrackingOptions`
+  * À utiliser si : vous souhaitez configurer la sortie du suivi des modifications.
+  * Champs confirmés : `modes` (`GitDiff` ou `Json`), `schema`, `prompt`, `tag`
+
+* `options.attribute_selectors`
+  * Type : `Vec<AttributeSelector>`
+  * À utiliser lorsque : vous souhaitez obtenir des attributs en sortie.
+  * Champs confirmés : `selector`, `attribute`
+
+<div id="interact">
+  ## Interact
+</div>
+
+<div id="why-use-it">
+  ### Pourquoi l’utiliser
+</div>
+
+Utilisez interact lorsqu’une page nécessite des actions du navigateur ou l’exécution de code une fois le scrape lancé.
+
+<div id="preferred-sdk-method">
+  ### Méthode recommandée du SDK
+</div>
+
+`client.interact(job_id, options)`
+
+Pour mettre fin à la session de navigateur, utilisez `client.stop_interaction(job_id)` (HTTP `DELETE` sur `/v2/scrape/{jobId}/interact`).
+
+<div id="simple-example">
+  ### Exemple simple
+</div>
+
+```rust
+use firecrawl::{Client, ScrapeExecuteOptions};
+
+let result = client
+    .interact(
+        "<scrapeJobId>",
+        ScrapeExecuteOptions {
+            prompt: Some("Click the pricing tab and summarize the plans.".to_string()),
+            ..Default::default()
+        },
+    )
+    .await?;
+```
+
+<div id="complex-example">
+  ### Exemple complexe
+</div>
+
+```rust
+use firecrawl::{Client, ScrapeExecuteOptions, ScrapeExecuteLanguage};
+
+let result = client
+    .interact(
+        "<scrapeJobId>",
+        ScrapeExecuteOptions {
+            code: Some("console.log(await page.title());".to_string()),
+            language: Some(ScrapeExecuteLanguage::Node),
+            timeout: Some(60),
+            ..Default::default()
+        },
+    )
+    .await?;
+```
+
+<div id="stop-session">
+  ### Arrêter la session
+</div>
+
+```rust
+let stopped = client.stop_interaction("<scrapeJobId>").await?;
+// stopped : ScrapeBrowserDeleteResponse { success, session_duration_ms, credits_billed, error, ... }
+```
+
+<div id="parameters">
+  ### Paramètres
+</div>
+
+* `job_id`
+  * Type : `impl AsRef<str>`
+  * À utiliser lorsque : vous avez un ID de tâche de scraping.
+
+* `options.code`
+  * Type : `Option<String>`
+  * À utiliser lorsque : vous souhaitez exécuter du code dans la session de navigateur.
+
+* `options.prompt`
+  * Type : `Option<String>`
+  * À utiliser lorsque : vous souhaitez que l’agent navigateur suive une instruction en langage naturel.
+
+* `options.language`
+  * Type : `ScrapeExecuteLanguage`
+  * À utiliser lorsque : vous avez besoin d’un environnement d’exécution spécifique.
+  * Valeurs confirmées : `Python`, `Node`, `Bash`
+  * Notes : la valeur par défaut dans le SDK est `Node` si ce paramètre est omis.
+
+* `options.timeout`
+  * Type : u32
+  * À utiliser lorsque : vous avez besoin d’un délai d’exécution maximal en secondes.
+
+* `options.origin`
+  * Type : `Option<String>`
+  * À utiliser lorsque : vous avez besoin d’un libellé d’origine facultatif pour la télémétrie d’exécution.
+  * Notes : omettez ce paramètre dans les exemples orientés agent, sauf si votre produit le définit intentionnellement.
+
+Au moins l’un de `options.code` ou `options.prompt` doit être non vide ; sinon, le SDK renvoie `FirecrawlError::Misuse` avant d’appeler l’API.
+
+<div id="response-types">
+  ### Types de réponse
+</div>
+
+* `interact` → `Result<ScrapeExecuteResponse, FirecrawlError>`
+  * `success: bool` est toujours présent ; `live_view_url`, `interactive_live_view_url`, `output`, `stdout`, `result`, `stderr`, `exit_code`, `killed` et `error` sont des champs `Option` de la structure.
+* `stop_interaction` → `Result<ScrapeBrowserDeleteResponse, FirecrawlError>`
+  * `success: bool` est toujours présent ; `session_duration_ms`, `credits_billed` et `error` sont optionnels.
+
+La spécification OpenAPI v2 modélise actuellement le corps de la requête `interact` avec `code` comme champ obligatoire ; le SDK Rust s’aligne sur le comportement du serveur en acceptant **soit** `code` **soit** `prompt` (voir `ScrapeExecuteOptions` dans `scrape.rs`).
+
+<div id="notes">
+  ## Remarques
+</div>
+
+* Alias dépréciés : `scrape_execute`, `stop_interactive_browser` et `delete_scrape_browser` renvoient à `interact` et `stop_interaction`.
+* `ScrapeOptions` comprend des `json_options`, `screenshot_options` et `change_tracking_options` spécifiques aux formats avancés.
+* `search_and_scrape(query, limit)` est une fonction utilitaire pratique : elle appelle `search` avec les `ScrapeOptions` par défaut et renvoie un `Vec<Document>` construit à partir des entrées `SearchResultOrDocument::Document` de `data.web` (voir `search.rs`).
+* Le SDK v2 exporte tous les types à la racine du crate : `use firecrawl::Client` (et non `use firecrawl::v2::Client`).
+* Les types d’erreur ont été simplifiés dans la v2 : `CrawlJobFailed(String, CrawlStatus)` → `JobFailed(String)`, `Missuse` → `Misuse`.
+
+<div id="source-of-truth">
+  ## Source de référence
+</div>
+
+* `firecrawl/apps/rust-sdk/Cargo.toml`
+* `firecrawl/apps/rust-sdk/src/lib.rs`
+* `firecrawl/apps/rust-sdk/src/client.rs`
+* `firecrawl/apps/rust-sdk/src/scrape.rs`
+* `firecrawl/apps/rust-sdk/src/search.rs`
+* `firecrawl/apps/rust-sdk/src/crawl.rs`
+* `firecrawl/apps/rust-sdk/src/map.rs`
+* `firecrawl/apps/rust-sdk/src/batch_scrape.rs`
+* `firecrawl/apps/rust-sdk/src/agent.rs`
+* `firecrawl/apps/rust-sdk/src/types.rs`
+* `firecrawl-docs/api-reference/v2-openapi.json`

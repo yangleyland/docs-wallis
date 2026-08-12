@@ -1,0 +1,62 @@
+---
+title: "Seguridad"
+description: "Verificar la autenticidad de los webhooks"
+og:title: "Seguridad de los webhooks | Firecrawl"
+og:description: "Verificar la autenticidad de los webhooks"
+icon: "shield-check"
+---
+
+import WebhookSignatureJS from '/snippets/es/v2/webhook-signature/js.mdx';
+import WebhookSignaturePython from '/snippets/es/v2/webhook-signature/python.mdx';
+
+Verifica que cada solicitud de webhook provenga realmente de Firecrawl comprobando su firma HMAC-SHA256. Esto evita que los atacantes falsifiquen la carga útil y te permite confiar en los datos antes de actuar en consecuencia.
+
+<div id="secret-key">
+  ## Clave secreta
+</div>
+
+Tu secreto de webhook está disponible en la [pestaña Advanced](https://www.firecrawl.dev/app/settings?tab=advanced) de la configuración de tu cuenta. Cada cuenta tiene un secreto único que se utiliza para firmar todas las solicitudes de webhook.
+
+<Warning>
+  Mantén tu secreto de webhook seguro y nunca lo expongas públicamente. Si crees que tu secreto se ha visto comprometido, regénéralo de inmediato desde la configuración de tu cuenta.
+</Warning>
+
+<div id="signature-verification">
+  ## Verificación de firmas
+</div>
+
+Cada solicitud de webhook incluye un encabezado `X-Firecrawl-Signature`:
+
+```
+X-Firecrawl-Signature: sha256=abc123def456...
+```
+
+
+<div id="how-to-verify">
+  ### Cómo verificar
+</div>
+
+1. Extrae la firma del encabezado `X-Firecrawl-Signature`
+2. Obtén el cuerpo sin procesar de la solicitud (antes de analizarlo)
+3. Calcula el HMAC-SHA256 usando tu clave secreta
+4. Compara las firmas usando una función de comparación segura frente al tiempo
+
+<div id="implementation">
+  ### Implementación
+</div>
+
+<CodeGroup>
+
+<WebhookSignatureJS />
+
+<WebhookSignaturePython />
+
+</CodeGroup>
+
+<div id="best-practices">
+  ## Buenas prácticas
+</div>
+
+* **Verifica cada solicitud.** Comprueba siempre la firma antes de procesar una carga útil de webhook. Rechaza cualquier solicitud que no supere la verificación con un código de estado `401`.
+* **Usa comparaciones seguras en tiempo constante.** Las comparaciones de cadenas estándar pueden filtrar información por temporización. Usa `crypto.timingSafeEqual()` en Node.js o `hmac.compare_digest()` en Python.
+* **Expón tu endpoint a través de HTTPS.** Esto garantiza que las cargas útiles de webhook estén cifradas durante la transmisión.

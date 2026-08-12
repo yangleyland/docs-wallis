@@ -1,0 +1,20 @@
+```python Python
+from firecrawl import FirecrawlApp
+
+app = FirecrawlApp(
+  # No API key needed to get started — add one for higher rate limits:
+  # api_key="fc-YOUR_API_KEY",
+)
+
+# Use cached data if it's less than 1 hour old (3600000 ms)
+# This can be 500% faster than a fresh scrape!
+scrape_result = app.scrape_url(
+    'https://firecrawl.dev', 
+    params={
+        'formats': ['markdown'],
+        'max_age': 3600000  # 1 hour in milliseconds
+    }
+)
+
+print(scrape_result['markdown'])
+```

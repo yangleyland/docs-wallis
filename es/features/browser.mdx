@@ -1,0 +1,425 @@
+---
+title: "sandbox del navegador"
+description: "Un sandbox del navegador seguro donde los agentes pueden interactuar con la web."
+og:title: "Navegador | Firecrawl"
+og:description: "Un sandbox del navegador seguro donde los agentes pueden interactuar con la web."
+icon: "browser"
+sidebarTitle: "sandbox del navegador"
+---
+
+import LaunchCURL from "/snippets/es/v2/browser/launch/curl.mdx";
+import LaunchJS from "/snippets/es/v2/browser/launch/js.mdx";
+import LaunchOutput from "/snippets/es/v2/browser/launch/output.mdx";
+import ExecuteCURL from "/snippets/es/v2/browser/execute/curl.mdx";
+import ExecuteCURLBash from "/snippets/es/v2/browser/execute/curl-bash.mdx";
+import ExecuteJS from "/snippets/es/v2/browser/execute/js.mdx";
+import ExecuteOutput from "/snippets/es/v2/browser/execute/output.mdx";
+import CloseCURL from "/snippets/es/v2/browser/close/curl.mdx";
+import CloseJS from "/snippets/es/v2/browser/close/js.mdx";
+import ListCURL from "/snippets/es/v2/browser/list/curl.mdx";
+import ListJS from "/snippets/es/v2/browser/list/js.mdx";
+import ListOutput from "/snippets/es/v2/browser/list/output.mdx";
+import QuickstartCURL from "/snippets/es/v2/browser/quickstart/curl.mdx";
+import QuickstartJS from "/snippets/es/v2/browser/quickstart/js.mdx";
+import PlaywrightJS from "/snippets/es/v2/browser/playwright/js.mdx";
+import PlaywrightPython from "/snippets/es/v2/browser/playwright/python.mdx";
+import QuickstartCLI from "/snippets/es/v2/browser/quickstart/cli.mdx";
+import LaunchCLI from "/snippets/es/v2/browser/launch/cli.mdx";
+import ExecuteCLI from "/snippets/es/v2/browser/execute/cli.mdx";
+import ListCLI from "/snippets/es/v2/browser/list/cli.mdx";
+import CloseCLI from "/snippets/es/v2/browser/close/cli.mdx";
+import QuickstartPython from "/snippets/es/v2/browser/quickstart/python.mdx";
+import PersistentCURL from "/snippets/es/v2/browser/persistent/curl.mdx";
+import PersistentJS from "/snippets/es/v2/browser/persistent/js.mdx";
+import PersistentPython from "/snippets/es/v2/browser/persistent/python.mdx";
+import PersistentCLI from "/snippets/es/v2/browser/persistent/cli.mdx";
+import LaunchPython from "/snippets/es/v2/browser/launch/python.mdx";
+import ExecutePython from "/snippets/es/v2/browser/execute/python.mdx";
+import ListPython from "/snippets/es/v2/browser/list/python.mdx";
+import ClosePython from "/snippets/es/v2/browser/close/python.mdx";
+
+<Info>
+  Para flujos de trabajo de agentes, usa [Interact](/es/features/interact). Interact es la ruta compatible para CLI/MCP y puede controlarse mediante prompts o código después de un scraping; MCP también permite abrir directamente desde una URL.
+</Info>
+
+| Superficie            | Úsalo para                                                                                                                                                 | Punto de entrada                                                                                       | Superficie de agente                                          |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| sandbox del navegador | Sesiones de navegador independientes para usuarios de API/SDK que necesitan un sandbox, URL de CDP, vista en vivo o un ciclo de vida de sesión persistente | `POST /v2/interact`                                                                                    | API y SDKs; el comando oculto de navegador en CLI es heredado |
+| Interact              | Actuar sobre una página extraída; MCP también puede abrir desde una URL con el modo URL de `firecrawl_interact`                                            | `POST /v2/scrape/{scrapeId}/interact`, CLI `interact` después del scraping, o MCP `firecrawl_interact` | Recomendado para flujos de trabajo de agentes en CLI/MCP      |
+
+El sandbox del navegador de Firecrawl ofrece a los usuarios de API y SDK un entorno de navegador seguro donde los agentes pueden interactuar con la web. Completa formularios, haz clic en botones, autentícate y mucho más.
+Sin configuración local, sin instalaciones de Chromium, sin problemas de compatibilidad de controladores. Agent Browser y Playwright ya vienen preinstalados.
+
+Disponible a través de [API](/es/api-reference/endpoint/browser-create), [Node SDK](/es/sdks/node#browser), [Python SDK](/es/sdks/python#browser) y [Vercel AI SDK](/es/developer-guides/llm-sdks-and-frameworks/vercel-ai-sdk). El comando oculto de CLI `firecrawl browser` es heredado; los flujos de agentes de CLI y MCP deben usar scrape + interact en su lugar.
+
+Para añadir compatibilidad con Interact a un agente de programación de IA (Claude Code, Codex, Open Code, Cursor, etc.), instala la skill de Firecrawl:
+
+```bash
+npx -y firecrawl-cli@latest init --all --browser
+```
+
+Cada sesión se ejecuta en un sandbox aislado, desechable o persistente, que escala sin necesidad de gestionar infraestructura.
+
+<div id="quick-start">
+  ## Inicio rápido
+</div>
+
+Crea una sesión, ejecuta código y ciérrala:
+
+<CodeGroup>
+  <QuickstartJS />
+
+  <QuickstartPython />
+
+  <QuickstartCLI />
+
+  <QuickstartCURL />
+</CodeGroup>
+
+* **Sin instalación de controladores** - Sin binario de Chromium, sin `playwright install`, sin problemas de compatibilidad de controladores
+* **Python, JavaScript y Bash** - Envía código vía API, CLI o SDK y recibe los resultados. Los tres lenguajes se ejecutan de forma remota en el sandbox
+* **agent-browser** - CLI preinstalada con más de 60 comandos. Los agentes de IA escriben comandos bash simples en lugar de código de Playwright
+* **Playwright disponible** - Playwright viene preinstalado en el sandbox. Los agentes pueden escribir código con Playwright si lo prefieren.
+* **Acceso CDP** - Conecta tu propia instancia de Playwright por WebSocket cuando necesites control completo
+* **Vista en vivo** - Mira las sesiones en tiempo real mediante una URL de streaming integrable
+* **Vista en vivo interactiva** - Permite que los usuarios interactúen directamente con el navegador a través de un stream interactivo integrable
+
+<div id="launch-a-session">
+  ## Iniciar una sesión
+</div>
+
+Devuelve un ID de sesión, una URL de CDP y una URL de vista en tiempo real.
+
+<CodeGroup>
+  <LaunchJS />
+
+  <LaunchPython />
+
+  <LaunchCLI />
+
+  <LaunchCURL />
+</CodeGroup>
+
+<LaunchOutput />
+
+<div id="execute-code">
+  ## Ejecutar código
+</div>
+
+Ejecuta código de Python, JavaScript o bash en tu sesión. La salida se devuelve a través de `stdout`; para Node.js, el valor de la última expresión también está disponible en `result`.
+
+<CodeGroup>
+  <ExecuteJS />
+
+  <ExecutePython />
+
+  <ExecuteCLI />
+
+  <ExecuteCURL />
+
+  <ExecuteCURLBash />
+</CodeGroup>
+
+<ExecuteOutput />
+
+<div id="handling-file-downloads">
+  ### Gestión de descargas de archivos
+</div>
+
+Los archivos descargados dentro de una sesión se pueden capturar y devolver como base64. Usa la API de descargas de Playwright mediante el endpoint `execute`:
+
+<CodeGroup>
+  ```python Python
+  import base64
+
+  async with page.expect_download() as download_info:
+      await page.click('a#download-link')  # Haz clic en el elemento que activa la descarga
+
+  download = download_info.value
+  path = await download.path()
+
+  # Opcionalmente, guarda el archivo en una ruta conocida
+  # await download.save_as('/tmp/myfile.pdf')
+
+  # Lee el contenido del archivo y genera la salida en base64
+  with open(path, "rb") as f:
+      content = base64.b64encode(f.read()).decode()
+      print(content)
+  ```
+
+  ```javascript Node
+  // Obtén la URL de descarga del elemento de enlace
+  const href = await page.getAttribute('a#download-link', 'href');
+
+  // Recupera el archivo en el contexto del navegador y conviértelo a base64
+  const b64 = await page.evaluate(async (url) => {
+    const resp = await fetch(url);
+    const blob = await resp.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result.split(',')[1]);
+      reader.readAsDataURL(blob);
+    });
+  }, href);
+
+  process.stdout.write(b64);
+  ```
+</CodeGroup>
+
+<Note>
+  El sistema de archivos del sandbox es efímero: los archivos descargados se pierden cuando termina la sesión. Para conservarlos, lee su contenido dentro de la sesión y guárdalo en tu propio almacenamiento. Los perfiles persistentes conservan el estado del navegador (`cookies`, `localStorage`), pero no los archivos en disco.
+</Note>
+
+<div id="agent-browser-bash-mode">
+  ## agent-browser (Modo Bash)
+</div>
+
+[agent-browser](https://github.com/vercel-labs/agent-browser) es una CLI de navegador headless preinstalada en cada sandbox. En lugar de escribir código de Playwright, los agentes envían comandos de bash sencillos. La CLI inyecta automáticamente `--cdp` para que agent-browser se conecte a tu sesión activa.
+
+<Note>
+  Los ejemplos de la CLI `firecrawl browser` que aparecen a continuación son para sesiones heredadas del sandbox del navegador. Para flujos de trabajo de agentes con CLI/MCP, usa preferentemente `firecrawl interact` o la herramienta MCP `firecrawl_interact`.
+</Note>
+
+<div id="shorthand">
+  ### Atajo
+</div>
+
+La forma más rápida de usar `browser`. Tanto el atajo como `execute` envían comandos a `agent-browser` automáticamente. El atajo simplemente omite `execute` y abre una sesión automáticamente si es necesario:
+
+```bash
+firecrawl browser "open https://example.com"
+firecrawl browser "snapshot"
+firecrawl browser "click @e5"
+```
+
+<div id="cli">
+  ### CLI
+</div>
+
+La forma explícita usa `execute`. Los comandos se envían automáticamente a agent-browser; no necesitas escribir `agent-browser` ni usar `--bash`:
+
+<CodeGroup>
+  ```bash Navegar y capturar instantánea
+  firecrawl browser execute "open https://example.com"
+  firecrawl browser execute "snapshot"
+  ```
+
+  ```bash Interactuar
+  firecrawl browser execute "click @e5"
+  firecrawl browser execute "fill @e3 'consulta de búsqueda'"
+  firecrawl browser execute "scrape"
+  ```
+</CodeGroup>
+
+<div id="api-sdk">
+  ### API y SDK
+</div>
+
+Utiliza `language: "bash"` para ejecutar comandos de agent-browser a través de la API o los SDK:
+
+<CodeGroup>
+  ```bash cURL
+  curl -X POST "https://api.firecrawl.dev/v2/interact/YOUR_SESSION_ID/execute" \
+    -H "Authorization: Bearer $FIRECRAWL_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "code": "agent-browser snapshot",
+      "language": "bash"
+    }'
+  ```
+
+  ```javascript Node
+  const result = await app.browserExecute(sessionId, {
+    code: "agent-browser snapshot",
+    language: "bash",
+  });
+  ```
+
+  ```python Python
+  result = app.browser_execute(
+      session_id,
+      code="agent-browser snapshot",
+      language="bash",
+  )
+  ```
+</CodeGroup>
+
+<div id="session-management">
+  ## Gestión de sesiones
+</div>
+
+<div id="persistent-sessions">
+  ### Sesiones persistentes
+</div>
+
+De forma predeterminada, cada sesión de navegador comienza desde cero. Con `profile`, puedes guardar el estado del navegador entre sesiones. Esto es útil para seguir conectado y mantener tus preferencias.
+
+Para guardar o seleccionar un perfil, usa el parámetro `profile` al crear una sesión.
+
+<CodeGroup>
+  <PersistentJS />
+
+  <PersistentPython />
+
+  <PersistentCURL />
+
+  <PersistentCLI />
+</CodeGroup>
+
+| Parámetro     | Predeterminado | Descripción                                                                                                                                                                                                  |
+| ------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `name`        | —              | Un nombre para el perfil persistente. Las sesiones con el mismo nombre comparten el almacenamiento.                                                                                                          |
+| `saveChanges` | `true`         | Cuando es `true`, el estado del navegador se guarda de nuevo en el perfil al cerrarse. Establécelo en `false` para cargar datos existentes sin escribir, útil cuando necesitas varios lectores concurrentes. |
+
+<Note>
+  Solo una sesión puede guardar en un perfil a la vez. Si otra sesión ya está guardando, recibirás un error `409`. Aun así puedes abrir el mismo perfil con `saveChanges: false` o intentarlo de nuevo más tarde.
+</Note>
+
+El estado de la sesión del navegador solo se guarda cuando la sesión se cierra. Por ello, recomendamos cerrar la sesión de navegador cuando termines de usarla para que pueda reutilizarse. Una vez cerrada una sesión, su ID de sesión deja de ser válido; no puedes reutilizarlo. En su lugar, crea una nueva sesión con el mismo nombre de perfil y usa el nuevo ID de sesión devuelto en la respuesta. Para guardarla y cerrarla:
+
+<CodeGroup>
+  <CloseJS />
+
+  <ClosePython />
+
+  <CloseCLI />
+
+  <CloseCURL />
+</CodeGroup>
+
+<div id="list-sessions">
+  ### Listar sesiones
+</div>
+
+<CodeGroup>
+  <ListJS />
+
+  <ListPython />
+
+  <ListCLI />
+
+  <ListCURL />
+</CodeGroup>
+
+<ListOutput />
+
+<div id="ttl-configuration">
+  ### Configuración de TTL
+</div>
+
+Las sesiones tienen dos controles de TTL:
+
+| Parámetro | Predeterminado | Descripción |
+|-----------|----------------|-------------|
+| `ttl` | 600s (10 min) | Vida útil máxima de la sesión (30-3600s) |
+| `activityTtl` | 300s (5 min) | Cierre automático tras inactividad (10-3600s) |
+
+<div id="close-a-session">
+  ### Cerrar una sesión
+</div>
+
+<CodeGroup>
+  <CloseJS />
+
+  <ClosePython />
+
+  <CloseCLI />
+
+  <CloseCURL />
+</CodeGroup>
+
+<div id="live-view">
+  ## Vista en vivo
+</div>
+
+Cada sesión devuelve un `liveViewUrl` en la respuesta que puedes insertar para ver el navegador en tiempo real. Resulta útil para depuración, demostraciones o para crear interfaces de usuario basadas en el navegador.
+
+```json Response
+{
+  "success": true,
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "cdpUrl": "wss://browser.firecrawl.dev/cdp/550e8400...?token=abc123...",
+  "liveViewUrl": "https://liveview.firecrawl.dev/...",
+  "interactiveLiveViewUrl": "https://liveview.firecrawl.dev/...",
+  "expiresAt": "2025-01-15T10:40:00Z"
+}
+```
+
+```html
+<iframe src="LIVE_VIEW_URL" width="100%" height="600" />
+```
+
+<div id="interactive-live-view">
+  ### Vista interactiva en vivo
+</div>
+
+La respuesta también incluye un `interactiveLiveViewUrl`. A diferencia de la vista en vivo estándar, que solo permite observar, la vista interactiva en vivo permite a los usuarios hacer clic, escribir e interactuar con la sesión del navegador directamente a través de la transmisión incrustada. Esto es útil para crear interfaces de navegador orientadas al usuario, depuración colaborativa o cualquier escenario en el que quien la visualiza necesite controlar el navegador.
+
+```html
+<iframe src="INTERACTIVE_LIVE_VIEW_URL" width="100%" height="600" />
+```
+
+<div id="connecting-via-cdp">
+  ## Conexión mediante CDP
+</div>
+
+Cada sesión expone una URL de WebSocket de CDP. La API execute y la bandera `--bash` cubren la mayoría de los casos de uso, pero si necesitas control local completo puedes conectarte directamente.
+
+<CodeGroup>
+  <PlaywrightJS />
+
+  <PlaywrightPython />
+
+  ```bash agent-browser
+  # Use the cdpUrl from the session response
+  agent-browser open https://example.com --cdp "$CDP_URL"
+  agent-browser snapshot --cdp "$CDP_URL"
+  ```
+</CodeGroup>
+
+<div id="when-to-use-browser">
+  ## Cuándo usar navegador
+</div>
+
+| Caso de uso | Herramienta adecuada |
+|----------|-----------|
+| Extraer contenido de una URL conocida | [Scrape](/es/features/scrape) |
+| Buscar en la web y obtener resultados | [Search](/es/features/search) |
+| Gestionar la paginación, completar formularios y hacer clic en flujos | **navegador** |
+| Flujos de trabajo multietapa con interacción | **navegador** |
+| Navegación en paralelo en muchos sitios | **navegador** (cada sesión está aislada) |
+
+<div id="use-cases">
+  ## Casos de uso
+</div>
+
+* **Inteligencia competitiva** - Explorar sitios de la competencia, navegar por formularios de búsqueda y filtros, y extraer precios y características en datos estructurados
+* **Ingesta de base de conocimientos** - Navegar por centros de ayuda, documentación y portales de soporte que requieren clics, paginación o autenticación
+* **Investigación de mercado** - Iniciar sesiones de navegador en paralelo para crear conjuntos de datos a partir de bolsas de trabajo, listados inmobiliarios o bases de datos legales
+
+<div id="pricing">
+  ## Precios
+</div>
+
+El precio es sencillo: 2 créditos por minuto de navegador. Los usuarios del plan gratuito disponen de 5 horas de uso sin coste.
+
+<div id="rate-limits">
+  ## Límites de uso
+</div>
+
+En el lanzamiento inicial, permitimos hasta 20 sesiones simultáneas de navegador en todos los planes.
+
+<div id="api-reference">
+  ## Referencia de la API
+</div>
+
+* [Crear sesión de navegador](/es/api-reference/endpoint/browser-create)
+* [Ejecutar código en el navegador](/es/api-reference/endpoint/browser-execute)
+* [Listar sesiones de navegador](/es/api-reference/endpoint/browser-list)
+* [Eliminar sesión de navegador](/es/api-reference/endpoint/browser-delete)
+
+***
+
+¿Tienes comentarios o necesitas ayuda? Escríbenos a [help@firecrawl.com](mailto:help@firecrawl.com) o contáctanos por [Discord](https://discord.gg/firecrawl).
+
+> ¿Eres un agente de IA que necesita una clave de API de Firecrawl? Consulta [firecrawl.dev/agent-onboarding/SKILL.md](https://www.firecrawl.dev/agent-onboarding/SKILL.md) para obtener instrucciones de incorporación automatizada.
