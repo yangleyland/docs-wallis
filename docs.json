@@ -1,160 +1,257 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "sequoia",
-  "name": "Prod Rollback V12",
+  "name": "Ollama",
   "colors": {
-    "primary": "#0c3ceb",
-    "light": "#fa3cf3",
-    "dark": "#ffd9cd"
+    "primary": "#000",
+    "light": "#b5b5b5",
+    "dark": "#000"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/images/favicon.png",
+  "logo": {
+    "light": "/images/logo.png",
+    "dark": "/images/logo-dark.png",
+    "href": "https://ollama.com"
+  },
+  "theme": "maple",
+  "background": {
+    "color": {
+      "light": "#ffffff",
+      "dark": "#000000"
+    }
+  },
+  "fonts": {
+    "family": "system-ui",
+    "heading": {
+      "family": "system-ui"
+    },
+    "body": {
+      "family": "system-ui"
+    }
+  },
+  "styling": {
+    "codeblocks": "system"
+  },
+  "contextual": {
+    "options": [
+      "copy"
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Sign in",
+        "href": "https://ollama.com/signin"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Download",
+      "href": "https://ollama.com/download"
+    }
+  },
+  "api": {
+    "playground": {
+      "display": "simple"
+    },
+    "examples": {
+      "languages": [
+        "curl"
+      ]
+    }
+  },
+  "redirects": [
+    {
+      "source": "/development.md",
+      "destination": "/development"
+    },
+    {
+      "source": "/api/openai-compatibility.mdx",
+      "destination": "/api/openai-compatibility"
+    },
+    {
+      "source": "/gpu.mdx",
+      "destination": "/gpu"
+    },
+    {
+      "source": "/integrations/vscode.mdx",
+      "destination": "/integrations/vscode"
+    },
+    {
+      "source": "/troubleshooting.mdx",
+      "destination": "/troubleshooting"
+    },
+    {
+      "source": "/openai",
+      "destination": "/api/openai-compatibility"
+    },
+    {
+      "source": "/api/openai",
+      "destination": "/api/openai-compatibility"
+    },
+    {
+      "source": "/api",
+      "destination": "/api/introduction"
+    },
+    {
+      "source": "/integrations/clawdbot",
+      "destination": "/integrations/openclaw"
+    },
+    {
+      "source": "/integrations/poolside",
+      "destination": "/integrations/pool"
+    }
+  ],
   "navigation": {
     "tabs": [
       {
-        "tab": "Docs",
-        "anchors": [
+        "tab": "Guide",
+        "groups": [
           {
-            "anchor": "Wallis Guidess",
-            "icon": "book-open-cover",
+            "group": "Get started",
             "pages": [
-              {
-                "group": "Customization",
-                "pages": [
-                  "essentials/settings"
-                ]
-              },
-              {
-                "group": "Writing content",
-                "pages": [
-                  "essentials/markdown",
-                  "essentials/code",
-                  "essentials/images",
-                  "essentials/reusable-snippets"
-                ]
-              },
-              {
-                "group": "AI tools",
-                "pages": [
-                  "ai-tools/cursor",
-                  "essentials/navigation",
-                  "ai-tools/claude-code",
-                  "ai-tools/windsurf",
-                  {
-                    "group": "Getting started",
-                    "pages": [
-                      "index",
-                      "quickstart",
-                      "development",
-                      "testpage",
-                      "changelog",
-                      "rollback-test",
-                      "rollback-v2",
-                      "rollback-v3",
-                      "rollback-v6"
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "Composite fixtures",
-                "pages": [
-                  "docs/root-only",
-                  "docs/shared-link/page"
-                ]
-              },
-              "untitled-page"
+              "index",
+              "quickstart",
+              "/cloud"
             ]
           },
           {
-            "anchor": "Wallis API Reference",
-            "icon": "code",
-            "openapi": {
-              "source": "api-reference/openapi.json",
-              "directory": "api-reference/generated"
-            },
-            "groups": [
-              {
-                "group": "API documentation",
-                "pages": [
-                  "api-reference/introduction"
-                ]
-              },
-              {
-                "group": "Endpoint examples",
-                "pages": [
-                  "GET /plants",
-                  "POST /plants",
-                  "DELETE /plants/{id}",
-                  "WEBHOOK /plant/webhook",
-                  "POST /plants/{id}/water"
-                ]
-              }
+            "group": "Capabilities",
+            "pages": [
+              "/capabilities/streaming",
+              "/capabilities/thinking",
+              "/capabilities/structured-outputs",
+              "/capabilities/vision",
+              "/capabilities/embeddings",
+              "/capabilities/tool-calling",
+              "/capabilities/web-search"
+            ]
+          },
+          {
+            "group": "More information",
+            "pages": [
+              "/cli",
+              "/modelfile",
+              "/context-length",
+              "/linux",
+              "/macos",
+              "/windows",
+              "/docker",
+              "/import",
+              "/faq",
+              "/gpu",
+              "/troubleshooting"
             ]
           }
         ]
       },
       {
-        "tab": "Solutions",
+        "tab": "Integrations",
         "groups": [
           {
-            "group": "Cloud",
+            "group": "Integrations",
             "pages": [
-              "quickstart",
-              "development"
+              "/integrations/index"
+            ]
+          },
+          {
+            "group": "Assistants",
+            "expanded": true,
+            "pages": [
+              "/integrations/openclaw",
+              "/integrations/hermes",
+              "/integrations/hermes-desktop"
+            ]
+          },
+          {
+            "group": "Coding",
+            "expanded": true,
+            "pages": [
+              "/integrations/claude-code",
+              "/integrations/opencode",
+              "/integrations/cline-cli",
+              "/integrations/codex-app",
+              "/integrations/codex",
+              "/integrations/copilot-cli",
+              "/integrations/droid",
+              "/integrations/goose",
+              "/integrations/oh-my-pi",
+              "/integrations/pi",
+              "/integrations/pool"
+            ]
+          },
+          {
+            "group": "IDEs & Editors",
+            "expanded": true,
+            "pages": [
+              "/integrations/vscode",
+              "/integrations/cline",
+              "/integrations/jetbrains",
+              "/integrations/roo-code",
+              "/integrations/xcode",
+              "/integrations/zed"
+            ]
+          },
+          {
+            "group": "Chat & RAG",
+            "pages": [
+              "/integrations/onyx"
+            ]
+          },
+          {
+            "group": "Automation",
+            "pages": [
+              "/integrations/n8n"
+            ]
+          },
+          {
+            "group": "Notebooks",
+            "pages": [
+              "/integrations/marimo"
+            ]
+          },
+          {
+            "group": "Assistant Sandboxing",
+            "pages": [
+              "/integrations/nemoclaw"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "openapi": "/openapi.yaml",
+        "groups": [
+          {
+            "group": "API Reference",
+            "pages": [
+              "/api/introduction",
+              "/api/authentication",
+              "/api/streaming",
+              "/api/usage",
+              "/api/errors",
+              "/api/openai-compatibility",
+              "/api/anthropic-compatibility"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "POST /api/generate",
+              "POST /api/chat",
+              "POST /api/embed",
+              "GET /api/tags",
+              "GET /api/ps",
+              "POST /api/show",
+              "POST /api/create",
+              "POST /api/copy",
+              "POST /api/pull",
+              "POST /api/push",
+              "DELETE /api/delete",
+              "GET /api/version"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/images/accelerate-svgrepo-com.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-      "copy",
-      "view",
-      "chatgpt",
-      "claude",
-      "perplexity",
-      "mcp",
-      "cursor",
-      "vscode"
     ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
   }
 }
