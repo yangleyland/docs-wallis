@@ -1,0 +1,59 @@
+---
+title: "Update Balance"
+openapi: "openapi POST /v1/balances.update"
+---
+
+import { DynamicParamField } from "/snippets/dynamic-param-field.jsx";
+import { DynamicResponseField } from "/snippets/dynamic-response-field.jsx";
+import { DynamicResponseExample } from "/snippets/dynamic-response-example.jsx";
+
+### Body Parameters
+
+<DynamicParamField body="customer_id" type="string" required>
+  The ID of the customer.
+</DynamicParamField>
+
+<DynamicParamField body="feature_id" type="string" required>
+  The ID of the feature.
+</DynamicParamField>
+
+<DynamicParamField body="entity_id" type="string">
+  The ID of the entity for entity-scoped balances (e.g., per-seat limits).
+</DynamicParamField>
+
+<DynamicParamField body="remaining" type="number">
+  Set the remaining balance to this exact value. Cannot be combined with add_to_balance.
+</DynamicParamField>
+
+<DynamicParamField body="add_to_balance" type="number">
+  Add this amount to the current balance. Use negative values to subtract. Cannot be combined with current_balance.
+</DynamicParamField>
+
+<DynamicParamField body="usage" type="number">
+  The usage amount to update. Cannot be combined with remaining or add_to_balance.
+</DynamicParamField>
+
+<DynamicParamField body="interval" type="'one_off' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'semi_annual' | 'year'">
+  Target a specific balance by its reset interval. Use when the customer has multiple balances for the same feature with different reset intervals.
+</DynamicParamField>
+
+<DynamicParamField body="included_grant" type="number">
+  Set the granted balance to this exact value.
+</DynamicParamField>
+
+<DynamicParamField body="balance_id" type="string">
+  Target a specific balance by its ID (set on create). Use when the customer has multiple balances for the same feature.
+</DynamicParamField>
+
+<DynamicParamField body="next_reset_at" type="number">
+  The next reset time for the balance. If there are multiple breakdowns, this will update the breakdown with the next reset time.
+</DynamicParamField>
+
+<DynamicParamField body="expires_at" type="number">
+  Unix timestamp (milliseconds) when the balance expires. Targets a specific balance via balance_id / interval when the customer has multiple balances for the same feature.
+</DynamicParamField>
+
+
+### Response
+
+<DynamicResponseField name="success" type="boolean" />

@@ -1,0 +1,317 @@
+---
+title: "Webhooks"
+description: "Receive real-time notifications when customer billing events occur"
+---
+
+With Autumn, you don't need webhooks for managing billing — subscription state, usage tracking, and access control are all synchronized automatically. 
+
+However, webhooks can still be useful for specific use cases where you want to trigger actions in your own systems.
+
+## Use Cases
+
+While Autumn handles billing complexity for you, webhooks are helpful for:
+
+- **Sending activation emails** — Welcome new subscribers or notify users when their plan changes
+- **Triggering workflows** — Start onboarding sequences, provision resources, or update CRM records
+- **Syncing with external systems** — Keep your database, analytics, or other tools in sync with subscription changes
+- **Deprovisioning access to services** — Shut off access to downstream services when a customer cancels their subscription
+
+## Available Events
+
+### billing.updated
+
+Fired whenever a customer's plans change — new subscriptions, upgrades, downgrades, etc. Each event carries a `plan_changes` array describing exactly what happened to each affected plan.
+
+| Action | Description |
+|--------|-------------|
+| `activated` | A plan is now active on the customer (newly attached, or a previously scheduled plan reached its start date) |
+| `scheduled` | A plan has been queued to start at a future date |
+| `updated` | A plan's state changed in place (cancellation set or cleared, `past_due` flipped, items added or removed) |
+| `expired` | A plan ended and is no longer in effect |
+
+Each entry also includes the `subscription` (or `purchase` for one-off products) after the change, and `previous_attributes` holding the prior values of any fields that were updated. For instance, if a plan was canceled at period end:
+
+```json expandable
+{
+  "action": "updated",
+  "subscription": {
+    "plan_id": "pro",
+    "status": "active",
+    "past_due": false,
+    "started_at": 1759248000000,
+    "canceled_at": 1761840000000,
+    "expires_at": 1764432000000,
+    "trial_ends_at": null,
+    "current_period_start": 1761840000000,
+    "current_period_end": 1764432000000
+  },
+  "previous_attributes": {
+    "canceled_at": null,
+    "expires_at": null
+  },
+  "item_changes": []
+}
+```
+
+The top-level `tags` array surfaces optional reason tags describing why the event fired:
+
+| Tag | When |
+|-----|------|
+| `trial_ended` | A trial just ended (Stripe subscription transition or the trial-expiry cron) |
+| `phase_changed` | A Stripe subscription schedule phase advanced |
+
+**Example payload (upgrade from `free` to `pro`):**
+
+```json expandable
+{
+  "type": "billing.updated",
+  "data": {
+    "object": "billing.updated",
+    "customer_id": "user_123",
+    "plan_changes": [
+      {
+        "action": "activated",
+        "subscription": {
+          "plan_id": "pro",
+          "status": "active",
+          "past_due": false,
+          "started_at": 1761840000000,
+          "canceled_at": null,
+          "expires_at": null,
+          "trial_ends_at": null,
+          "current_period_start": 1761840000000,
+          "current_period_end": 1764432000000
+        },
+        "previous_attributes": null,
+        "item_changes": []
+      },
+      {
+        "action": "expired",
+        "subscription": {
+          "plan_id": "free",
+          "status": "expired",
+          "past_due": false,
+          "started_at": 1759248000000,
+          "canceled_at": 1761840000000,
+          "expires_at": 1761840000000,
+          "trial_ends_at": null,
+          "current_period_start": null,
+          "current_period_end": null
+        },
+        "previous_attributes": { "status": "active" },
+        "item_changes": []
+      }
+    ],
+    "tags": []
+  }
+}
+```
+
+For entity-scoped events, the payload will also include an `entity_id`:
+
+```json expandable
+{
+  "type": "billing.updated",
+  "data": {
+    "object": "billing.updated",
+    "customer_id": "user_123",
+    "entity_id": "team_456",
+    "plan_changes": [ ... ],
+    "tags": []
+  }
+}
+```
+
+**Common patterns:**
+
+- **Sync Autumn state back to your DB** — listen for every `billing.updated` and persist each `plan_changes` entry's `subscription` snapshot keyed by `customer_id` (+ `entity_id` if set).
+- **Notify on upgrades** — filter for entries with `action: "activated"`. For "upgrade from previous plan" specifically, pair it with an `action: "expired"` entry on the same event.
+- **Detect cancellations** — filter for entries where `previous_attributes.canceled_at === null` (a cancellation was just set) or `previous_attributes.canceled_at` is a number (an uncancel).
+- **Trial-end emails** — filter for `tags.includes("trial_ended")`.
+
+### balances.limit_reached
+
+Fired when a customer hits a usage limit for a feature. A limit can be the included allowance, a max purchase cap, or a spend limit.
+
+| Limit Type | Description |
+|------------|-------------|
+| `included` | Customer has exhausted their included allowance |
+| `max_purchase` | Customer has reached the maximum purchase cap for overage |
+| `spend_limit` | Customer has hit their configured spend limit |
+
+**Example payload:**
+
+```json expandable
+{
+  "type": "balances.limit_reached",
+  "data": {
+    "customer_id": "user_123",
+    "feature_id": "api_calls",
+    "limit_type": "included"
+  }
+}
+```
+
+For entity-scoped usage, the payload will also include an `entity_id`:
+
+```json expandable
+{
+  "type": "balances.limit_reached",
+  "data": {
+    "customer_id": "user_123",
+    "feature_id": "api_calls",
+    "entity_id": "team_456",
+    "limit_type": "max_purchase"
+  }
+}
+```
+
+### billing.auto_topup_succeeded
+
+Fired when an [auto top-up](/documentation/modelling-pricing/auto-top-ups) successfully grants additional prepaid balance. Useful for sending receipts, updating internal ledgers, or reconciling balance after a recharge.
+
+For auto-charged top-ups, the event fires only after the Stripe invoice is `paid`. For `invoice_mode` top-ups, the event fires once credits are granted and the invoice is finalized — `invoice.status` will typically be `"open"` until the customer pays.
+
+Use `invoice.stripe_id` as a stable dedupe key. The top-level `id` field (e.g. `evt_auto_topup_...`) is a unique identifier for the event itself.
+
+**Example payload (auto-charge):**
+
+```json expandable
+{
+  "type": "billing.auto_topup_succeeded",
+  "id": "evt_auto_topup_2abc123",
+  "occurred_at": 1761840000000,
+  "data": {
+    "customer_id": "user_123",
+    "feature_id": "credits",
+    "quantity_granted": 1000,
+    "threshold": 500,
+    "balance_after": 1450,
+    "invoice_mode": false,
+    "invoice": {
+      "stripe_id": "in_1A2B3C4D5E6F",
+      "status": "paid",
+      "total": 1000,
+      "currency": "usd",
+      "hosted_invoice_url": "https://invoice.stripe.com/i/..."
+    }
+  }
+}
+```
+
+**Example payload (invoice mode):**
+
+```json expandable
+{
+  "type": "billing.auto_topup_succeeded",
+  "id": "evt_auto_topup_3xyz456",
+  "occurred_at": 1761840000000,
+  "data": {
+    "customer_id": "user_123",
+    "feature_id": "credits",
+    "quantity_granted": 1000,
+    "threshold": 500,
+    "balance_after": 1450,
+    "invoice_mode": true,
+    "invoice": {
+      "stripe_id": "in_2G3H4I5J6K7L",
+      "status": "open",
+      "total": 1000,
+      "currency": "usd",
+      "hosted_invoice_url": "https://invoice.stripe.com/i/..."
+    }
+  }
+}
+```
+
+### billing.auto_topup_failed
+
+Fired when an [auto top-up](/documentation/modelling-pricing/auto-top-ups) is blocked, declined, or fails before granting additional prepaid balance. This includes charge failures, purchase/attempt limits, missing payment methods, unavailable customer billing setup, lock contention, and transient infrastructure issues.
+
+Use `reason` to branch on the failure mode.
+
+Limit-blocked failures are suppressed per blocking window, so repeated attempts while the same purchase, attempt, or failed-attempt limit is active do not emit duplicate webhooks.
+
+**Example payload:**
+
+```json expandable
+{
+  "type": "billing.auto_topup_failed",
+  "id": "evt_auto_topup_failed_2abc123",
+  "occurred_at": 1761840000000,
+  "data": {
+    "customer_id": "user_123",
+    "feature_id": "credits",
+    "reason": "charge_failed",
+    "quantity": 1000,
+    "threshold": 500,
+    "balance": 250,
+    "invoice_mode": false,
+    "error": {
+      "code": "card_declined",
+      "message": "Your card was declined.",
+      "type": "card_error",
+      "decline_code": "generic_decline"
+    }
+  }
+}
+```
+
+### balances.usage_alert_triggered
+
+Fired when a customer crosses a configured usage alert threshold. Usage alerts let you monitor when customers approach or exceed specific usage levels for a feature.
+
+| Alert Threshold Type | Description |
+|---------------------|-------------|
+| `usage` | An absolute usage count was crossed |
+| `usage_percentage` | A percentage of the usage allowance was crossed |
+
+**Example payload:**
+
+```json expandable
+{
+  "type": "balances.usage_alert_triggered",
+  "data": {
+    "customer_id": "user_123",
+    "feature_id": "api_calls",
+    "usage_alert": {
+      "name": "80% usage warning",
+      "threshold": 80,
+      "threshold_type": "usage_percentage"
+    }
+  }
+}
+```
+
+## Setup
+
+Configure your webhook endpoints in the Autumn dashboard:
+
+<Steps>
+  <Step title="Navigate to Developer Settings">
+    Go to the **Developer** section in your Autumn dashboard and select the **Webhooks** tab.
+  </Step>
+  <Step title="Add an Endpoint">
+    Click **Add Endpoint** and enter the URL where you want to receive webhook events.
+  </Step>
+  <Step title="Select Events">
+    Choose which events you want to subscribe to. You can select all events or specific ones.
+  </Step>
+  <Step title="Save and Test">
+    Save your endpoint configuration. You can use the **Send Test Event** button to verify your endpoint is receiving events correctly.
+  </Step>
+</Steps>
+
+## Webhook Security
+
+Autumn uses [Svix](https://www.svix.com/) for reliable webhook delivery. Each webhook request includes signature headers that you can use to verify the request is genuinely from Autumn:
+
+- `svix-id` — Unique message identifier
+- `svix-timestamp` — Timestamp of when the message was sent
+- `svix-signature` — Signature for verifying authenticity
+
+You can use the [Svix libraries](https://docs.svix.com/receiving/verifying-payloads/how) to easily verify webhook signatures in your application.
+
+## Retry Policy
+
+If your endpoint returns an error or is unavailable, Autumn will automatically retry the webhook with exponential backoff. You can view delivery attempts and retry failed webhooks from the dashboard.

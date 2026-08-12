@@ -1,0 +1,161 @@
+---
+title: "List Events"
+openapi: "openapi POST /v1/events.list"
+---
+
+import { DynamicParamField } from "/snippets/dynamic-param-field.jsx";
+import { DynamicResponseField } from "/snippets/dynamic-response-field.jsx";
+import { DynamicResponseExample } from "/snippets/dynamic-response-example.jsx";
+
+### Body Parameters
+
+<DynamicParamField body="start_cursor" type="string">
+  Opaque pagination cursor. Empty string (default) requests the first page; use next_cursor from a prior response for subsequent pages.
+</DynamicParamField>
+
+<DynamicParamField body="limit" type="integer">
+  Number of items to return. Default 50, hard ceiling 5000.
+</DynamicParamField>
+
+<DynamicParamField body="customer_id" type="string">
+  Filter events by customer ID
+</DynamicParamField>
+
+<DynamicParamField body="entity_id" type="string">
+  Filter events by entity ID (e.g., per-seat or per-resource)
+</DynamicParamField>
+
+<DynamicParamField body="feature_id" type="string">
+  Filter by specific feature ID(s)
+</DynamicParamField>
+
+<DynamicParamField body="custom_range" type="object">
+  Filter events by time range
+  <Expandable title="properties">
+    <DynamicParamField body="start" type="number">
+      Filter events after this timestamp (epoch milliseconds)
+    </DynamicParamField>
+
+    <DynamicParamField body="end" type="number">
+      Filter events before this timestamp (epoch milliseconds)
+    </DynamicParamField>
+
+  </Expandable>
+</DynamicParamField>
+
+
+### Response
+
+<DynamicResponseField name="list" type="object[]">
+  Items for current page.
+  <Expandable title="properties">
+    <DynamicResponseField name="id" type="string">
+      Event ID (KSUID)
+    </DynamicResponseField>
+
+    <DynamicResponseField name="timestamp" type="number">
+      Event timestamp (epoch milliseconds)
+    </DynamicResponseField>
+
+    <DynamicResponseField name="feature_id" type="string">
+      ID of the feature that the event belongs to
+    </DynamicResponseField>
+
+    <DynamicResponseField name="customer_id" type="string">
+      Customer identifier
+    </DynamicResponseField>
+
+    <DynamicResponseField name="value" type="number">
+      Event value/count
+    </DynamicResponseField>
+
+    <DynamicResponseField name="properties" type="object">
+      Event properties (JSON)
+    </DynamicResponseField>
+
+    <DynamicResponseField name="deductions" type="object[] | null">
+      Per-balance breakdown of what this event deducted. Null for events ingested before deductions were tracked; an empty array means the event was accepted but no balance moved.
+      <Expandable title="properties">
+        <DynamicResponseField name="balance_id" type="string">
+          ID of the underlying balance row that was deducted from (customer_entitlement or rollover).
+        </DynamicResponseField>
+
+        <DynamicResponseField name="feature_id" type="string">
+          The feature this balance belongs to.
+        </DynamicResponseField>
+
+        <DynamicResponseField name="plan_id" type="string | null">
+          ID of the plan/product this balance belongs to. Null when the balance can't be attributed to a single plan (e.g. it spans multiple).
+        </DynamicResponseField>
+
+        <DynamicResponseField name="reset" type="object | null">
+          Reset configuration for the balance this deduction came from, or null if the balance doesn't reset.
+          <Expandable title="properties">
+            <DynamicResponseField name="interval" type="'one_off' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'semi_annual' | 'year'">
+              The reset interval (hour, day, week, month, etc.) or 'multiple' if combined from different intervals.
+            </DynamicResponseField>
+
+            <DynamicResponseField name="interval_count" type="number">
+              Number of intervals between resets (eg. 2 for bi-monthly).
+            </DynamicResponseField>
+
+            <DynamicResponseField name="resets_at" type="number | null">
+              Timestamp when the balance will next reset.
+            </DynamicResponseField>
+
+          </Expandable>
+        </DynamicResponseField>
+
+        <DynamicResponseField name="value" type="number">
+          Amount deducted from this balance. Positive when usage was consumed, negative when credit was restored (e.g. a refund via negative track value).
+        </DynamicResponseField>
+
+      </Expandable>
+    </DynamicResponseField>
+
+  </Expandable>
+</DynamicResponseField>
+
+<DynamicResponseField name="next_cursor" type="string | null">
+  Opaque cursor for the next page. Null when there are no more results.
+</DynamicResponseField>
+
+
+<ResponseExample>
+```json 200
+{
+  "list": [
+    {
+      "id": "evt_36xpk2TmuQX5zVPPQ8tCtnR5Weg",
+      "timestamp": 1765958215459,
+      "feature_id": "credits",
+      "customer_id": "0pCIbS4AMAFDB1iBMNhARWZt2gDtVwQx",
+      "value": 30,
+      "properties": {},
+      "deductions": [
+        {
+          "balance_id": "cus_ent_3DdSDtFBlvDbjyUuJeUIbQlyN12",
+          "feature_id": "credits",
+          "plan_id": "pro",
+          "reset": {
+            "interval": "month",
+            "resets_at": 1765958215459
+          },
+          "value": 30
+        }
+      ]
+    },
+    {
+      "id": "evt_36xmHxxjAkqxufDf9yHAPNfRrLM",
+      "timestamp": 1765956512057,
+      "feature_id": "credits",
+      "customer_id": "0pCIbS4AMAFDB1iBMNhARWZt2gDtVwQx",
+      "value": 49,
+      "properties": {},
+      "deductions": null
+    }
+  ],
+  "next_cursor": "eyJ2IjowLCJpZCI6ImV2dF8zNnhtSHh4akFrcXh1ZkRmOXlIQVBOZlJyTE0iLCJ0IjoxNzY1OTU2NTEyMDU3fQ"
+}
+```
+</ResponseExample>

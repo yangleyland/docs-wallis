@@ -1,0 +1,939 @@
+---
+title: "Querying"
+sidebarTitle: "Querying"
+description: "How to address tables, convert types, join, and avoid footguns."
+---
+
+<Warning>
+  **Available on request** — The Autumn Lakehouse is provisioned per customer. Contact us at [hey@useautumn.com](mailto:hey@useautumn.com) to get access.
+</Warning>
+
+Throughout this page, replace `<catalog>` and `<namespace>` with the names Autumn assigned you.
+
+## Find your catalog and namespace
+
+Autumn sends you both names when your Lakehouse is provisioned (see [Connecting](/documentation/lakehouse/connecting)). If you need to rediscover them in ClickHouse Cloud, the catalog mounts as a database — list databases to find it:
+
+<Tabs>
+<Tab title="ClickHouse">
+
+```sql
+SHOW DATABASES;
+```
+
+The catalog appears as one of the listed databases. Your tables then live under `` `<catalog>`.`<namespace>.v2_3_<object>` `` (the `<namespace>.v2_3_<object>` part is a single literal table name — see below).
+
+</Tab>
+<Tab title="BigQuery">
+
+BigQuery has no catalog to mount — Autumn grants you a **project** and **dataset**. List it to see what's there:
+
+```sql
+SELECT table_name
+FROM `<project>.<dataset>.INFORMATION_SCHEMA.TABLES`
+ORDER BY table_name;
+```
+
+</Tab>
+</Tabs>
+
+## Identifier syntax
+
+<Tabs>
+<Tab title="ClickHouse">
+
+The Glue catalog mounts as a database. The whole `<namespace>.v2_3_<object>` is the **table name** — the dot is literal, so backtick **both** parts:
+
+```sql
+SELECT * FROM `<catalog>`.`<namespace>.v2_3_features` LIMIT 10;
+```
+
+A common mistake is `` `<catalog>.<namespace>`.`v2_3_features` `` — that won't resolve, because `<namespace>.v2_3_features` is a single identifier, not `database.table`. The single-quoted `'<namespace>.v2_3_features'` form does not resolve in ClickHouse Cloud either — use backticks on both parts.
+
+</Tab>
+<Tab title="BigQuery">
+
+Iceberg tables are addressed as standard fully-qualified BigQuery tables — ordinary `project.dataset.table`, with no literal dot inside the table name:
+
+```sql
+SELECT * FROM `<project>.<dataset>.v2_3_features` LIMIT 10;
+```
+
+</Tab>
+</Tabs>
+
+## Timestamps
+
+All `number (epoch ms)` columns (`created_at`, `started_at`, `expires_at`, `current_period_*`, `*_resets_at`, …) are epoch-milliseconds. Convert before use. The only native timestamp is `events.timestamp` (the unversioned `events` table — see [Schema → Events](/documentation/lakehouse/schema#events)).
+
+<Tabs>
+<Tab title="ClickHouse">
+
+```sql
+SELECT
+  customer_id,
+  toDateTime(toInt64(created_at) / 1000) AS created
+FROM `<catalog>`.`<namespace>.v2_3_customers`;
+```
+
+`fromUnixTimestamp64Milli(toInt64(created_at))` also works and preserves millisecond precision. `events.timestamp` is already a `DateTime` — use it directly.
+
+</Tab>
+<Tab title="BigQuery">
+
+```sql
+SELECT
+  customer_id,
+  TIMESTAMP_MILLIS(created_at) AS created
+FROM `<project>.<dataset>.v2_3_customers`;
+```
+
+</Tab>
+</Tabs>
+
+## JSON columns
+
+`metadata`, `config`, `processors`, `properties`, `deductions`, `display`, `v2_3_rollovers.entities`, and the `discounts` arrays are stored as JSON strings.
+
+<Tabs>
+<Tab title="ClickHouse">
+
+```sql
+SELECT JSONExtractString(properties, 'subtype') AS subtype
+FROM `<catalog>`.`<namespace>.events`;
+```
+
+</Tab>
+<Tab title="BigQuery">
+
+```sql
+SELECT JSON_VALUE(properties, '$.subtype') AS subtype
+FROM `<project>.<dataset>.events`;
+```
+
+</Tab>
+</Tabs>
+
+## Nullable columns: don't use `IS NULL`
+
+<Warning>
+  **ClickHouse only.** On the Iceberg tables, `WHERE col IS NULL` raises `NOT_FOUND_COLUMN_IN_BLOCK` — the engine reaches for an unmaterialized `col.null` subcolumn that doesn't exist. This bites hardest on `entity_id` (the customer-vs-entity scope discriminator) and on `v2_3_rollovers.expires_at` (where null means "never expires", so you *have* to test for it). Use **`coalesce(col, '') = ''`** for "is null" and **`coalesce(col, '') != ''`** for "is not null"; for numeric columns, `coalesce(col, 0) = 0`. BigQuery has no such restriction — plain `IS NULL` works there.
+</Warning>
+
+```sql
+-- ✗ throws NOT_FOUND_COLUMN_IN_BLOCK (ClickHouse)
+WHERE entity_id IS NULL
+-- ✓ customer-scoped (pooled) rows
+WHERE coalesce(entity_id, '') = ''
+-- ✓ unexpired rollovers
+WHERE coalesce(expires_at, 0) = 0 OR expires_at > toUnixTimestamp(now()) * 1000
+```
+
+## Examples
+
+### Fetch one customer
+
+<Tabs>
+<Tab title="ClickHouse">
+
+```sql
+SELECT internal_id, customer_id, name, email
+FROM `<catalog>`.`<namespace>.v2_3_customers`
+WHERE customer_id = 'cus_123';
+```
+
+</Tab>
+<Tab title="BigQuery">
+
+```sql
+SELECT internal_id, customer_id, name, email
+FROM `<project>.<dataset>.v2_3_customers`
+WHERE customer_id = 'cus_123';
+```
+
+</Tab>
+</Tabs>
+
+### Active subscriptions joined to their plan
+
+Join on the **internal** ids, not the external ones (see [below](#use-internal-ids-not-external-ids)).
+
+<Tabs>
+<Tab title="ClickHouse">
+
+```sql
+SELECT
+  s.customer_id,
+  p.name AS plan_name,
+  p.price_amount,
+  toDateTime(toInt64(s.current_period_end) / 1000) AS renews_at
+FROM `<catalog>`.`<namespace>.v2_3_subscriptions` AS s
+INNER JOIN `<catalog>`.`<namespace>.v2_3_plans` AS p
+  ON p.internal_id = s.internal_product_id
+WHERE s.status = 'active';
+```
+
+</Tab>
+<Tab title="BigQuery">
+
+```sql
+SELECT
+  s.customer_id,
+  p.name AS plan_name,
+  p.price_amount,
+  TIMESTAMP_MILLIS(s.current_period_end) AS renews_at
+FROM `<project>.<dataset>.v2_3_subscriptions` AS s
+INNER JOIN `<project>.<dataset>.v2_3_plans` AS p
+  ON p.internal_id = s.internal_product_id
+WHERE s.status = 'active';
+```
+
+</Tab>
+</Tabs>
+
+### A customer's balances for a feature
+
+Use the customer-scoped (pooled) rows where `coalesce(entity_id, '') = ''`.
+
+<Warning>
+  This returns the **raw** aggregated row, which sums over *every* entitlement — including superseded versions and past cycles — so `granted`/`remaining`/`usage` will not match the API for customers with history. It also **excludes rollover balances**, which live in `v2_3_rollovers` — see [Balance including rollovers](#balance-including-rollovers). To reproduce the API/dashboard figure, apply the active + current-cycle filter from [Working with balances](/documentation/lakehouse/balance-semantics). For overage specifically, use [the reference query below](#current-period-overage).
+</Warning>
+
+<Tabs>
+<Tab title="ClickHouse">
+
+```sql
+SELECT feature_id, granted, remaining, usage
+FROM `<catalog>`.`<namespace>.v2_3_balances`
+WHERE customer_id = 'cus_123'
+  AND feature_id = 'AI_CREDITS'
+  AND coalesce(entity_id, '') = '';
+```
+
+</Tab>
+<Tab title="BigQuery">
+
+```sql
+SELECT feature_id, granted, remaining, usage
+FROM `<project>.<dataset>.v2_3_balances`
+WHERE customer_id = 'cus_123'
+  AND feature_id = 'AI_CREDITS'
+  AND entity_id IS NULL;
+```
+
+</Tab>
+</Tabs>
+
+### Balance including rollovers
+
+<Warning>
+  `v2_3_balances.remaining` and `v2_3_breakdowns.remaining` **do not include rollover balances** — rollovers are their own table, so any customer carrying unused allowance forward reads low until you add them in. This is the single most common way to undercount.
+</Warning>
+
+Join `v2_3_rollovers.internal_breakdown_id` to `v2_3_breakdowns.internal_id` and sum the **unexpired** rows. A rollover with `expires_at` null never expires; one with `expires_at` in the past is dead weight the table still keeps, so an unfiltered `sum(balance)` overstates.
+
+<Tabs>
+<Tab title="ClickHouse">
+
+```sql
+SELECT
+  b.customer_id,
+  b.feature_id,
+  sum(b.remaining)                              AS remaining_excl_rollover,
+  sum(coalesce(r.rollover_balance, 0))          AS rollover_balance,
+  sum(b.remaining) + sum(coalesce(r.rollover_balance, 0)) AS remaining_incl_rollover
+FROM `<catalog>`.`<namespace>.v2_3_breakdowns` AS b
+LEFT JOIN (
+  SELECT internal_breakdown_id AS bid, sum(balance) AS rollover_balance
+  FROM `<catalog>`.`<namespace>.v2_3_rollovers`
+  WHERE env = 'live'
+    AND (coalesce(expires_at, 0) = 0 OR expires_at > toUnixTimestamp(now()) * 1000)
+  GROUP BY bid
+) AS r ON r.bid = b.internal_id
+WHERE b.env = 'live'
+  AND b.customer_id = 'cus_123'
+  AND b.feature_id = 'AI_CREDITS'
+  AND coalesce(b.entity_id, '') = ''
+GROUP BY b.customer_id, b.feature_id;
+```
+
+</Tab>
+<Tab title="BigQuery">
+
+```sql
+SELECT
+  b.customer_id,
+  b.feature_id,
+  SUM(b.remaining)                              AS remaining_excl_rollover,
+  SUM(COALESCE(r.rollover_balance, 0))          AS rollover_balance,
+  SUM(b.remaining) + SUM(COALESCE(r.rollover_balance, 0)) AS remaining_incl_rollover
+FROM `<project>.<dataset>.v2_3_breakdowns` AS b
+LEFT JOIN (
+  SELECT internal_breakdown_id AS bid, SUM(balance) AS rollover_balance
+  FROM `<project>.<dataset>.v2_3_rollovers`
+  WHERE env = 'live'
+    AND (expires_at IS NULL OR expires_at > UNIX_MILLIS(CURRENT_TIMESTAMP()))
+  GROUP BY bid
+) AS r ON r.bid = b.internal_id
+WHERE b.env = 'live'
+  AND b.customer_id = 'cus_123'
+  AND b.feature_id = 'AI_CREDITS'
+  AND b.entity_id IS NULL
+GROUP BY b.customer_id, b.feature_id;
+```
+
+</Tab>
+</Tabs>
+
+<Note>
+  Aggregate the rollovers in a **subquery before joining**, as above. Joining the rollover rows in directly fans out `v2_3_breakdowns` — one entitlement can hold several rollover grants — and then `sum(b.remaining)` counts the same breakdown row once per rollover. This query also has the same caveat as every other raw balances query: it sums over all entitlement rows, so apply the [active + current-cycle filter](/documentation/lakehouse/balance-semantics#the-active-current-cycle-filter) if you want the figure the API would return.
+</Note>
+
+### Current-period overage
+
+Overage is **derived, not stored**, and there are **two figures** — pick deliberately (see [Working with balances → Overage](/documentation/lakehouse/balance-semantics#overage-is-derived-not-stored-and-there-are-two-of-them)):
+
+- **Displayed** (`max(0, Σusage − Σgranted)` — sum first, floor once): what the **balance header / dashboard** shows. This query computes this one, so it reproduces the dashboard to within sync-lag drift.
+- **Billable** (`Σ max(0, usage − granted)` — floor per row, then sum): what Autumn **invoices**. To get it, swap the `overage` expression as noted in the query.
+
+Both reconstruct from `v2_3_breakdowns` over the same row set: rows whose customer plan is an **active** subscription (plus always-live `one_off` rows), restricted to each entitlement's **current cycle** (earliest upcoming reset).
+
+<Note>
+  Swap in your `<catalog>` / `<namespace>` and the feature id. Known simplifications: it omits rollover balances (join `v2_3_rollovers` as in [Balance including rollovers](#balance-including-rollovers) if your features roll over — unspent rollover reduces overage) and it is customer-scope-only (`coalesce(entity_id,'') = ''`), so entity-scoped overage under `config.disable_pooled_balance` is not counted. For those customers, sum the per-entity rows instead.
+</Note>
+
+<Tabs>
+<Tab title="ClickHouse">
+<Expandable title="ClickHouse">
+
+```sql
+WITH
+  -- `internal_customer_product_id` on breakdowns IS the subscription's `internal_id`,
+  -- so active-ness is one direct equality — no customer + plan-version detour.
+  active_plan AS (
+    SELECT internal_id
+    FROM `<catalog>`.`<namespace>.v2_3_subscriptions`
+    WHERE env = 'live' AND status = 'active'
+  ),
+  bd AS (
+    SELECT
+      b.internal_customer_id      AS icid,
+      b.internal_customer_product_id AS icpid,
+      b.reset_interval            AS ri,
+      toInt64(b.reset_resets_at)  AS rra,
+      (b.included_grant + b.prepaid_grant) AS granted,
+      b.usage AS usage
+    FROM `<catalog>`.`<namespace>.v2_3_breakdowns` AS b
+    WHERE b.env = 'live'
+      AND b.feature_id = 'AI_CREDITS'
+      AND coalesce(b.entity_id, '') = ''
+      AND (
+        b.reset_interval = 'one_off'
+        OR b.internal_customer_product_id IN (SELECT internal_id FROM active_plan)
+      )
+  ),
+  cur_cycle AS (
+    SELECT icid, icpid, min(rra) AS cur_reset
+    FROM bd
+    WHERE ri != 'one_off' AND rra > toUnixTimestamp(now()) * 1000
+    GROUP BY icid, icpid
+  ),
+  per_customer AS (
+    SELECT
+      bd.icid AS icid,
+      sum(bd.granted) AS granted,
+      sum(bd.usage)   AS usage,
+      -- DISPLAYED overage (matches the dashboard): sum first, floor once.
+      greatest(0, sum(bd.usage) - sum(bd.granted)) AS overage
+      -- For BILLABLE overage (what Autumn invoices) instead, floor per row, then sum:
+      --   sum(greatest(0, bd.usage - bd.granted)) AS overage
+    FROM bd
+    LEFT JOIN cur_cycle AS cc ON cc.icid = bd.icid AND cc.icpid = bd.icpid
+    WHERE bd.ri = 'one_off' OR bd.rra = cc.cur_reset
+    GROUP BY bd.icid
+    HAVING overage > 0
+    ORDER BY overage DESC
+    LIMIT 10
+  ),
+  active_subs AS (
+    SELECT s.internal_customer_id AS icid, groupArray(coalesce(p.name, s.plan_id)) AS subscriptions
+    FROM `<catalog>`.`<namespace>.v2_3_subscriptions` AS s
+    LEFT JOIN `<catalog>`.`<namespace>.v2_3_plans` AS p ON p.internal_id = s.internal_product_id
+    WHERE s.env = 'live' AND s.status = 'active'
+    GROUP BY s.internal_customer_id
+  )
+SELECT
+  c.customer_id AS customer_id,
+  nullIf(c.name, '')  AS name,
+  nullIf(c.email, '') AS email,
+  pc.granted AS granted,
+  pc.usage   AS usage,
+  pc.overage AS overage,
+  s.subscriptions AS subscriptions
+FROM per_customer AS pc
+INNER JOIN `<catalog>`.`<namespace>.v2_3_customers` AS c ON c.internal_id = pc.icid
+LEFT JOIN active_subs AS s ON s.icid = pc.icid
+ORDER BY pc.overage DESC;
+```
+
+</Expandable>
+</Tab>
+<Tab title="BigQuery">
+<Expandable title="BigQuery">
+
+```sql
+WITH
+  -- `internal_customer_product_id` on breakdowns IS the subscription's `internal_id`,
+  -- so active-ness is one direct equality — no customer + plan-version detour.
+  active_plan AS (
+    SELECT internal_id
+    FROM `<project>.<dataset>.v2_3_subscriptions`
+    WHERE env = 'live' AND status = 'active'
+  ),
+  bd AS (
+    SELECT
+      b.internal_customer_id      AS icid,
+      b.internal_customer_product_id AS icpid,
+      b.reset_interval            AS ri,
+      b.reset_resets_at           AS rra,
+      (b.included_grant + b.prepaid_grant) AS granted,
+      b.usage AS usage
+    FROM `<project>.<dataset>.v2_3_breakdowns` AS b
+    WHERE b.env = 'live'
+      AND b.feature_id = 'AI_CREDITS'
+      AND b.entity_id IS NULL
+      AND (
+        b.reset_interval = 'one_off'
+        OR b.internal_customer_product_id IN (SELECT internal_id FROM active_plan)
+      )
+  ),
+  cur_cycle AS (
+    SELECT icid, icpid, MIN(rra) AS cur_reset
+    FROM bd
+    WHERE ri != 'one_off' AND rra > UNIX_MILLIS(CURRENT_TIMESTAMP())
+    GROUP BY icid, icpid
+  ),
+  per_customer AS (
+    SELECT
+      bd.icid AS icid,
+      SUM(bd.granted) AS granted,
+      SUM(bd.usage)   AS usage,
+      -- DISPLAYED overage (matches the dashboard): sum first, floor once.
+      GREATEST(0, SUM(bd.usage) - SUM(bd.granted)) AS overage
+      -- For BILLABLE overage (what Autumn invoices) instead, floor per row, then sum:
+      --   SUM(GREATEST(0, bd.usage - bd.granted)) AS overage
+    FROM bd
+    LEFT JOIN cur_cycle AS cc ON cc.icid = bd.icid AND cc.icpid = bd.icpid
+    WHERE bd.ri = 'one_off' OR bd.rra = cc.cur_reset
+    GROUP BY bd.icid
+    HAVING overage > 0
+    ORDER BY overage DESC
+    LIMIT 10
+  ),
+  active_subs AS (
+    SELECT s.internal_customer_id AS icid,
+           ARRAY_AGG(COALESCE(p.name, s.plan_id) IGNORE NULLS) AS subscriptions
+    FROM `<project>.<dataset>.v2_3_subscriptions` AS s
+    LEFT JOIN `<project>.<dataset>.v2_3_plans` AS p ON p.internal_id = s.internal_product_id
+    WHERE s.env = 'live' AND s.status = 'active'
+    GROUP BY s.internal_customer_id
+  )
+SELECT
+  c.customer_id AS customer_id,
+  NULLIF(c.name, '')  AS name,
+  NULLIF(c.email, '') AS email,
+  pc.granted AS granted,
+  pc.usage   AS usage,
+  pc.overage AS overage,
+  s.subscriptions AS subscriptions
+FROM per_customer AS pc
+INNER JOIN `<project>.<dataset>.v2_3_customers` AS c ON c.internal_id = pc.icid
+LEFT JOIN active_subs AS s ON s.icid = pc.icid
+ORDER BY pc.overage DESC;
+```
+
+</Expandable>
+</Tab>
+</Tabs>
+
+### Invoice totals by status
+
+<Tabs>
+<Tab title="ClickHouse">
+
+```sql
+SELECT status, count() AS invoices, sum(total) AS total
+FROM `<catalog>`.`<namespace>.v2_3_invoices`
+GROUP BY status
+ORDER BY total DESC;
+```
+
+To break down by plan, expand the `plan_ids` array with `ARRAY JOIN`:
+
+```sql
+SELECT plan_id, count() AS invoices
+FROM `<catalog>`.`<namespace>.v2_3_invoices`
+ARRAY JOIN plan_ids AS plan_id
+GROUP BY plan_id;
+```
+
+</Tab>
+<Tab title="BigQuery">
+
+```sql
+SELECT status, COUNT(*) AS invoices, SUM(total) AS total
+FROM `<project>.<dataset>.v2_3_invoices`
+GROUP BY status
+ORDER BY total DESC;
+```
+
+To break down by plan, expand the `plan_ids` array with `UNNEST`:
+
+```sql
+SELECT plan_id, COUNT(*) AS invoices
+FROM `<project>.<dataset>.v2_3_invoices`, UNNEST(plan_ids) AS plan_id
+GROUP BY plan_id;
+```
+
+</Tab>
+</Tabs>
+
+### Event volume per day by subtype
+
+<Tabs>
+<Tab title="ClickHouse">
+
+```sql
+SELECT
+  toStartOfDay(timestamp) AS day,
+  JSONExtractString(properties, 'subtype') AS subtype,
+  count() AS events
+FROM `<catalog>`.`<namespace>.events`
+WHERE timestamp > now() - INTERVAL 30 DAY
+GROUP BY day, subtype
+ORDER BY day;
+```
+
+</Tab>
+<Tab title="BigQuery">
+
+```sql
+SELECT
+  TIMESTAMP_TRUNC(timestamp, DAY) AS day,
+  JSON_VALUE(properties, '$.subtype') AS subtype,
+  COUNT(*) AS events
+FROM `<project>.<dataset>.events`
+WHERE timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
+GROUP BY day, subtype
+ORDER BY day;
+```
+
+</Tab>
+</Tabs>
+
+### Reconstruct a full customer (API shape)
+This rebuilds the **entire** `GET /customers/:id` response — scalars, subscriptions, purchases, balances (with per-plan breakdowns), flags, and invoices — from the warehouse in a single query, returned as one JSON object. It's the most useful query if you want the API's customer view without calling the API.
+
+ClickHouse-specific (uses `groupArray`, `Tuple`/`Map` casts, and the `JSON` type — ClickHouse 24.8+). Customer-level (pooled) balances and flags use `entity_id = ''`; per-entity rows are excluded from the customer envelope. `FORMAT PrettyJSONEachRow` emits one pretty-printed JSON object.
+
+<Warning>
+  This mirrors the **shape** of the API response, but the `balances` / `breakdown` values are the raw aggregated rows — they sum over superseded versions and past cycles, and they **exclude rollover balances** — so they will not match `GET /customers/:id` for customers with billing history or rollovers. To match the API, restrict the balances/breakdowns subqueries to active, current-cycle rows per [Working with balances → The active + current-cycle filter](/documentation/lakehouse/balance-semantics#the-active-current-cycle-filter), and fold in `v2_3_rollovers` as in [Balance including rollovers](#balance-including-rollovers).
+</Warning>
+<Tabs>
+<Tab title="ClickHouse">
+<Expandable title="ClickHouse">
+
+```sql
+SELECT
+  -- customer scalars — from v2_3_customers
+  c.customer_id                                       AS id,
+  nullIf(c.name, '')                                  AS name,
+  nullIf(c.email, '')                                 AS email,
+  c.created_at                                        AS created_at,
+  nullIf(c.fingerprint, '')                           AS fingerprint,
+  nullIf(c.stripe_id, '')                             AS stripe_id,
+  c.env                                               AS env,
+  c.internal_id                                       AS autumn_id,
+  c.send_email_receipts                               AS send_email_receipts,
+  CAST(if(empty(c.metadata), '{}', c.metadata) AS JSON)                 AS metadata,
+  CAST(if(empty(c.billing_controls), '{}', c.billing_controls) AS JSON) AS billing_controls,
+  CAST(if(empty(c.config), '{}', c.config) AS JSON)                     AS config,
+  CAST(if(empty(c.processors), '{}', c.processors) AS JSON)             AS processors,
+
+  -- subscriptions[] — recurring customer products, from v2_3_subscriptions
+  (
+    SELECT groupArray(CAST((
+      s.id, s.plan_id, s.auto_enable, s.add_on, s.status, s.past_due,
+      nullIf(s.canceled_at, 0), nullIf(s.expires_at, 0), nullIf(s.trial_ends_at, 0),
+      s.started_at, s.quantity,
+      nullIf(s.current_period_start, 0), nullIf(s.current_period_end, 0),
+      if(coalesce(s.entity_id, '') = '', 'customer', 'entity'),
+      nullIf(s.entity_id, ''), nullIf(s.internal_entity_id, '')
+    ) AS Tuple(
+      id String, plan_id String, auto_enable Bool, add_on Bool, status String, past_due Bool,
+      canceled_at Nullable(Int64), expires_at Nullable(Int64), trial_ends_at Nullable(Int64),
+      started_at Int64, quantity Float64,
+      current_period_start Nullable(Int64), current_period_end Nullable(Int64),
+      scope String, entity_id Nullable(String), internal_entity_id Nullable(String))))
+    FROM `<catalog>`.`<namespace>.v2_3_subscriptions` s
+    WHERE s.customer_id = 'cus_123'
+  )                                                   AS subscriptions,
+
+  -- purchases[] — one-off customer products, from v2_3_purchases
+  (
+    SELECT groupArray(CAST((
+      p.plan_id, nullIf(p.expires_at, 0), p.started_at, p.quantity,
+      if(coalesce(p.entity_id, '') = '', 'customer', 'entity'),
+      nullIf(p.entity_id, ''), nullIf(p.internal_entity_id, '')
+    ) AS Tuple(plan_id String, expires_at Nullable(Int64), started_at Int64, quantity Float64,
+      scope String, entity_id Nullable(String), internal_entity_id Nullable(String))))
+    FROM `<catalog>`.`<namespace>.v2_3_purchases` p
+    WHERE p.customer_id = 'cus_123'
+  )                                                   AS purchases,
+
+  -- balances{} — keyed by feature_id, with nested breakdown[], from v2_3_balances + v2_3_breakdowns.
+  -- The breakdown's plan_id and price_* fields no longer live on v2_3_breakdowns — they are
+  -- joined back in from v2_3_plans and v2_3_plan_items via the internal_*_id keys.
+  (
+    SELECT CAST(groupArray((b.feature_id, CAST((
+      'balance', b.feature_id, b.granted, b.remaining, b.usage, b.unlimited,
+      nullIf(b.next_reset_at, 0),
+      bd.breakdown
+    ) AS Tuple(
+      object String, feature_id String, granted Float64, remaining Float64, usage Float64,
+      unlimited Bool, next_reset_at Nullable(Int64),
+      breakdown Array(Tuple(
+        object String, id String, plan_id Nullable(String), included_grant Float64, prepaid_grant Float64,
+        remaining Float64, usage Float64, unlimited Bool, expires_at Nullable(Int64),
+        reset_interval Nullable(String), reset_interval_count Nullable(Float64), reset_resets_at Nullable(Int64),
+        price_amount Nullable(Float64), price_billing_method Nullable(String), price_billing_units Nullable(Float64),
+        price_tier_behavior Nullable(String), price_max_purchase Nullable(Float64))))))
+    ) AS Map(String, Tuple(
+      object String, feature_id String, granted Float64, remaining Float64, usage Float64,
+      unlimited Bool, next_reset_at Nullable(Int64),
+      breakdown Array(Tuple(
+        object String, id String, plan_id Nullable(String), included_grant Float64, prepaid_grant Float64,
+        remaining Float64, usage Float64, unlimited Bool, expires_at Nullable(Int64),
+        reset_interval Nullable(String), reset_interval_count Nullable(Float64), reset_resets_at Nullable(Int64),
+        price_amount Nullable(Float64), price_billing_method Nullable(String), price_billing_units Nullable(Float64),
+        price_tier_behavior Nullable(String), price_max_purchase Nullable(Float64))))))
+    FROM `<catalog>`.`<namespace>.v2_3_balances` b
+    LEFT JOIN (
+      SELECT d.feature_id AS feature_id, groupArray(CAST((
+        'balance_breakdown', d.id, nullIf(pl.plan_id, ''), d.included_grant, d.prepaid_grant, d.remaining, d.usage, d.unlimited,
+        nullIf(d.expires_at, 0), nullIf(d.reset_interval, ''), d.reset_interval_count, nullIf(d.reset_resets_at, 0),
+        pi.price_amount, nullIf(pi.price_billing_method, ''), pi.price_billing_units, nullIf(pi.price_tier_behavior, ''), pi.price_max_purchase
+      ) AS Tuple(
+        object String, id String, plan_id Nullable(String), included_grant Float64, prepaid_grant Float64,
+        remaining Float64, usage Float64, unlimited Bool, expires_at Nullable(Int64),
+        reset_interval Nullable(String), reset_interval_count Nullable(Float64), reset_resets_at Nullable(Int64),
+        price_amount Nullable(Float64), price_billing_method Nullable(String), price_billing_units Nullable(Float64),
+        price_tier_behavior Nullable(String), price_max_purchase Nullable(Float64)))) AS breakdown
+      FROM `<catalog>`.`<namespace>.v2_3_breakdowns` d
+      LEFT JOIN `<catalog>`.`<namespace>.v2_3_plans` pl      ON pl.internal_id = d.internal_product_id
+      LEFT JOIN `<catalog>`.`<namespace>.v2_3_plan_items` pi ON pi.internal_id = d.internal_plan_item_id
+      WHERE d.customer_id = 'cus_123' AND coalesce(d.entity_id, '') = ''
+      GROUP BY d.feature_id
+    ) bd ON bd.feature_id = b.feature_id
+    WHERE b.customer_id = 'cus_123' AND coalesce(b.entity_id, '') = ''
+  )                                                   AS balances,
+
+  -- flags{} — keyed by feature_id, boolean features, from v2_3_flags.
+  -- plan_id no longer lives on v2_3_flags — it is joined back in from v2_3_plans
+  -- via internal_product_id, the same way the breakdowns above resolve theirs.
+  (
+    SELECT CAST(groupArray((f.feature_id, CAST((
+      'flag', f.id, nullIf(fp.plan_id, ''), nullIf(f.expires_at, 0), f.feature_id
+    ) AS Tuple(object String, id String, plan_id Nullable(String), expires_at Nullable(Int64), feature_id String))))
+    AS Map(String, Tuple(object String, id String, plan_id Nullable(String), expires_at Nullable(Int64), feature_id String)))
+    FROM `<catalog>`.`<namespace>.v2_3_flags` f
+    LEFT JOIN `<catalog>`.`<namespace>.v2_3_plans` fp ON fp.internal_id = f.internal_product_id
+    WHERE f.customer_id = 'cus_123' AND coalesce(f.entity_id, '') = ''
+  )                                                   AS flags,
+
+  -- invoices[] — from v2_3_invoices
+  (
+    SELECT groupArray(CAST((
+      i.plan_ids, i.stripe_id, coalesce(nullIf(i.processor_type, ''), 'stripe'),
+      coalesce(i.status, ''), i.total, i.currency, i.created_at, nullIf(i.hosted_invoice_url, '')
+    ) AS Tuple(
+      plan_ids Array(String), stripe_id String, processor_type String, status String,
+      total Float64, currency String, created_at Int64, hosted_invoice_url Nullable(String))))
+    FROM `<catalog>`.`<namespace>.v2_3_invoices` i
+    WHERE i.customer_id = 'cus_123'
+  )                                                   AS invoices
+
+FROM `<catalog>`.`<namespace>.v2_3_customers` c
+WHERE c.customer_id = 'cus_123'
+FORMAT PrettyJSONEachRow;
+```
+
+<Note>
+  Timestamps in the output are epoch-milliseconds (the API's convention); `0` is normalized to `null` via `nullIf(x, 0)`. `metadata` / `billing_controls` / `config` / `processors` are stored as JSON strings and re-parsed with `CAST(... AS JSON)` — on ClickHouse older than 24.8, drop the `CAST` to emit the raw JSON string.
+</Note>
+
+</Expandable>
+</Tab>
+</Tabs>
+
+## Recipes
+
+Short, runnable answers to the questions people ask most often once they start joining the balances lane to everything else. They're written for **BigQuery**; to run them on ClickHouse, swap the addressing form to `` `<catalog>`.`<namespace>.<table>` ``, replace `TIMESTAMP_MILLIS(x)` with `fromUnixTimestamp64Milli(toInt64(x))`, `UNIX_MILLIS(CURRENT_TIMESTAMP())` with `toUnixTimestamp(now()) * 1000`, and every `IS NULL` / `IS NOT NULL` with the `coalesce` form ([why](#nullable-columns-dont-use-is-null)).
+
+<Note>
+  All of these read raw breakdown rows, which span superseded plan versions and past cycles and exclude rollovers, so apply the [active + current-cycle filter](/documentation/lakehouse/balance-semantics#the-active-current-cycle-filter) before quoting any of these numbers as the customer's real position.
+</Note>
+
+### Join a breakdown to its subscription
+
+`internal_customer_product_id` **is** the subscription's `internal_id`, so this is one equality — no detour through customer + plan version.
+
+```sql
+SELECT
+  b.customer_id,
+  b.feature_id,
+  b.remaining,
+  s.id                                  AS subscription_id,
+  s.status,
+  s.past_due,
+  TIMESTAMP_MILLIS(s.current_period_end) AS period_end
+FROM `<project>.<dataset>.v2_3_breakdowns` AS b
+INNER JOIN `<project>.<dataset>.v2_3_subscriptions` AS s
+  ON s.internal_id = b.internal_customer_product_id
+WHERE b.env = 'live'
+  AND b.customer_id = 'cus_123';
+```
+
+### Join a breakdown to its purchase
+
+Identical shape against `v2_3_purchases` — one-off purchases have no `status`, so their liveness is `expires_at`.
+
+```sql
+SELECT
+  b.customer_id,
+  b.feature_id,
+  b.remaining,
+  p.id                            AS purchase_id,
+  TIMESTAMP_MILLIS(p.started_at)  AS started_at,
+  TIMESTAMP_MILLIS(p.expires_at)  AS expires_at
+FROM `<project>.<dataset>.v2_3_breakdowns` AS b
+INNER JOIN `<project>.<dataset>.v2_3_purchases` AS p
+  ON p.internal_id = b.internal_customer_product_id
+WHERE b.env = 'live'
+  AND b.customer_id = 'cus_123';
+```
+
+### The status of the plan a breakdown belongs to
+
+`v2_3_breakdowns` has **no `status` column** — status is a property of the customer's plan, so you fetch it through `internal_customer_product_id`. Because that key resolves to a subscription *or* a purchase, join both sides and coalesce. This also shows how to recover the external `plan_id`, which no longer lives on breakdowns: join `internal_product_id` → `v2_3_plans`.
+
+```sql
+SELECT
+  b.internal_id AS breakdown_id,
+  b.feature_id,
+  pl.plan_id,                       -- external plan id, resolved via internal_product_id
+  pl.name AS plan_name,
+  CASE
+    WHEN s.internal_id IS NOT NULL THEN s.status   -- 'active' / 'scheduled'
+    WHEN pu.internal_id IS NOT NULL THEN 'purchase'
+    ELSE 'unattached'                              -- no customer plan (rare)
+  END AS plan_status,
+  TIMESTAMP_MILLIS(COALESCE(s.expires_at, pu.expires_at)) AS plan_expires_at
+FROM `<project>.<dataset>.v2_3_breakdowns` AS b
+LEFT JOIN `<project>.<dataset>.v2_3_subscriptions` AS s
+  ON s.internal_id = b.internal_customer_product_id
+LEFT JOIN `<project>.<dataset>.v2_3_purchases` AS pu
+  ON pu.internal_id = b.internal_customer_product_id
+LEFT JOIN `<project>.<dataset>.v2_3_plans` AS pl
+  ON pl.internal_id = b.internal_product_id
+WHERE b.env = 'live'
+  AND b.customer_id = 'cus_123';
+```
+
+### The status of the plan behind a flag
+
+`v2_3_flags` works the same way, and for the same reason: it carries keys, not copies. It has **no `customer_plan_status`, `customer_plan_starts_at`, or `customer_plan_ended_at`** — those were removed along with `plan_id` — so a flag's plan status comes from the same double join on `internal_customer_product_id`.
+
+```sql
+SELECT
+  fl.customer_id,
+  fl.feature_id,
+  pl.plan_id,                          -- external plan id, resolved via internal_product_id
+  COALESCE(
+    s.status,                          -- 'active' / 'scheduled' for a subscription
+    IF(pu.internal_id IS NOT NULL, 'purchase', NULL)
+  ) AS plan_status,
+  TIMESTAMP_MILLIS(COALESCE(s.started_at, pu.started_at)) AS plan_started_at,
+  TIMESTAMP_MILLIS(COALESCE(s.expires_at, pu.expires_at)) AS plan_ends_at
+FROM `<project>.<dataset>.v2_3_flags` AS fl
+LEFT JOIN `<project>.<dataset>.v2_3_subscriptions` AS s
+  ON s.internal_id = fl.internal_customer_product_id
+LEFT JOIN `<project>.<dataset>.v2_3_purchases` AS pu
+  ON pu.internal_id = fl.internal_customer_product_id
+LEFT JOIN `<project>.<dataset>.v2_3_plans` AS pl
+  ON pl.internal_id = fl.internal_product_id
+WHERE fl.env = 'live'
+  AND fl.customer_id = 'cus_123'
+  AND fl.entity_id IS NULL;          -- pooled rows only; see Pooled vs per-entity
+```
+
+<Note>
+  Only `v2_3_subscriptions` has a `status` column — a one-off purchase has no lifecycle states, so its liveness is `expires_at`. That's why the `COALESCE` falls back to a literal rather than to `pu.status`. To keep only flags granted by a live plan, filter `s.status = 'active'` **or** an unexpired purchase, rather than reaching for a single status column.
+</Note>
+
+### Use `internal_customer_product_id` as the join key
+
+A **customer plan** is a customer's own instance of a plan, and it is either a recurring subscription or a one-off purchase — never both, never neither-but-something-else. So `internal_customer_product_id` on `v2_3_breakdowns`, `v2_3_rollovers`, and `v2_3_flags` points at `v2_3_subscriptions.internal_id` **or** `v2_3_purchases.internal_id`, and exactly one of the two joins matches. Left-join both and let the null tell you which kind it is:
+
+```sql
+SELECT
+  CASE
+    WHEN s.internal_id  IS NOT NULL THEN 'subscription'
+    WHEN pu.internal_id IS NOT NULL THEN 'purchase'
+    ELSE 'unattached'
+  END AS plan_kind,
+  COUNT(*) AS breakdown_rows
+FROM `<project>.<dataset>.v2_3_breakdowns` AS b
+LEFT JOIN `<project>.<dataset>.v2_3_subscriptions` AS s
+  ON s.internal_id = b.internal_customer_product_id
+LEFT JOIN `<project>.<dataset>.v2_3_purchases` AS pu
+  ON pu.internal_id = b.internal_customer_product_id
+WHERE b.env = 'live'
+GROUP BY plan_kind;
+```
+
+Don't reach for `internal_product_id` to do this job. It identifies the shared **plan version**, so matching on it gives you every customer who ever held that plan; you'd have to add the customer id and still couldn't tell two spells of the same plan apart. `internal_customer_product_id` is the customer's own row, and it is unique.
+
+### What balances did this customer have on their last plan
+
+"Last plan" is the most recently started customer plan. Take it from `v2_3_subscriptions` by `started_at`, then pull every breakdown that hangs off it.
+
+```sql
+WITH last_plan AS (
+  SELECT internal_id, plan_id, internal_product_id, started_at
+  FROM `<project>.<dataset>.v2_3_subscriptions`
+  WHERE env = 'live' AND customer_id = 'cus_123'
+  ORDER BY started_at DESC
+  LIMIT 1
+)
+SELECT
+  lp.plan_id,
+  b.feature_id,
+  SUM(b.included_grant + b.prepaid_grant) AS granted,
+  SUM(b.remaining)                        AS remaining,
+  SUM(b.usage)                            AS usage
+FROM `<project>.<dataset>.v2_3_breakdowns` AS b
+INNER JOIN last_plan AS lp
+  ON lp.internal_id = b.internal_customer_product_id
+GROUP BY lp.plan_id, b.feature_id
+ORDER BY b.feature_id;
+```
+
+<Note>
+  Two adjustments depending on what you mean. If the customer's most recent plan might be a one-off, build `last_plan` as a `UNION ALL` over `v2_3_subscriptions` and `v2_3_purchases` before the `ORDER BY started_at DESC LIMIT 1`. And this still sums **every reset cycle** that plan lived through — add `AND b.reset_resets_at = (the current cycle)` per the [active + current-cycle filter](/documentation/lakehouse/balance-semantics#the-active-current-cycle-filter), and fold in [rollovers](#balance-including-rollovers), if you want the position as of now rather than the plan's whole history.
+</Note>
+
+### Rows whose next reset is in the past
+
+Useful as a health check. On `v2_3_balances`, `next_reset_at` is the **earliest** reset across every entitlement in the group, so a past value usually means the group still contains stale entitlement rows from cycles that have already rolled — not that a reset is overdue.
+
+```sql
+SELECT
+  customer_id,
+  feature_id,
+  entity_id,
+  remaining,
+  TIMESTAMP_MILLIS(next_reset_at) AS next_reset
+FROM `<project>.<dataset>.v2_3_balances`
+WHERE env = 'live'
+  AND next_reset_at IS NOT NULL
+  AND next_reset_at < UNIX_MILLIS(CURRENT_TIMESTAMP())
+ORDER BY next_reset_at;
+```
+
+To find the individual entitlements behind it, run the same predicate on `v2_3_breakdowns.reset_resets_at` — that column is per-entitlement, so a past value there identifies exactly which rows the current-cycle filter would drop.
+
+```sql
+SELECT internal_id, customer_id, feature_id, internal_customer_product_id,
+       TIMESTAMP_MILLIS(reset_resets_at) AS resets_at
+FROM `<project>.<dataset>.v2_3_breakdowns`
+WHERE env = 'live'
+  AND reset_resets_at IS NOT NULL
+  AND reset_resets_at < UNIX_MILLIS(CURRENT_TIMESTAMP())
+ORDER BY reset_resets_at;
+```
+
+## Cross-database joins
+
+You can join your Lakehouse tables against your own data living elsewhere in the same engine.
+
+<Tabs>
+<Tab title="ClickHouse">
+
+Qualify each side fully — the Iceberg catalog table and your own ClickHouse table:
+
+```sql
+SELECT c.customer_id, c.email, u.signup_source
+FROM `<catalog>`.`<namespace>.v2_3_customers` AS c
+INNER JOIN my_db.users AS u
+  ON u.autumn_customer_id = c.customer_id;
+```
+
+<Note>
+  The catalog connection is best for **ad-hoc and bounded** queries. For very large scans, filter early (by `env`, time range, or id) or materialize a subset into a native table first.
+</Note>
+
+</Tab>
+<Tab title="BigQuery">
+
+Cross-dataset joins are native — fully-qualify `project.dataset.table` on both sides:
+
+```sql
+SELECT i.id, i.total, a.region
+FROM `<project>.<dataset>.v2_3_invoices` AS i
+INNER JOIN `<project>.analytics.accounts` AS a
+  ON a.autumn_customer_id = i.customer_id;
+```
+
+</Tab>
+</Tabs>
+
+## Important notes
+
+### Use internal ids, not external ids
+
+This is the single most important rule for reliable queries.
+
+- Each **plan version is its own row** in `v2_3_plans`, with its own `internal_id`. The only identifier shared *across versions* is the external `plan_id`.
+- External ids (`plan_id`, `customer_id`, `feature_id`, `entity_id`, …) are **mutable** — you can rename them in Autumn at any time — and a single external id can map to multiple versioned rows.
+
+So:
+
+- **Join and filter on `internal_id`** and the `internal_*` foreign keys (`internal_customer_id`, `internal_feature_id`, `internal_product_id`, `internal_entity_id`). These are immutable and globally unique.
+- The balances lane (`v2_3_breakdowns`, `v2_3_balances`, `v2_3_rollovers`, `v2_3_flags`) uses the same keys as every other table: `internal_product_id` (→ `v2_3_plans`), `internal_plan_item_id` (→ `v2_3_plan_items`), and `internal_customer_product_id` (→ `v2_3_subscriptions` or `v2_3_purchases`). Reach for `internal_customer_product_id` whenever you need the customer's *own* plan row — status, period, cancellation — rather than the shared plan version.
+- Treat external ids as **display-only** — great for human-readable output, unreliable as join or lookup keys.
+
+<Warning>
+  Filtering by an external `plan_id` can silently match **multiple plan versions** (and breaks entirely if the id was renamed). Reach for `internal_id` whenever you need a stable, exact reference.
+</Warning>
+
+### Pooled vs per-entity rows
+
+`v2_3_balances`, `v2_3_breakdowns`, and `v2_3_flags` contain two kinds of row:
+
+- **Pooled** (customer-scoped) — `entity_id` is null.
+- **Per-entity** — `entity_id` is set.
+
+In `v2_3_balances` and `v2_3_breakdowns` the two are **disjoint**: an entitlement produces exactly one row, under whichever scope it holds. So `coalesce(entity_id, '') = ''` gives you the customer-scoped rows and *excludes* entity-scoped ones — it isn't a dedup. If you want a customer's true total across both, sum them all and don't filter on scope at all. To analyze one entity, filter on its `entity_id` (or `internal_entity_id`).
+
+`v2_3_flags` is different: an entity-scoped flag is written **twice**, once at its own entity scope and once into the customer pool, so there `coalesce(entity_id, '') = ''` genuinely is the dedup.
+
+<Warning>
+  Write `coalesce(entity_id, '') = ''`, **not** `entity_id IS NULL` — `IS NULL` throws on these Iceberg columns (see [Nullable columns](#nullable-columns-dont-use-is-null)).
+</Warning>
+
+Customers with `config.disable_pooled_balance` track per-entity rather than pooled — for them, sum the per-entity rows instead of reading the pooled row. See [Working with balances](/documentation/lakehouse/balance-semantics) for what the aggregated values mean and the active + current-cycle filter you need before trusting them.
+
+### Freshness
+
+State tables sync within **~5 minutes** under normal load; events have a variable lead time and backfill on first connection. See [Overview → Data freshness](/documentation/lakehouse/overview#data-freshness).
