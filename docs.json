@@ -14,8 +14,7 @@
 	"contextual": {
 		"options": [
 			"copy",
-			"cursor",
-			"view"
+			"cursor"
 		]
 	},
 	"favicon": "/favicon.svg",
