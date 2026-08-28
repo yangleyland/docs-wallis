@@ -335,6 +335,25 @@
 				"pages": [
 					"changelog/changelog"
 				]
+			},
+			{
+				"tab": "ZZ Tools",
+				"icon": "wrench",
+				"groups": [
+					{
+						"group": "ZZ Tools",
+						"pages": [
+							"zz-tools/overview",
+							"zz-tools/cli-reference",
+							"zz-tools/sdk-setup",
+							"zz-tools/migration-guide",
+							"zz-tools/troubleshooting",
+							"zz-tools/webhooks-reference",
+							"zz-tools/rate-limits",
+							"zz-tools/changelog"
+						]
+					}
+				]
 			}
 		]
 	},
