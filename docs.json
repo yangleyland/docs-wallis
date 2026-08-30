@@ -350,7 +350,8 @@
 							"zz-tools/troubleshooting",
 							"zz-tools/webhooks-reference",
 							"zz-tools/rate-limits",
-							"zz-tools/changelog"
+							"zz-tools/changelog",
+							"zz-tools/octokit-retest"
 						]
 					}
 				]
