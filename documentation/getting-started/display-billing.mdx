@@ -3,6 +3,8 @@ title: "Build your billing page"
 description: "Display usage and billing data in your app for your users"
 ---
 
+sep 1 10:18
+
 Software applications typically ship with a billing page. This allows customers to change plan, cancel subscription and view their usage.
 
 The customer endpoint returns the current state of the customer, including their active subscriptions, one-time purchases, and feature balances.
@@ -14,7 +16,7 @@ When building a pricing table, you need to know what each plan means for the cur
 Pass a `customerId` when listing plans and each plan will include a `customerEligibility` object:
 
 | Field | Type | Description |
-|-------|------|-------------|
+| --- | --- | --- |
 | `attachAction` | `"activate"` \| `"upgrade"` \| `"downgrade"` \| `"purchase"` \| `"none"` | What happens when this plan is attached |
 | `status` | `"active"` \| `"scheduled"` \| undefined | The customer's current relationship to this plan |
 | `trialAvailable` | boolean | Whether the customer is eligible for the plan's free trial |
@@ -221,6 +223,7 @@ Display the plan the user is currently on. Users can have multiple active subscr
 - **`purchases`** - One-off plans (e.g., credit top-ups)
 
 <CodeGroup>
+
 ```typescript TypeScript
 import { Autumn } from "autumn-js";
 
@@ -258,6 +261,7 @@ curl -X POST 'https://api.useautumn.com/v1/customers' \
 
 # Response includes subscriptions array
 ```
+
 </CodeGroup>
 
 ## Usage balances
@@ -300,16 +304,15 @@ curl -X POST 'https://api.useautumn.com/v1/customers' \
 
 # Response includes balances.[feature_id]
 ```
+
 </CodeGroup>
-
-
 
 ## Stripe billing portal
 
 The Stripe billing portal lets users manage their payment method, view past invoices, and cancel their plan.
 
 <Warning>
-Enable the billing portal in your [Stripe settings](https://dashboard.stripe.com/settings/billing/portal).
+  Enable the billing portal in your [Stripe settings](https://dashboard.stripe.com/settings/billing/portal).
 </Warning>
 
 <CodeGroup>
@@ -350,7 +353,6 @@ curl -X POST 'https://api.useautumn.com/v1/billing.open_customer_portal' \
 ```
 
 </CodeGroup>
-
 
 ## Usage timeseries chart
 
@@ -393,6 +395,7 @@ curl -X POST 'https://api.useautumn.com/v1/events.aggregate' \
     "range": "30d"
   }'
 ```
+
 </CodeGroup>
 
 You can also use the [`events.list`](/api-reference/events/listEvents) method to get the raw event data and display it in a table.
@@ -403,9 +406,6 @@ You can also use the [`events.list`](/api-reference/events/listEvents) method to
 
 Once your billing page is in place, go through the production checklist to launch with real payments.
 
-<Card
-  title="Deploy to production"
-  href='/documentation/getting-started/deploy'
->
-A checklist to go live with confidence
+<Card title="Deploy to production" href="/documentation/getting-started/deploy">
+  A checklist to go live with confidence
 </Card>
