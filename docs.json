@@ -48,7 +48,6 @@
 				"groups": [
 					{
 						"group": " ",
-						"public":true,
 						"pages": [
 							"welcome",
 							{
