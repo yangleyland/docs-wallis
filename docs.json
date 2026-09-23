@@ -147,6 +147,17 @@
 								]
 							}
 						]
+					},
+					{
+						"group": "Exclude groups e2e",
+						"pages": [
+							"excl/p4",
+							"excl/p5",
+							"excl/p7",
+							"excl/p8",
+							"excl/p9",
+							"excl/p10"
+						]
 					}
 				]
 			},
