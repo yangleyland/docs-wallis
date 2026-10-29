@@ -70,6 +70,7 @@
 					{
 						"group": "Getting Started",
 						"pages": [
+							"file-download-test",
 							"documentation/getting-started/setup",
 							"documentation/getting-started/gating",
 							"documentation/getting-started/display-billing",
