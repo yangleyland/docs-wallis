@@ -59,8 +59,7 @@
 									"documentation/concepts/features",
 									"documentation/concepts/plan-items",
 									"documentation/concepts/subscriptions",
-									"documentation/concepts/balances",
-									"documentation/concepts/stripe"
+									"documentation/concepts/balances"
 								]
 							},
 							"documentation/getting-started/migration",
@@ -71,6 +70,7 @@
 						"group": "Getting Started",
 						"pages": [
 							"file-download-test",
+							"documentation/concepts/stripe",
 							"documentation/getting-started/setup",
 							"documentation/getting-started/gating",
 							"documentation/getting-started/display-billing",
